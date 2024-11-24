@@ -1,0 +1,80 @@
+.heads{
+    margin: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 5px solid #ddd;
+    padding: 5px;
+    width: 80%; 
+    display: flex; /* Flexbox aktiviert */
+    gap: 16px; /* Abstand zwischen den divs */
+   
+
+}
+
+.box1{
+    flex-direction: column;
+    padding: 20px;
+/*    background-color: lightblue;    */
+    border: 1px solid #ccc;
+    width: 50%;
+    display: flex;
+    
+
+}
+
+.box2{
+    padding: 20px;
+/*    background-color: lightblue;    */
+    border: 1px solid #ccc;
+    width: 50%;
+    display: flex;
+    justify-content: flex-end;  /* Horizontal nach rechts ausrichten */
+    align-items: flex-start; 
+
+}
+
+.form{
+    margin: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 5px solid #ddd;
+    padding: 5px;
+    width: 80%;
+
+}
+
+.errors{
+    margin: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 5px solid #ddd;
+    padding: 5px;
+    width: 100%;
+
+}
+
+table {
+border-collapse: collapse;
+width: 80%;
+margin: auto;
+margin-top: 25px;
+border: 5px solid #ddd;
+}
+thead {
+font-style:italic;
+background-color: orange
+}
+th, td {
+text-align: left;
+padding: 16px;
+}
+tr:nth-child(even) {
+background-color: #FAC898;
+}
+
+.bottombutton{
+    width: 80%;
+    margin: auto;
+    margin-top: 15px;
+    text-align: right;
+}
