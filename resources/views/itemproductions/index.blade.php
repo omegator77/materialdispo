@@ -23,7 +23,7 @@
             <div class="form-group">
                 <!-- Filter nach Produktion -->
                 <label for="productionFilter">Produktion:</label>
-                <select id="productionFilter" name="production_id" onchange="this.form.submit()">
+                <select class="rounded-md" id="productionFilter" name="production_id" onchange="this.form.submit()">
                     <option value="">Alle Produktionen</option>
                     @foreach($allProductions as $production)
                         <option value="{{ $production->id }}" 
@@ -37,7 +37,7 @@
             <div class="form-group">
                 <!-- Filter nach Gruppe -->
                 <label for="unitFilter">Gruppe:</label>
-                <select id="unitFilter" name="unit_id" onchange="this.form.submit()">
+                <select class="rounded-md"  id="unitFilter" name="unit_id" onchange="this.form.submit()">
                     <option value="">Alle Gruppen</option>
                     @foreach($allUnits as $unit)
                         <option value="{{ $unit->id }}" 
@@ -51,7 +51,7 @@
             <div class="form-group">
                 <!-- Filter nach Gerät -->
                 <label for="itemFilter">Gerät:</label>
-                <select id="itemFilter" name="item_id" onchange="this.form.submit()">
+                <select class="rounded-md" id="itemFilter" name="item_id" onchange="this.form.submit()">
                     <option value="">Alle Geräte</option>
                     @foreach($allItems as $item)
                         <option value="{{ $item->id }}" 
