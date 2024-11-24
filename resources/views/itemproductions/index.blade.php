@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Zuordnung</title>
+    @vite('resources/css/app.css')
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
@@ -17,9 +18,9 @@
        
 
         <!-- Filterformular -->
-         <div class="form">
+         <div class="form" >
         <form method="GET" action="{{ route('itemprods') }}">
-            <div>
+            <div class="form-group">
                 <!-- Filter nach Produktion -->
                 <label for="productionFilter">Produktion:</label>
                 <select id="productionFilter" name="production_id" onchange="this.form.submit()">
@@ -33,7 +34,7 @@
                 </select>
             </div>
 
-            <div>
+            <div class="form-group">
                 <!-- Filter nach Gruppe -->
                 <label for="unitFilter">Gruppe:</label>
                 <select id="unitFilter" name="unit_id" onchange="this.form.submit()">
@@ -47,7 +48,7 @@
                 </select>
             </div>
 
-            <div>
+            <div class="form-group">
                 <!-- Filter nach Gerät -->
                 <label for="itemFilter">Gerät:</label>
                 <select id="itemFilter" name="item_id" onchange="this.form.submit()">
