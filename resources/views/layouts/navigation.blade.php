@@ -28,9 +28,9 @@
                         {{ __('Productions') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
+                {{--     <x-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
                         {{ __('Buchungen') }}
-                    </x-nav-link>
+                    </x-nav-link>   --}}
 
                     <x-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
                         {{ __('Packliste') }}
@@ -90,6 +90,27 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('units.index')" :active="request()->routeIs('units.*')">
+                         {{ __('Gruppen') }}
+                    </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
+                        {{ __('Einheiten') }}
+                    </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
+                        {{ __('Productions') }}
+                    </x-responsive-nav-link>
+
+            {{--    <x-responsive-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
+                        {{ __('Buchungen') }}
+                    </x-responsive-nav-link>   --}}
+
+                    <x-responsive-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
+                        {{ __('Packliste') }}
+                    </x-responsive-nav-link>
+
         </div>
 
         <!-- Responsive Settings Options -->
