@@ -24,7 +24,7 @@
 <th>Bezeichnung</th>
 <th>Beginn</th>
 <th>Ende</th>
-<th>Zuweisen</th>
+<th>Packen</th>
 <th>Ändern</th>
 <th>Löschen</th>
 
@@ -44,7 +44,7 @@
 
 <td>{{$production->booking_start ? \Carbon\Carbon::parse ($production->booking_start)->format('d.m.Y') : '/' }}</td>
 <td>{{$production->booking_end ? \Carbon\Carbon::parse ($production->booking_end)->format('d.m.Y') : '/' }}</td>
-<td><a href="{{ route('productions.show', $production->id) }}">Zuweisen</a></td>
+<td><a href="{{ route('productions.show', $production->id) }}">Packen</a></td>
 <td>
 <a href="{{ route('productions.edit', $production->id) }}">Ändern</a>
 </td>

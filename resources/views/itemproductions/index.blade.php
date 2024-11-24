@@ -11,7 +11,7 @@
     <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Einheiten') }}
+            {{ __('Packliste') }}
         </h2>
     </x-slot>
        
@@ -68,20 +68,22 @@
         <table>
             <thead>
                 <tr>
-                    <th>Produktions ID</th>
+                {{--     <th>Produktions ID</th>   --}}
                     <th>Produktion</th>
-                    <th>Item ID</th>
+                {{--     <th>Item ID</th>   --}}
                     <th>Gerät</th>
+                    <th>Beschreibung</th>
                     <th>Gerätegruppe</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($itemproductions as $itemproduction)
                     <tr>
-                        <td>{{ $itemproduction->production_id ?? '/' }}</td>
+                {{--         <td>{{ $itemproduction->production_id ?? '/' }}</td>   --}}
                         <td>{{ $itemproduction->production->bezeichnung ?? '/' }}</td>
-                        <td>{{ $itemproduction->item_id ?? '/' }}</td>
+                {{--         <td>{{ $itemproduction->item_id ?? '/' }}</td>    --}}
                         <td>{{ $itemproduction->item->bezeichnung ?? '/' }}</td>
+                        <td>{{ $itemproduction->item->description}}</td>
                         <td>{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
                     </tr>
                 @endforeach
