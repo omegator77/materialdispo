@@ -19,7 +19,8 @@
 <thead>
 <tr>
 <th>Bezeichnung</th>
-<th>Beschreibung</th>
+{{-- <th>Beschreibung</th>  --}}
+<th>Nummer</th>
 {{-- <th>Menge</th> --}}
 <th>Gruppe</th>
 <th>Angemietet</th>
@@ -34,7 +35,8 @@
 @foreach ( $items as $item )
 <tr>
 <td>{{$item->bezeichnung}}</td>
-<td>{{$item->description}}</td>
+{{-- <td>{{$item->description}}</td>  --}}
+<td>{{$item->nummer}}</td>
 {{-- <td>{{$item->quantity}}</td> --}}
 <td>{{$item->unit->bezeichnung}}</td>
 <td>{{$item->is_rented == 1 ? 'Ja' : 'Nein' }}</td>

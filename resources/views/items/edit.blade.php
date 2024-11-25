@@ -27,6 +27,11 @@
         </div>
 
         <div class="form-group">
+            <label for="nummer">Nummer</label>
+            <input type="text" name="nummer" id="nummer" value="{{ $item->nummer }}" class="form-control">
+        </div>
+
+        <div class="form-group">
             <label for="description">Beschreibung</label>
             <textarea name="description" id="description" class="form-control">{{ $item->description }}</textarea>
         </div>

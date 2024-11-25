@@ -102,6 +102,7 @@ $rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $reque
 
         $request->validate([
             'bezeichnung' => 'required',
+            'nummer' => 'nullable',
             'rent_start' => 'nullable',
             'rent_end' => 'nullable',
         ]);
@@ -116,6 +117,7 @@ $rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $reque
             'units_id' => $request->units_id,
             'suppliers_id' => $request->suppliers_id,
             'bezeichnung' => $request->input('bezeichnung'),
+            'nummer' => $request->input('nummer'),
             'description' => $request->input('description'),
             'is_rented' => $request->has('is_rented') ? 1 : 0, // Setze auf 1 oder 0
             'rent_start' => $rentStart ?: null,
