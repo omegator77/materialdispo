@@ -73,7 +73,7 @@
                     <th>Produktion</th>
                 {{--     <th>Item ID</th>   --}}
                     <th>Gerät</th>
-                    <th>Beschreibung</th>
+                    <th>Nummer</th>
                     <th>Gerätegruppe</th>
                 </tr>
             </thead>
@@ -81,10 +81,10 @@
                 @foreach ($itemproductions as $itemproduction)
                     <tr>
                 {{--         <td>{{ $itemproduction->production_id ?? '/' }}</td>   --}}
-                        <td>{{ $itemproduction->production->bezeichnung ?? '/' }}</td>
+                        <td>{{ $itemproduction->production->bezeichnung ?? '/', $itemproduction->nummer ?? ''}}</td>
                 {{--         <td>{{ $itemproduction->item_id ?? '/' }}</td>    --}}
                         <td>{{ $itemproduction->item->bezeichnung ?? '/' }}</td>
-                        <td>{{ $itemproduction->item->description}}</td>
+                        <td>{{ $itemproduction->item->nummer}}</td>
                         <td>{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
                     </tr>
                 @endforeach

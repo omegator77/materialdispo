@@ -19,39 +19,33 @@
 <thead>
 <tr>
 <th>Bezeichnung</th>
-<th>Beschreibung</th>
+{{-- <th>Beschreibung</th>  --}}
+<th>Nummer</th>
 {{-- <th>Menge</th> --}}
 <th>Gruppe</th>
 <th>Angemietet</th>
 <th>Vermieter</th>
 <th>Miete von</th>
 <th>Miete bis</th>
-<th>Ändern</th>
-<th>Löschen</th>
+
+
 </tr>
 </thead>
 <tbody>
 @foreach ( $items as $item )
 <tr>
-<td>{{$item->bezeichnung}}</td>
-<td>{{$item->description}}</td>
+<td><a href="{{ route('items.show', $item->id) }}">
+        {{ $item->bezeichnung }}
+    </a></td>
+{{-- <td>{{$item->description}}</td>  --}}
+<td>{{$item->nummer}}</td>
 {{-- <td>{{$item->quantity}}</td> --}}
 <td>{{$item->unit->bezeichnung}}</td>
 <td>{{$item->is_rented == 1 ? 'Ja' : 'Nein' }}</td>
 <td>{{$item->supplier->bezeichnung ?? 'Eigentum'}}</td>
 <td>{{$item->rent_start ? \Carbon\Carbon::parse ($item->rent_start)->format('d.m.Y') : '/' }}</td>
 <td>{{$item->rent_end ? \Carbon\Carbon::parse ($item->rent_end)->format('d.m.Y') : '/' }}</td>
-<td>
-<a href="{{ route('items.edit', $item->id) }}">Ändern</a>
-</td>
-<td>
-<form action="/items/{{$item->id}}"
-method="POST">
-@csrf
-@method("DELETE")
-<input type="submit" value="Löschen">
-</form>
-</td>
+
 </tr>
 @endforeach
 </tbody>

@@ -34,6 +34,14 @@ id="bezeichnung"
 placeholder="Bezeichnung ..."
 value="{{ old('bezeichnung') }}"><br>
 
+<label for="nummer">Nummer: </label>
+<input
+type="text"
+name="nummer"
+id="nummer"
+placeholder="No ..."
+value="{{ old('nummer') }}"><br>
+
 <label for="description">Bemerkung: </label>
 <input
 type="text"

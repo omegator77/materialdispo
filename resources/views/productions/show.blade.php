@@ -24,7 +24,7 @@
     <ul  style="list-style-type: disc; padding-left: 20px;">
         @foreach ($production->items as $item)
             <li style="margin-bottom: 10px;">
-                {{ $item->bezeichnung }} ({{ $item->unit->bezeichnung }})
+                {{ $item->bezeichnung }} {{ $item->nummer}} ({{ $item->unit->bezeichnung }})
                 <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}" method="POST" style="display:inline;">
                     @csrf
                     @method('DELETE')
@@ -62,7 +62,7 @@
     <input type="hidden" name="unit" value="{{ request('unit') }}">
         <select name="item_id">
             @foreach ($availableItems as $item)
-                <option value="{{ $item->id }}">{{ $item->bezeichnung }} ({{ $item->unit->bezeichnung }})</option>
+                <option value="{{ $item->id }}">{{ $item->bezeichnung }} {{ $item->nummer}} ({{ $item->unit->bezeichnung }})</option>
             @endforeach
         </select>
         <button type="submit" style=" background-color: orange;

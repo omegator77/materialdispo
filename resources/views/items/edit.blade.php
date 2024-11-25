@@ -16,7 +16,7 @@
     </x-slot>
 
 <div class="form">
-    <h1>Edit Item</h1>
+
     <form action="{{ route('items.update', $item->id) }}" method="POST">
         @csrf
         @method('PUT')
@@ -24,6 +24,11 @@
         <div class="form-group">
             <label for="bezeichnung">Bezeichnung</label>
             <input type="text" name="bezeichnung" id="bezeichnung" value="{{ $item->bezeichnung }}" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nummer">Nummer</label>
+            <input type="text" name="nummer" id="nummer" value="{{ $item->nummer }}" class="form-control">
         </div>
 
         <div class="form-group">
@@ -54,20 +59,25 @@
             </select>
         </div>
 
+        <div class="form-group form-check">
+            <input type="checkbox" name="is_rented" id="is_rented" class="form-check-input" {{ $item->is_rented ? 'checked' : '' }}>
+            <label for="is_rented" class="form-check-label">Angemietet</label>
+        </div>
+
         <div class="form-group">
             <label for="rent_start">Mietbeginn</label>
-            <input type="text" name="rent_start" id="rent_start" value="{{ \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') }}" class="form-control">
+            <input type="text" name="rent_start" id="rent_start" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '' }}" class="form-control">
         </div>
 
         <div class="form-group">
             <label for="rent_end">Mietende</label>
-            <input type="text" name="rent_end" id="rent_end" value="{{ \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') }}" class="form-control">
+            <input type="text" name="rent_end" id="rent_end" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '' }}" class="form-control">
+            <br>
         </div>
+        
 
-        <div class="form-group form-check">
-            <input type="checkbox" name="is_rented" id="is_rented" class="form-check-input" {{ $item->is_rented ? 'checked' : '' }}>
-            <label for="is_rented" class="form-check-label">Verliehen</label>
-        </div>
+
+        
 
         <button type="submit" style=" background-color: orange;
     color: white;
@@ -76,6 +86,7 @@
     border-radius: 4px;
     font-weight: bold;
     cursor: pointer;">Speichern</button>
+    
 
         <a href="{{ route('items.index') }}" style=" background-color: orange;
     color: white;
@@ -85,6 +96,7 @@
     font-weight: bold;
     cursor: pointer;">Abbrechen</a>
     </form>
+ 
 </div>
 
 </body>
