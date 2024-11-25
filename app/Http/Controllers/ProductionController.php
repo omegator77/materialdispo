@@ -147,41 +147,64 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
             'item_id' => 'required|exists:items,id',
         ]);
     
-        $production = Production::findOrFail($id);
+        try {
+            $production = Production::findOrFail($id);
     
-        // Daten der neuen Buchung
-        $newStart = $production->booking_start;
-        $newEnd = $production->booking_end;
+            // Retrieve booking dates
+            $newStart = $production->booking_start;
+            $newEnd = $production->booking_end;
     
-        // Prüfen, ob das Item bereits für diesen Zeitraum gebucht ist
-        $conflict = DB::table('item_production')
-            ->join('productions', 'item_production.production_id', '=', 'productions.id')
-            ->where('item_production.item_id', $request->item_id)
-            ->where(function ($query) use ($newStart, $newEnd) {
-                $query->where('productions.booking_start', '<=', $newEnd)
-                      ->where('productions.booking_end', '>=', $newStart);
-            })
-            ->exists();
-           
-            //dd($newStart, $newEnd, $conflict);
+            // Retrieve item details
+            $item = Item::findOrFail($request->item_id);
+    
+            if ($item->is_rented) {
+                // Validate rental period overlap
+                $rentStart = $item->rent_start;
+                $rentEnd = $item->rent_end;
             
     
-        if ($conflict) {
-            
+                if (!($rentStart <= $newStart && $rentEnd >= $newEnd)) {
+                    // Production period falls outside the rental period
+                    return redirect()->route('productions.show', [
+                        'production' => $id,
+                        'unit' => $request->unit,
+                    ])->with('error', 'Das gemietete Item kann nicht zugewiesen werden, da der Produktionszeitraum außerhalb des Mietzeitraums liegt.');
+                }
+            } else {
+                // Check for booking conflicts for owned items
+                $conflict = DB::table('item_production')
+                    ->join('productions', 'item_production.production_id', '=', 'productions.id')
+                    ->where('item_production.item_id', $request->item_id)
+                    ->where(function ($query) use ($newStart, $newEnd) {
+                        $query->where('productions.booking_start', '<=', $newEnd)
+                              ->where('productions.booking_end', '>=', $newStart);
+                    })
+                    ->exists();
+    
+                if ($conflict) {
+                    return redirect()->route('productions.show', [
+                        'production' => $id,
+                        'unit' => $request->unit,
+                    ])->with('error', 'Das Item ist im angegebenen Zeitraum bereits gebucht.');
+                }
+            }
+    
+            // Perform the attachment in a transaction
+            DB::transaction(function () use ($production, $request) {
+                $production->items()->attach($request->item_id);
+            });
+    
             return redirect()->route('productions.show', [
                 'production' => $id,
                 'unit' => $request->unit,
-            ])->with('error', 'Das Item ist im angegebenen Zeitraum bereits gebucht.');
+            ])->with('success', 'Item erfolgreich zugewiesen.');
+        } catch (ModelNotFoundException $e) {
+            return redirect()->route('productions.index')->with('error', 'Production oder Item nicht gefunden.');
+        } catch (\Exception $e) {
+            return redirect()->route('productions.index')->with('error', 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
         }
-    
-        // Zuweisung durchführen
-        $production->items()->attach($request->item_id);
-    
-        return redirect()->route('productions.show', [
-            'production' => $id,
-            'unit' => $request->unit,
-        ])->with('success', 'Item erfolgreich zugewiesen.');
     }
+    
     
 
 
