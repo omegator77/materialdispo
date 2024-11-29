@@ -21,11 +21,20 @@ class ItemController extends Controller
             $query->where('units_id', $request->unit_id);
         }
 
-        $items = $query->orderBy('units_id', 'asc')->get();
+        // Sortierung
+        if ($request->has('sort_by') && in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])) {
+            $sortDirection = $request->get('sort_direction', 'asc');
+            $query->orderBy($request->sort_by, $sortDirection);
+        } else {
+            $query->orderBy('units_id', 'asc');
+        }
+
+        $items = $query->get();
         $allUnits = Unit::all();
         
         return view('items.index', ['items' => $items, 'allUnits' => $allUnits]);
     }
+
 
 
     /**
