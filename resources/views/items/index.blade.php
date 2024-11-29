@@ -15,6 +15,26 @@
             {{ __('Einheiten') }}
         </h2>
     </x-slot>
+
+    <!-- Filterformular -->
+    <div class="form">
+        <form method="GET" action="{{ route('items.index') }}">
+            <div class="form-group">
+                <!-- Filter nach Gruppe (Unit) -->
+                <label for="unitFilter">Gruppe:</label>
+                <select class="rounded-md" id="unitFilter" name="unit_id" onchange="this.form.submit()">
+                    <option value="">Alle Gruppen</option>
+                    @foreach($allUnits as $unit)
+                        <option value="{{ $unit->id }}" 
+                            {{ (request('unit_id') ?? '') == $unit->id ? 'selected' : '' }}>
+                            {{ $unit->bezeichnung }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+    </div>
+    
    <table>
 <thead>
 <tr>
