@@ -44,7 +44,7 @@ value="{{ $production->bezeichnung }}"><br>
     border-radius: 4px;
     font-weight: bold;
     cursor: pointer;">
-    Item speichern
+    Produktion speichern
 </button>
 
 {{-- <div class="errors"> --}}
