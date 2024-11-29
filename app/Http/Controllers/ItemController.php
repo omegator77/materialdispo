@@ -12,13 +12,21 @@ class ItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::orderBy('units_id', 'asc')->get();
-        //$items = Item::all();
-        //dd($items);
-       return view('items.index', ['items'=> $items]);
+        $query = Item::with(['unit', 'supplier']);
+
+        // Filter nach Gruppe (Unit)
+        if ($request->has('unit_id') && $request->unit_id) {
+            $query->where('units_id', $request->unit_id);
+        }
+
+        $items = $query->orderBy('units_id', 'asc')->get();
+        $allUnits = Unit::all();
+        
+        return view('items.index', ['items' => $items, 'allUnits' => $allUnits]);
     }
+
 
     /**
      * Show the form for creating a new resource.
