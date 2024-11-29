@@ -37,7 +37,7 @@
         </div>
 
         <div class="form-group">
-            <label for="units_id">Einheit</label>
+            <label for="units_id">Gruppe</label>
             <select name="units_id" id="units_id" class="form-control" required>
                 @foreach($units as $unit)
                     <option value="{{ $unit->id }}" {{ $item->units_id == $unit->id ? 'selected' : '' }}>
