@@ -53,6 +53,7 @@ $rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $reque
             'units_id' => $request->units_id,
             'suppliers_id' => $request->suppliers_id,
             'bezeichnung' => $request->bezeichnung,
+            'nummer' => $request->nummer,
             'description' => $request->description,
             'is_rented' => $request->has('is_rented') ? 1 : 0, // Setze auf 1 oder 0
             'rent_start' => $rentStart,
