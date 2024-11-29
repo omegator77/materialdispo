@@ -32,26 +32,28 @@
                     @endforeach
                 </select>
             </div>
+            
         </form>
+
     </div>
     
    <table>
 <thead>
 <tr>
-<th>Bezeichnung</th>
+<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Bezeichnung</a></th>
 {{-- <th>Beschreibung</th>  --}}
-<th>Nummer</th>
+<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Nummer</a></th>
 {{-- <th>Menge</th> --}}
-<th>Gruppe</th>
+<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'units_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Gruppe</a></th>
+{{-- <th>Gruppe</th> --}}
 <th>Angemietet</th>
 <th>Vermieter</th>
-<th>Miete von</th>
-<th>Miete bis</th>
-
-
+<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_start', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Miete von</a></th>
+<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_end', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Miete bis</a></th>
 </tr>
 </thead>
 <tbody>
+
 @foreach ( $items as $item )
 <tr>
 <td><a href="{{ route('items.show', $item->id) }}">
