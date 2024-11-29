@@ -46,6 +46,20 @@
 
 }
 
+.packen{
+    
+    width: 80%;
+    margin: auto;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 5px solid #ddd;
+    padding: 5px;
+    /*justify-content: center; */
+    
+
+}
+
+
 .form-group {
     display: inline-flex;
     flex-direction: column; /* Beschriftung über dem Dropdown */
