@@ -15,11 +15,44 @@
             {{ __('Productions') }}
         </h2>
     </x-slot>
+<div class="packen">
+<h1 class="font-bold">Produktion: {{ $production->bezeichnung }}</h1>
+    <p class="font-bold">Buchungszeitraum: {{$production->booking_start ? \Carbon\Carbon::parse ($production->booking_start)->format('d.m.Y') : '/' }} bis {{$production->booking_end ? \Carbon\Carbon::parse ($production->booking_end)->format('d.m.Y') : '/' }}</p>
+    <h2>Verfügbare Items hinzufügen</h2>
 
-<h1>Produktion: {{ $production->bezeichnung }}</h1>
-    <p>Buchungszeitraum: {{$production->booking_start ? \Carbon\Carbon::parse ($production->booking_start)->format('d.m.Y') : '/' }} bis {{$production->booking_end ? \Carbon\Carbon::parse ($production->booking_end)->format('d.m.Y') : '/' }}</p>
+<!-- Gruppenauswahl -->
+<form method="GET" action="{{ route('productions.show', $production->id) }}">
+<label for="unit">Gruppe filtern:</label>
+<select name="unit" id="unit" onchange="this.form.submit()">
+    <option value="">Alle Gruppen</option>
+    @foreach ($allUnits as $unit)
+        <option value="{{ $unit->id }}" {{ request('unit') == $unit->id ? 'selected' : '' }}>
+            {{ $unit->bezeichnung }}
+        </option>
+    @endforeach
+</select>
+</form>
 
-    <h2>Verknüpfte Items</h2>
+<!-- Item-Auswahl -->
+<form action="{{ route('productions.attachItem', $production->id) }}" method="POST">
+    @csrf
+    <!-- Verstecktes Eingabefeld für die Gruppe -->
+<input type="hidden" name="unit" value="{{ request('unit') }}">
+    <select name="item_id">
+        @foreach ($availableItems as $item)
+            <option value="{{ $item->id }}">{{ $item->bezeichnung }} {{ $item->nummer}} ({{ $item->unit->bezeichnung }})</option>
+        @endforeach
+    </select>
+    <button type="submit" style=" background-color: orange;
+color: white;
+padding: 5px 10px;
+border: none;
+border-radius: 4px;
+font-weight: bold;
+cursor: pointer;">Hinzufügen</button>
+</form>
+
+    <h2 class="font-semibold">Verknüpfte Items</h2>
     
     <ul  style="list-style-type: disc; padding-left: 20px;">
         @foreach ($production->items as $item)
@@ -40,39 +73,8 @@
         @endforeach
     </ul>
 
-    <h2>Verfügbare Items hinzufügen</h2>
-
-    <!-- Gruppenauswahl -->
-<form method="GET" action="{{ route('productions.show', $production->id) }}">
-    <label for="unit">Gruppe filtern:</label>
-    <select name="unit" id="unit" onchange="this.form.submit()">
-        <option value="">Alle Gruppen</option>
-        @foreach ($allUnits as $unit)
-            <option value="{{ $unit->id }}" {{ request('unit') == $unit->id ? 'selected' : '' }}>
-                {{ $unit->bezeichnung }}
-            </option>
-        @endforeach
-    </select>
-</form>
-
-    <!-- Item-Auswahl -->
-    <form action="{{ route('productions.attachItem', $production->id) }}" method="POST">
-        @csrf
-        <!-- Verstecktes Eingabefeld für die Gruppe -->
-    <input type="hidden" name="unit" value="{{ request('unit') }}">
-        <select name="item_id">
-            @foreach ($availableItems as $item)
-                <option value="{{ $item->id }}">{{ $item->bezeichnung }} {{ $item->nummer}} ({{ $item->unit->bezeichnung }})</option>
-            @endforeach
-        </select>
-        <button type="submit" style=" background-color: orange;
-    color: white;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;">Hinzufügen</button>
-    </form>
+   
+    </div>
 
     @if (session('success'))
     <div class="alert alert-success">
