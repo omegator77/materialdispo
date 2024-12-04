@@ -33,7 +33,7 @@
 
 }
 
-.form{
+/* .form{
     display: flex;
     margin: auto;
     margin-top: 5px;
@@ -42,9 +42,8 @@
     padding: 5px;
     width: 80%;
     justify-content: center;
-    
-
-}
+    }
+*/    
 
 .packen{
     
@@ -86,7 +85,7 @@ select {
 
 }
 
-table {
+/* table {
 border-collapse: collapse;
 width: 80%;
 margin: auto;
@@ -104,10 +103,12 @@ padding: 16px;
 tr:nth-child(even) {
 background-color: #FAC898;
 }
+*/
 
+/*
 .bottombutton{
     width: 80%;
     margin: auto;
     margin-top: 15px;
     text-align: right;
-}
+} */

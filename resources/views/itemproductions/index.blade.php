@@ -1,14 +1,3 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Zuordnung</title>
-    @vite('resources/css/app.css')
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
     <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -18,11 +7,13 @@
        
 
         <!-- Filterformular -->
-         <div class="form" >
+        <div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
         <form method="GET" action="{{ route('itemprods') }}">
-            <div class="form-group">
+
+            <div class="flex flex-wrap gap-4">
+            <div class="w-full flex-1 text-center">
                 <!-- Filter nach Produktion -->
-                <label for="productionFilter">Produktion:</label>
+                <label for="productionFilter" class="block text-sm font-medium text-gray-700">Produktion:</label>
                 <select class="rounded-md" id="productionFilter" name="production_id" onchange="this.form.submit()">
                     <option value="">Alle Produktionen</option>
                     @foreach($allProductions as $production)
@@ -34,9 +25,9 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="w-full flex-1 text-center">
                 <!-- Filter nach Gruppe -->
-                <label for="unitFilter">Gruppe:</label>
+                <label for="unitFilter" class="block text-sm font-medium text-gray-700">Gruppe:</label>
                 <select class="rounded-md"  id="unitFilter" name="unit_id" onchange="this.form.submit()">
                     <option value="">Alle Gruppen</option>
                     @foreach($allUnits as $unit)
@@ -48,9 +39,9 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="w-full flex-1 text-center">
                 <!-- Filter nach Gerät -->
-                <label for="itemFilter">Gerät:</label>
+                <label for="itemFilter" class="block text-sm font-medium text-gray-700">Gerät:</label>
                 <select class="rounded-md" id="itemFilter" name="item_id" onchange="this.form.submit()">
                     <option value="">Alle Geräte</option>
                     @foreach($allItems as $item)
@@ -61,35 +52,36 @@
                     @endforeach
                 </select>
             </div>
+            </div>
         </form><form method="GET" action="{{ route('itemprods') }}">
         </div>
 
 
         <!-- Gefilterte Ergebnisse -->
-        <table>
-            <thead>
+    <div class="w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
+        <table class="border-collapse w-full h-full bg-white">
+        <thead class="text-left bg-orange-400">
                 <tr>
-                {{--     <th>Produktions ID</th>   --}}
-                    <th>Produktion</th>
-                {{--     <th>Item ID</th>   --}}
-                    <th>Gerät</th>
-                    <th>Nummer</th>
-                    <th>Gerätegruppe</th>
+        {{--    <th class="text-left pl-4">Produktions ID</th> --}}
+                <th class="text-left pl-4">Produktion</th>
+        {{--    <th class="text-left pl-4">Item ID</th>        --}}
+                <th class="text-left pl-4">Gerät</th>
+                <th class="text-left pl-4">Nummer</th>
+                <th class="text-left pl-4">Gerätegruppe</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($itemproductions as $itemproduction)
-                    <tr>
-                {{--         <td>{{ $itemproduction->production_id ?? '/' }}</td>   --}}
-                        <td>{{ $itemproduction->production->bezeichnung ?? '/', $itemproduction->nummer ?? ''}}</td>
-                {{--         <td>{{ $itemproduction->item_id ?? '/' }}</td>    --}}
-                        <td>{{ $itemproduction->item->bezeichnung ?? '/' }}</td>
-                        <td>{{ $itemproduction->item->nummer}}</td>
-                        <td>{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
-                    </tr>
+                <tr class="even:bg-orange-200">
+        {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>        --}}
+                <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung ?? '/', $itemproduction->nummer ?? ''}}</td>
+        {{--    <td class="text-left pl-4">{{ $itemproduction->item_id ?? '/' }}</td>              --}}
+                <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}</td>
+                <td class="text-left pl-4">{{ $itemproduction->item->nummer}}</td>
+                <td class="text-left pl-4">{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
+                </tr>
                 @endforeach
             </tbody>
         </table>
+        </div>
     </x-app-layout>
-</body>
-</html>

@@ -1,12 +1,4 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initialscale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Vorlage</title>
-<link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
+
 <x-app-layout>
 <body>
     <h1>Unit Details</h1>
@@ -19,4 +11,3 @@
 
     </body>
 </x-app-layout>
-</html>

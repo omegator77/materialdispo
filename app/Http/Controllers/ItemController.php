@@ -30,9 +30,9 @@ class ItemController extends Controller
         }
 
         $items = $query->get();
-        $allUnits = Unit::all();
+        $Units = Unit::all();
         
-        return view('items.index', ['items' => $items, 'allUnits' => $allUnits]);
+        return view('items.index', ['items' => $items, 'units' => $Units]);
     }
 
 
@@ -44,7 +44,8 @@ class ItemController extends Controller
     {
         $units = Unit::all(); // Alle Units abrufen
         $suppliers = Supplier::all(); // Alle Supplier abrufen
-        return view('items.create', compact('units', 'suppliers')); // Beide Sammlungen zur View übergeben
+        $items = Item::all();
+        return view('items.create', compact('units', 'suppliers', 'items')); // Beide Sammlungen zur View übergeben
         
     }
 
@@ -56,6 +57,7 @@ class ItemController extends Controller
         $request->validate([
             'units_id' => 'required|exists:units,id',
             'suppliers_id' => 'exists:suppliers,id|nullable',
+            'bezeichnung' => 'required',
             // Validierung der Datumsfelder im Format TT.MM.JJJJ
             'rent_start' => 'date_format:d.m.Y|nullable',
             'rent_end' => 'date_format:d.m.Y|after_or_equal:rent_start|nullable',

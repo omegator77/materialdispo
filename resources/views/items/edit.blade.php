@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initialscale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Vorlage</title>
-<link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
+
 <x-app-layout>
 <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -15,29 +6,29 @@
         </h2>
     </x-slot>
 
-<div class="form">
-
+<div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
     <form action="{{ route('items.update', $item->id) }}" method="POST">
         @csrf
         @method('PUT')
         
-        <div class="form-group">
-            <label for="bezeichnung">Bezeichnung</label>
+    <div class="flex flex-wrap gap-4">    
+    <div class="w-full md:flex-1">    
+            <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
             <input type="text" name="bezeichnung" id="bezeichnung" value="{{ $item->bezeichnung }}" class="form-control" required>
         </div>
 
-        <div class="form-group">
-            <label for="nummer">Nummer</label>
+        <div class="w-full md:flex-1">    
+            <label for="nummer" class="block text-sm font-medium text-gray-700">Nummer</label>
             <input type="text" name="nummer" id="nummer" value="{{ $item->nummer }}" class="form-control">
         </div>
 
-        <div class="form-group">
-            <label for="description">Beschreibung</label>
+        <div class="w-full md:flex-1">    
+            <label for="description" class="block text-sm font-medium text-gray-700">Beschreibung</label>
             <textarea name="description" id="description" class="form-control">{{ $item->description }}</textarea>
         </div>
 
-        <div class="form-group">
-            <label for="units_id">Gruppe</label>
+        <div class="w-full md:flex-1">    
+            <label for="units_id" class="block text-sm font-medium text-gray-700">Gruppe</label>
             <select name="units_id" id="units_id" class="form-control" required>
                 @foreach($units as $unit)
                     <option value="{{ $unit->id }}" {{ $item->units_id == $unit->id ? 'selected' : '' }}>
@@ -46,6 +37,7 @@
                 @endforeach
             </select>
         </div>
+    </div>
 
         <div class="form-group">
             <label for="suppliers_id">Lieferant</label>
@@ -59,17 +51,18 @@
             </select>
         </div>
 
-        <div class="form-group form-check">
+     <div class="flex flex-wrap gap-4">    
+        <div class="w-full md:flex-1"> 
             <input type="checkbox" name="is_rented" id="is_rented" class="form-check-input" {{ $item->is_rented ? 'checked' : '' }}>
             <label for="is_rented" class="form-check-label">Angemietet</label>
         </div>
 
-        <div class="form-group">
+        <div class="w-full md:flex-1"> 
             <label for="rent_start">Mietbeginn</label>
             <input type="text" name="rent_start" id="rent_start" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '' }}" class="form-control">
         </div>
 
-        <div class="form-group">
+        <div class="w-full md:flex-1"> 
             <label for="rent_end">Mietende</label>
             <input type="text" name="rent_end" id="rent_end" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '' }}" class="form-control">
             <br>
@@ -96,9 +89,6 @@
     font-weight: bold;
     cursor: pointer;">Abbrechen</a>
     </form>
- 
+ </div>
 </div>
-
-</body>
 </x-app-layout>
-</html>

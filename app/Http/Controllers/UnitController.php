@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Unit;
+use App\Models\Item;
 use Illuminate\Http\Request;
 
 class UnitController extends Controller
@@ -22,7 +23,13 @@ class UnitController extends Controller
      */
     public function create()
     {
-        return view('units.create');
+        $units = Unit::all();
+        $items = Item::all();
+        return view('units.create', compact('units', 'items')) ;
+        //->withErrors([
+        // 'bezeichnung' => 'Testfehler',
+        // 'description' => 'Testfehler',
+        // ]);
     }
 
     /**
@@ -60,11 +67,13 @@ class UnitController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
-    {
-        $unit = Unit::findOrFail($id);
-        return view('units.edit', compact('unit'));
-        //return redirect('/units');
-    }
+{
+    $unit = Unit::findOrFail($id); // Für das Formular.
+    $units = Unit::all(); // Hole alle Einheiten, um die Tabelle darzustellen
+
+    return view('units.edit', compact('unit', 'units'));
+}
+
 
     /**
      * Update the specified resource in storage.

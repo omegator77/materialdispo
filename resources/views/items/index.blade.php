@@ -1,80 +1,12 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initialscale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Einheiten</title>
-<link rel="stylesheet" href="{{ asset('css/style.css') }}">
-
-</head>
-<body>
 <x-app-layout>
 <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Einheiten') }}
         </h2>
     </x-slot>
-
-    <!-- Filterformular -->
-    <div class="form">
-        <form method="GET" action="{{ route('items.index') }}">
-            <div class="form-group">
-                <!-- Filter nach Gruppe (Unit) -->
-                <label for="unitFilter">Gruppe:</label>
-                <select class="rounded-md" id="unitFilter" name="unit_id" onchange="this.form.submit()">
-                    <option value="">Alle Gruppen</option>
-                    @foreach($allUnits as $unit)
-                        <option value="{{ $unit->id }}" 
-                            {{ (request('unit_id') ?? '') == $unit->id ? 'selected' : '' }}>
-                            {{ $unit->bezeichnung }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            
-        </form>
-
-    </div>
+    @include('items._table')
     
-   <table>
-<thead>
-<tr>
-<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Bezeichnung</a></th>
-{{-- <th>Beschreibung</th>  --}}
-<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Nummer</a></th>
-{{-- <th>Menge</th> --}}
-<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'units_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Gruppe</a></th>
-{{-- <th>Gruppe</th> --}}
-<th>Angemietet</th>
-<th>Vermieter</th>
-<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_start', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Miete von</a></th>
-<th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_end', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}">Miete bis</a></th>
-</tr>
-</thead>
-<tbody>
-
-@foreach ( $items as $item )
-<tr>
-<td><a href="{{ route('items.show', $item->id) }}">
-        {{ $item->bezeichnung }}
-    </a></td>
-{{-- <td>{{$item->description}}</td>  --}}
-<td>{{$item->nummer}}</td>
-{{-- <td>{{$item->quantity}}</td> --}}
-<td>{{$item->unit->bezeichnung}}</td>
-<td>{{$item->is_rented == 1 ? 'Ja' : 'Nein' }}</td>
-<td>{{$item->supplier->bezeichnung ?? 'Eigentum'}}</td>
-<td>{{$item->rent_start ? \Carbon\Carbon::parse ($item->rent_start)->format('d.m.Y') : '/' }}</td>
-<td>{{$item->rent_end ? \Carbon\Carbon::parse ($item->rent_end)->format('d.m.Y') : '/' }}</td>
-
-</tr>
-@endforeach
-</tbody>
-</table>
-<div class="bottombutton"><a href="items/create" style="background-color: orange; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; text-decoration: none;">
-            Neue Einheit
+    <div class="w-4/5 mx-auto pt-4 text-right"><a href="items/create" class="bg-orange-400 hover:bg-orange-500 hover:font-extrabold text-white font-thin py-1 px-4 rounded focus:outline-none focus:ring">
+            Neue  Einheit
             </a></div>
 </x-app-layout>
-</body>
-</html>

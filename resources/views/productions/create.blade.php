@@ -1,68 +1,40 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initialscale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Vorlage</title>
-<link rel="stylesheet" href="{{ asset('css/style.css') }}">
-</head>
-<body>
 <x-app-layout>
 <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Einheiten') }}
         </h2>
     </x-slot>
-    <div class="form">
+    <div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
     <form action="/productions" method="POST">
-@csrf
-
-{{-- <label for="units_id">Gruppe auswählen:</label>
-    <select name="units_id" id="units_id" class="form-select">
-        @foreach($units as $unit)
-            <option value="{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
-        @endforeach
-    </select>
-    <br>
-<label for="suppliers_id">Vermieter auswählen:</label>
-    <select name="suppliers_id" id="suppliers_id" class="form-select">
-    <option value="" selected>-- Bitte wählen --</option>
-        @foreach($suppliers as $supplier)
-            <option value="{{ $supplier->id }}">{{ $supplier->bezeichnung }}</option>
-        @endforeach
-    </select>
-    <br> --}}
-
-<label for="bezeichnung">Bezeichnung: </label>
-<input
-type="text"
-name="bezeichnung"
-id="bezeichnung"
-placeholder="Bezeichnung ..."
-value="{{ old('bezeichnung') }}"><br>
+    @csrf
+    <div class="flex flex-wrap gap-4">
+        <div class="w-full md:flex-1">
+    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung: </label>
+    <input
+        type="text"
+        name="bezeichnung"
+        id="bezeichnung"
+        placeholder="Bezeichnung ..."
+        value="{{ old('bezeichnung') }}">
+        </div>
 
 
-<br>
 <!-- Eingabefeld für Mietbeginn (booking_start) -->
-<label for="booking_start">Mietbeginn:</label>
+ <div class="w-full md:flex-1">
+<label for="booking_start" class="block text-sm font-medium text-gray-700">Mietbeginn:</label>
     <input type="text" name="booking_start" id="booking_start" class="form-control" placeholder="TT.MM.JJJJ"><br>
-
+    </div>
+    <div class="w-full md:flex-1">
     <!-- Eingabefeld für Mietende (booking_end) -->
-    <label for="booking_end">Mietende:</label>
+    <label for="booking_end" class="block text-sm font-medium text-gray-700">Mietende:</label>
     <input type="text" name="booking_end" id="booking_end" class="form-control" placeholder="TT.MM.JJJJ"><br>
+    </div>
+    <div class="text-right">
+<button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-thin hover:font-extrabold py-1 px-4 rounded focus:outline-none focus:ring">
+Speichern</button>
+</div>
+</div>
 
-<button type="submit" style=" background-color: orange;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;">
-    Produktion speichern
-</button>
-
-{{-- <div class="errors"> --}}
 @if ($errors->any())
 <ul>
 @foreach ($errors->all() as $error)
@@ -70,9 +42,7 @@ value="{{ old('bezeichnung') }}"><br>
 @endforeach
 </ul>
 @endif
-{{-- </div> --}}
-
 </div>
-</body>
+@include('productions._table')
+
 </x-app-layout>
-</html>

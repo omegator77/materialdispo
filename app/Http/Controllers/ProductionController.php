@@ -96,7 +96,8 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
      */
     public function edit(Production $production)
     {
-        return view('productions.edit', compact('production'));
+        $productions = Production::all();
+        return view('productions.edit', compact('production', 'productions'));
     }
 
     /**
@@ -104,6 +105,7 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
      */
     public function update(Request $request, Production $production)
 {
+    try{
     // Validierung der Eingaben
     $request->validate([
         'bezeichnung' => 'required',
@@ -129,6 +131,10 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
 
     // Weiterleitung mit Erfolgsnachricht
     return redirect('/productions')->with('success', 'Produktion erfolgreich aktualisiert.');
+}
+    catch(Exeption $e) {
+        return redirect()->back()->with('error', 'Fehler beim Aktualisieren: ' . $e->getMessage());
+    }
 }
 
 
