@@ -27,7 +27,7 @@
             <form action="{{ route('productions.attachItem', $production->id) }}" method="POST" class="mb-8">
                 @csrf
                 <input type="hidden" name="unit" value="{{ request('unit') }}">
-                <label for="item_id" class="block font-semibold mb-2">Item auswählen:</label>
+                <label for="item_id" class="block font-semibold mb-2">Material auswählen:</label>
                 <select name="item_id" id="item_id" class="w-full p-2 border border-gray-300 rounded mb-4">
                     @foreach ($availableItems as $item)
                         <option value="{{ $item->id }}">{{ $item->bezeichnung }} {{ $item->nummer }} ({{ $item->unit->bezeichnung }})</option>
@@ -40,7 +40,7 @@
         </div>
 
         <div class="w-full md:w-1/2">
-            <h2 class="text-xl font-semibold mb-4">Verknüpfte Items</h2>
+            <h2 class="text-xl font-semibold mb-4">Gepacktes Material</h2>
             <ul class="list-disc pl-5 space-y-3">
                 @foreach ($production->items as $item)
                     <li class="flex items-center">
