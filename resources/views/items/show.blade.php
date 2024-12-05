@@ -24,18 +24,18 @@
 @endif
 
         </div>
-        <div class="w-full md:w-1/2">
-<a href="{{ route('items.edit', $item->id) }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold mt-4">Ändern</a>
+        <div class=" w-full  md:w-1/2 p-4 flex flex-col gap-4 will-change-auto">
+<a href="{{ route('items.edit', $item->id) }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">Ändern</a>
 
 <form action="/items/{{$item->id}}"
 method="POST">
 @csrf
 @method("DELETE")
-<input type="submit" value="Löschen" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold mt-4">
+<input type="submit" value="Löschen" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">
 </form>
 
 
-<a href="{{ route('items.index') }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold mt-4">Zurück zur Übersicht</a>
+<a href="{{ route('items.index') }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">Zurück</a>
         </div> 
     </div>    
 </div>
