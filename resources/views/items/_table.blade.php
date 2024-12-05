@@ -37,7 +37,7 @@
 
 @foreach ( $items as $item )
 <tr class="even:bg-orange-200">
-<td class="text-left pl-4"><a href="{{ route('items.show', $item->id) }}">
+<td class="text-left pl-4 hover:font-bold"><a href="{{ route('items.show', $item->id) }}">
         {{ $item->bezeichnung }}
     </a></td>
 {{-- <td>{{$item->description}}</td>  --}}
