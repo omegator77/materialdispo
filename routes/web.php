@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ItemproductionController;
+use App\Http\Controllers\PDFController;
 
 
 Route::get('/', function () {
@@ -53,5 +54,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+
+
 
 require __DIR__.'/auth.php';
