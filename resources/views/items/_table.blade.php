@@ -1,5 +1,5 @@
 <!-- Filterformular -->
-<div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
+<div class=" max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
         <form method="GET" action="{{ route('items.index') }}">
             <div class="text-center">
                 <!-- Filter nach Gruppe (Unit) -->
@@ -17,7 +17,7 @@
         </div>
 
     </div>
-    <div class="w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
+    <div class="overflow-x-auto  w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
 <table class="border-collapse w-full h-full bg-white">
 <thead class="text-left bg-orange-400">
 <tr>

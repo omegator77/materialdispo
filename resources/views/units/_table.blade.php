@@ -1,4 +1,4 @@
-<div class="w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
+<div class="overflow-x-auto  w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
 <table class="border-collapse w-full h-full bg-white">
 <thead class="text-left bg-orange-400">
 <tr>
