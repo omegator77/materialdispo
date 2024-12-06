@@ -28,9 +28,9 @@
                         {{ __('Productions') }}
                     </x-nav-link>
 
-                {{--     <x-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
-                        {{ __('Buchungen') }}
-                    </x-nav-link>   --}}
+                    <x-nav-link :href="route('suppliers')" :active="request()->routeIs('suppliers')">
+                        {{ __('Vermieter') }}
+                    </x-nav-link>
 
                     <x-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
                         {{ __('Packliste') }}
@@ -103,9 +103,9 @@
                         {{ __('Productions') }}
                     </x-responsive-nav-link>
 
-            {{--    <x-responsive-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
-                        {{ __('Buchungen') }}
-                    </x-responsive-nav-link>   --}}
+                    <x-responsive-nav-link :href="route('suppliers')" :active="request()->routeIs('suppliers')">
+                        {{ __('Vermieter') }}
+                    </x-responsive-nav-link> 
 
                     <x-responsive-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
                         {{ __('Packliste') }}
