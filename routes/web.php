@@ -26,6 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/productions', ProductionController::class);
     Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
+    Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
+
+
 });
 
 

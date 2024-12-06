@@ -222,6 +222,16 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
         return Redirect::route('productions.show', ['production' => $id])->with('success', 'Item erfolgreich entfernt.');
     }
     
+    public function requirements($id)
+    {
+        // Lade die Produktion anhand der ID
+        $production = Production::findOrFail($id);
+    
+        // Übergebe die Produktion an die View
+        return view('productions.requirements', compact('production'));
+    }
+    
+
 
 }
 

@@ -24,12 +24,9 @@
 @foreach ( $productions as $production )
 <tr class="even:bg-orange-200">
 
-
-
-<td class="text-left pl-4"><a href="{{ route('productions.index', ['production_id' => $production->id]) }}">
-             {{ $production->bezeichnung }}</a></td>
-
-
+<td class="text-left pl-4 hover:font-bold"><a href="{{ route('productions.requirements', $production->id) }}">
+        {{ $production->bezeichnung }}
+    </a></td>
 <td class="text-left pl-4">{{$production->booking_start ? \Carbon\Carbon::parse ($production->booking_start)->format('d.m.Y') : '/' }}</td>
 <td class="text-left pl-4">{{$production->booking_end ? \Carbon\Carbon::parse ($production->booking_end)->format('d.m.Y') : '/' }}</td>
 <td class="text-left pl-4"><a href="{{ route('productions.show', $production->id) }}">Packen</a></td>

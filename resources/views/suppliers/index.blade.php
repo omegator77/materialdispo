@@ -1,55 +1,33 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initialscale=1.0">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-<title>Vorlage</title>
-<style>
-table {
-border-collapse: collapse;
-width: 100%;
-border: 5px solid #ddd;
-}
-thead {
-font-style:italic;
-background-color: orange
-}
-th, td {
-text-align: left;
-padding: 16px;
-}
-tr:nth-child(even) {
-background-color: #FAC898;
-}
+<x-app-layout>
+<x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Vermieter') }}
+        </h2>
+    </x-slot>
 
-</style>
-</head>
-<body>
-<h1>Vermieter</h1>
-<h2>Übersicht der Vermieter </h2>
-<table>
-<thead>
+<div class="overflow-x-auto  w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
+<table class="border-collapse w-full h-full bg-white">
+<thead class="text-left bg-orange-400">
 <tr>
-<th>Bezeichnung</th>
-<th>Kontakt</th>
-<th>Telefon</th>
-<th>Email</th>
+<th class="text-left pl-4">Bezeichnung</th>
+<th class="text-left pl-4">Kontakt</th>
+<th class="text-left pl-4">Telefon</th>
+<th class="text-left pl-4">Email</th>
 
 </tr>
 </thead>
 <tbody>
 @foreach ( $suppliers as $supplier )
-<tr>
+<tr class="even:bg-orange-200">
 
-<td>{{$supplier->bezeichnung}}</td>
-<td>{{$supplier->kontakt}}</td>
-<td>{{$supplier->phone}}</td>
-<td>{{$supplier->email}}</td>
+<td class="text-left pl-4" >{{$supplier->bezeichnung}}</td>
+<td class="text-left pl-4">{{$supplier->kontakt}}</td>
+<td class="text-left pl-4">{{$supplier->phone}}</td>
+<td class="text-left pl-4">{{$supplier->email}}</td>
 
 </tr>
 @endforeach
 </tbody>
 </table>
-</body>
-</html>
+</div>
+</x-app-layout>
