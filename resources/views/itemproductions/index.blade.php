@@ -59,10 +59,11 @@
 
         <!-- Gefilterte Ergebnisse -->
     <div class="overflow-x-auto w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
-        <table class="border-collapse w-full h-full bg-white">
+        <table class="border-collapse w-full h-full table-auto bg-white">
         <thead class="text-left bg-orange-400">
                 <tr>
         {{--    <th class="text-left pl-4">Produktions ID</th> --}}
+                <th class="text-left w-12 pl-4"></th>
                 <th class="text-left pl-4">Produktion</th>
         {{--    <th class="text-left pl-4">Item ID</th>        --}}
                 <th class="text-left pl-4">Gerät</th>
@@ -72,10 +73,11 @@
             <tbody>
                 @foreach ($itemproductions as $itemproduction)
                 <tr class="even:bg-orange-200">
-        {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>        --}}
-                <td class="text-left pl-4"> <a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
-                        {{ $itemproduction->production->bezeichnung}}   <i class=" pl-4 text-red-500 fas fa-file-pdf"></i>
-                    </a></td>
+        {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>  --}}
+                <td class="text-left w-12 pl-4"><a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
+                        <i class="text-left text-red-500 fas fa-file-pdf"></i>
+                    </a></td>        
+                <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung}}</td>            
                 
         {{--    <td class="text-left pl-4">{{ $itemproduction->item_id ?? '/' }}</td>              --}}
                 <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
