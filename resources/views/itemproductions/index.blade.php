@@ -66,7 +66,6 @@
                 <th class="text-left pl-4">Produktion</th>
         {{--    <th class="text-left pl-4">Item ID</th>        --}}
                 <th class="text-left pl-4">Gerät</th>
-                <th class="text-left pl-4">Nummer</th>
                 <th class="text-left pl-4">Gerätegruppe</th>
                 </tr>
             </thead>
@@ -76,8 +75,9 @@
         {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>        --}}
                 <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung ?? '/', $itemproduction->nummer ?? ''}}</td>
         {{--    <td class="text-left pl-4">{{ $itemproduction->item_id ?? '/' }}</td>              --}}
-                <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}</td>
-                <td class="text-left pl-4">{{ $itemproduction->item->nummer}}</td>
+                <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
+                    @isset( $itemproduction->item->nummer)<span class="font-bold">{{ $itemproduction->item->nummer}}</span>
+                    @endisset</td>
                 <td class="text-left pl-4">{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
                 </tr>
                 @endforeach

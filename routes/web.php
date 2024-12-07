@@ -8,10 +8,14 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ItemproductionController;
+use App\Http\Controllers\PDFController;
 
 Route::get('/', function () {
     return view('auth.register');
 });
+
+Route::get('pdf', [PDFController::class, 'index']);
+
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -27,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
     Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
+    Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
 
 
 });

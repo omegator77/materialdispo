@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Unit;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\PDF;
 
 use Illuminate\Http\Request;
 
@@ -231,6 +232,22 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
         return view('productions.requirements', compact('production'));
     }
     
+    public function generatePDF($id)
+{
+    // Produktion abrufen
+    $production = Production::with('items')->findOrFail($id);
+
+    // Daten an die View übergeben
+    $data = [
+        'production' => $production,
+        'items' => $production->items, // Alle gebuchten Items
+    ];
+
+    // PDF generieren
+    $pdf = PDF::loadView('pdf.production_items', $data);
+
+    return $pdf->download("production_{$production->id}_items.pdf");
+}
 
 
 }
