@@ -73,7 +73,10 @@
                 @foreach ($itemproductions as $itemproduction)
                 <tr class="even:bg-orange-200">
         {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>        --}}
-                <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung ?? '/', $itemproduction->nummer ?? ''}}</td>
+                <td class="text-left pl-4"> <a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
+                        {{ $itemproduction->production->bezeichnung}}   <i class=" pl-4 text-red-500 fas fa-file-pdf"></i>
+                    </a></td>
+                
         {{--    <td class="text-left pl-4">{{ $itemproduction->item_id ?? '/' }}</td>              --}}
                 <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
                     @isset( $itemproduction->item->nummer)<span class="font-bold">{{ $itemproduction->item->nummer}}</span>

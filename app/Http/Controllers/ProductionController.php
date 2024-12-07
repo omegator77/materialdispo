@@ -246,7 +246,7 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     // PDF generieren
     $pdf = PDF::loadView('pdf.production_items', $data);
 
-    return $pdf->download("production_{$production->id}_items.pdf");
+    return $pdf->download("{$production->bezeichnung}.pdf");
 }
 
 
