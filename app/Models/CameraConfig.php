@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class CameraConfig extends Model
+{
+    use HasFactory;
+
+    // Tabelle, falls der Name von der Konvention abweicht (z. B. wenn du eine andere Tabelle verwendest):
+    // protected $table = 'camera_configs';
+
+    /**
+     * Die Felder, die massenweise zuweisbar sind.
+     */
+    protected $fillable = [
+        'production_id',
+        'item_id',
+        'cam_number',
+        'cam_position',
+        'lens',
+        'tripod',
+        'tripod_head',
+        'large_lens_adapter',
+        'notes',
+    ];
+
+    /**
+     * Beziehung zur `Production`-Tabelle.
+     */
+    public function production()
+    {
+        return $this->belongsTo(Production::class, 'production_id');
+    }
+
+    /**
+     * Beziehung zur `Item`-Tabelle.
+     */
+    public function item()
+    {
+        return $this->belongsTo(Item::class, 'item_id');
+    }
+}

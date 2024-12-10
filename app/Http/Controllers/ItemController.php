@@ -13,27 +13,31 @@ class ItemController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $query = Item::with(['unit', 'supplier']);
+{
+    $query = Item::with(['unit', 'supplier']);
 
-        // Filter nach Gruppe (Unit)
-        if ($request->has('unit_id') && $request->unit_id) {
-            $query->where('units_id', $request->unit_id);
-        }
-
-        // Sortierung
-        if ($request->has('sort_by') && in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])) {
-            $sortDirection = $request->get('sort_direction', 'asc');
-            $query->orderBy($request->sort_by, $sortDirection);
-        } else {
-            $query->orderBy('units_id', 'asc');
-        }
-
-        $items = $query->get();
-        $Units = Unit::all();
-        
-        return view('items.index', ['items' => $items, 'units' => $Units]);
+    // Filter nach Gruppe (Unit)
+    if ($request->has('unit_id') && $request->unit_id) {
+        $query->where('units_id', $request->unit_id);
     }
+
+    // Benutzerdefinierte Sortierung
+    if ($request->has('sort_by') && in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])) {
+        $sortDirection = $request->get('sort_direction', 'asc');
+        $query->orderBy('units_id') // Zuerst immer nach units_id gruppieren
+              ->orderBy($request->sort_by, $sortDirection); // Dann benutzerdefinierte Sortierung
+    } else {
+        // Standard-Sortierung, falls nichts angegeben ist
+        $query->orderBy('units_id', 'asc')
+              ->orderBy('nummer', 'asc'); // Zweite Sortierung nach nummer
+    }
+
+    $items = $query->get();
+    $Units = Unit::all();
+    
+    return view('items.index', ['items' => $items, 'units' => $Units]);
+}
+
 
 
 

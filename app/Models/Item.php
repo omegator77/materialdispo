@@ -30,4 +30,10 @@ class Item extends Model
             'rent_start', 
             'rent_end',
         ];
+
+        public function cameraConfigs()
+{
+    return $this->hasMany(CameraConfig::class, 'item_id');
+}
+
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Production;
 use App\Models\Item;
 use App\Models\Unit;
+use App\Models\CameraConfig;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\PDF;
@@ -73,12 +74,13 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
      */
     public function show($id, Request $request)
     {
-        //  \Log::info('Aktuelle Gruppenauswahl: ', ['unit' => $request->get('unit')]);
-        $production = Production::with('items')->findOrFail($id);
+        $production = Production::with(['items.unit', 'cameraConfigs.item.unit'])->findOrFail($id);
     
         $unitFilter = $request->get('unit', null);
     
         $availableItems = Item::whereDoesntHave('productions', function ($query) use ($id) {
+            $query->where('production_id', $id);
+        })->whereDoesntHave('cameraConfigs', function ($query) use ($id) {
             $query->where('production_id', $id);
         });
     
@@ -91,6 +93,7 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     
         return view('productions.show', compact('production', 'availableItems', 'unitFilter', 'allUnits'));
     }
+    
 
     /**
      * Show the form for editing the specified resource.
@@ -237,10 +240,16 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     // Produktion abrufen
     $production = Production::with('items')->findOrFail($id);
 
+    // Kamera-Konfigurationen abrufen
+    $cameraConfigs = CameraConfig::with('item.unit')
+        ->where('production_id', $id)
+        ->get();
+
     // Daten an die View übergeben
     $data = [
         'production' => $production,
         'items' => $production->items, // Alle gebuchten Items
+        'cameraConfigs' => $cameraConfigs, // Kamera-Konfigurationen
     ];
 
     // PDF generieren
@@ -248,6 +257,43 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
 
     return $pdf->download("{$production->bezeichnung}.pdf");
 }
+
+
+public function showCameraConfigForm($productionId, $itemId)
+{
+    $production = Production::findOrFail($productionId);
+    $item = Item::findOrFail($itemId);
+
+    return view('camera_configs.create', compact('production', 'item'));
+}
+
+public function storeCameraConfig(Request $request, $productionId, $itemId)
+{
+    $validated = $request->validate([
+        'cam_number' => 'required|string|max:255',
+        'cam_position' => 'nullable|string|max:255',
+        'lens' => 'nullable|string|max:255',
+        'tripod' => 'nullable|string|max:255',
+        'tripod_head' => 'nullable|string|max:255',
+        'large_lens_adapter' => 'nullable|string|max:255',
+        'notes' => 'nullable|string',
+    ]);
+
+    CameraConfig::create([
+        'production_id' => $productionId,
+        'item_id' => $itemId,
+        'cam_number' => $validated['cam_number'],
+        'cam_position' => $validated['cam_position'],
+        'lens' => $validated['lens'],
+        'tripod' => $validated['tripod'],
+        'tripod_head' => $validated['tripod_head'],
+        'large_lens_adapter' => $validated['large_lens_adapter'],
+        'notes' => $validated['notes'],
+    ]);
+
+    return redirect()->route('productions.show', $productionId)->with('success', 'Kamera erfolgreich konfiguriert und hinzugefügt!');
+}
+
 
 
 }

@@ -24,40 +24,98 @@
             </form>
 
             <!-- Item-Auswahl -->
-            <form action="{{ route('productions.attachItem', $production->id) }}" method="POST" class="mb-8">
+            <form id="item-selection-form" method="POST" action="">
                 @csrf
-                <input type="hidden" name="unit" value="{{ request('unit') }}">
-                <label for="item_id" class="block font-semibold mb-2">Material auswählen:</label>
-                <select name="item_id" id="item_id" class="w-full p-2 border border-gray-300 rounded mb-4">
+                <label for="item_id" class="block font-semibold mb-2">Item auswählen:</label>
+                <select name="item_id" id="item_id" class="w-full p-2 border border-gray-300 rounded mb-4" required>
+                    <option value="">Bitte Item auswählen</option>
                     @foreach ($availableItems as $item)
-                        <option value="{{ $item->id }}">{{ $item->bezeichnung }} {{ $item->nummer }} ({{ $item->unit->bezeichnung }})</option>
+                        <option value="{{ $item->id }}" data-unit-id="{{ $item->units_id }}">{{ $item->bezeichnung }} ({{ $item->nummer }})</option>
                     @endforeach
                 </select>
-                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold">
-                    Hinzufügen
-                </button>
+
+                <div id="button-container">
+                    <button type="button" onclick="redirectToConfigPage()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded font-bold hidden" id="config-button">
+                        Konfiguration hinzufügen
+                    </button>
+                    <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded font-bold" id="add-button">
+                        Standard hinzufügen
+                    </button>
+                </div>
             </form>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const itemSelect = document.getElementById('item_id');
+                    const configButton = document.getElementById('config-button');
+                    const addButton = document.getElementById('add-button');
+                    const form = document.getElementById('item-selection-form');
+
+                    itemSelect.addEventListener('change', function() {
+                        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+                        const unitId = selectedOption.getAttribute('data-unit-id');
+
+                        if (unitId === '1') { // UNIT_ID 1 ist für Kameras
+                            configButton.classList.remove('hidden');
+                            addButton.classList.add('hidden');
+                            form.action = `{{ route('camera-config.create', [$production->id, 0]) }}`.replace('/0', `/${itemSelect.value}`);
+                        } else {
+                            configButton.classList.add('hidden');
+                            addButton.classList.remove('hidden');
+                            form.action = `{{ route('productions.attachItem', $production->id) }}`;
+                        }
+                    });
+                });
+
+                function redirectToConfigPage() {
+                    const selectedItemId = document.getElementById('item_id').value;
+
+                    if (!selectedItemId) {
+                        alert('Bitte wählen Sie ein Item aus.');
+                        return;
+                    }
+
+                    document.getElementById('item-selection-form').submit();
+                }
+            </script>
+
         </div>
 
         <div class="w-full md:w-1/2">
-            <h2 class="text-xl font-semibold mb-4">Gepacktes Material</h2>
-            <ul class="list-disc pl-5 space-y-3">
-                @foreach ($production->items as $item)
-                    <li class="flex items-center">
-                        <span class="flex-1">{{ $item->bezeichnung }} {{ $item->nummer }} ({{ $item->unit->bezeichnung }})</span>
-                        <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold">
-                                Entfernen
-                            </button>
-                        </form>
-                    </li>
-                @endforeach
-            </ul>
-        </div>
-    </div>
+    <h2 class="text-xl font-semibold mb-4">Gepacktes Material</h2>
+    <ul class="list-disc pl-5 space-y-3">
+        @foreach ($production->items as $item)
+            <li class="flex items-center">
+                <span class="flex-1">{{ $item->bezeichnung }} {{ $item->nummer }} ({{ $item->unit->bezeichnung }})</span>
+                <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold">
+                        Entfernen
+                    </button>
+                </form>
+            </li>
+        @endforeach
+
+        @foreach ($production->cameraConfigs as $config)
+            <li class="flex items-center">
+                <span class="flex-1">
+                    Kamera-Konfiguration: {{ $config->item->bezeichnung }} {{ $config->item->nummer }} 
+                    <br>
+                    Objektiv: {{ $config->lens }}, Stativ: {{ $config->tripod }}, Stativkopf: {{ $config->tripod_head }}
+                </span>
+                <form action="{{ route('camera-config.destroy', [$config->id]) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold">
+                        Entfernen
+                    </button>
+                </form>
+            </li>
+        @endforeach
+    </ul>
 </div>
+
 
 @if (session('success'))
     <div id="success-message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mt-4 fixed top-4 right-4 z-50">
@@ -73,23 +131,42 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const successMessage = document.getElementById('success-message');
-        const errorMessage = document.getElementById('error-message');
-        if (successMessage) {
-            setTimeout(() => {
-                successMessage.style.transition = 'opacity 0.5s ease';
-                successMessage.style.opacity = '0';
-                setTimeout(() => successMessage.remove(), 500);
-            }, 3000);
-        }
-        if (errorMessage) {
-            setTimeout(() => {
-                errorMessage.style.transition = 'opacity 0.5s ease';
-                errorMessage.style.opacity = '0';
-                setTimeout(() => errorMessage.remove(), 500);
-            }, 3000);
+    const itemSelect = document.getElementById('item_id');
+    const configButton = document.getElementById('config-button');
+    const addButton = document.getElementById('add-button');
+    const form = document.getElementById('item-selection-form');
+
+    itemSelect.addEventListener('change', function() {
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+        const unitId = selectedOption.getAttribute('data-unit-id');
+        const selectedItemId = selectedOption.value;
+
+        if (unitId === '1') { // UNIT_ID 1 ist für Kameras
+            configButton.classList.remove('hidden');
+            addButton.classList.add('hidden');
+            form.action = `{{ route('camera-config.create', [$production->id, 0]) }}`.replace('/0', `/${selectedItemId}`);
+        } else {
+            configButton.classList.add('hidden');
+            addButton.classList.remove('hidden');
+            form.action = `{{ route('productions.attachItem', $production->id) }}`;
         }
     });
+});
+
+function redirectToConfigPage() {
+    const selectedItemId = document.getElementById('item_id').value;
+
+    if (!selectedItemId) {
+        alert('Bitte wählen Sie ein Item aus.');
+        return;
+    }
+
+    const form = document.getElementById('item-selection-form');
+    const action = form.action;
+
+    window.location.href = action;
+}
+
 </script>
 
 </x-app-layout>

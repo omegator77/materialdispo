@@ -48,6 +48,16 @@
                     <td>{{ $item->pivot->notes }}</td>
                 </tr>
             @endforeach
+            @foreach ($cameraConfigs as $config)
+            <tr>
+            <td><strong>{{ $config->item->bezeichnung }} {{ $config->item->nummer }}</strong><br>
+            <em>Objektiv:</em> {{ $config->lens ?? '/' }}<br>
+            <em>Stativ:</em> {{ $config->tripod ?? '/' }}<br>
+            <em>Position:</em> {{ $config->cam_position ?? '/' }}</td>
+            <td>ToDo: Notes einbinden</td>
+
+            </tr>
+            @endforeach
         </tbody>
     </table>
 </body>

@@ -71,22 +71,48 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($itemproductions as $itemproduction)
-                <tr class="even:bg-orange-200">
-        {{--    <td class="text-left pl-4">{{ $itemproduction->production_id ?? '/' }}</td>  --}}
-                <td class="text-left w-12 pl-4"><a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
-                        <i class="text-left text-red-500 fas fa-file-pdf"></i>
-                    </a></td>        
-                <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung}}</td>            
-                
-        {{--    <td class="text-left pl-4">{{ $itemproduction->item_id ?? '/' }}</td>              --}}
-                <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
-                    @isset( $itemproduction->item->nummer)<span class="font-bold">{{ $itemproduction->item->nummer}}</span>
-                    @endisset</td>
-                <td class="text-left pl-4">{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
-                </tr>
-                @endforeach
-            </tbody>
+    <!-- Normale Item-Productions -->
+    @foreach ($itemproductions as $itemproduction)
+    <tr class="even:bg-orange-200">
+        <td class="text-left w-12 pl-4">
+            <a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
+                <i class="text-left text-red-500 fas fa-file-pdf"></i>
+            </a>
+        </td>        
+        <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung }}</td>            
+        <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
+            @isset($itemproduction->item->nummer)
+                <span class="font-bold">{{ $itemproduction->item->nummer }}</span>
+            @endisset
+        </td>
+        <td class="text-left pl-4">{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
+    </tr>
+    @endforeach
+
+    <!-- Kamera-Konfigurationen -->
+    @foreach ($cameraConfigs as $config)
+    <tr class="even:bg-green-200">
+        <td class="text-left w-12 pl-4">
+            <a href="{{ route('productions.pdf', $config->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
+                <i class="text-left text-red-500 fas fa-file-pdf"></i>
+            </a>
+        </td>        
+        <td class="text-left pl-4">{{ $config->production->bezeichnung }}</td>            
+        <td class="text-left pl-4">
+            <strong>Kamera:</strong> {{ $config->item->bezeichnung ?? '/' }}
+            @isset($config->item->nummer)
+                <span class="font-bold">{{ $config->item->nummer }}</span>
+            @endisset
+            <br>
+            <strong>Objektiv:</strong> {{ $config->lens ?? '/' }}<br>
+            <strong>Stativ:</strong> {{ $config->tripod ?? '/' }}<br>
+            <strong>Position:</strong> {{ $config->cam_position ?? '/' }}
+        </td>
+        <td class="text-left pl-4">{{ $config->item->unit->bezeichnung ?? '/' }}</td>
+    </tr>
+    @endforeach
+</tbody>
+
         </table>
         
         </div>
