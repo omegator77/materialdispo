@@ -5,9 +5,22 @@
         </h2>
     </x-slot>
 
+    @if (session('error'))
+  <div class="mb-4 rounded border border-red-300 bg-red-50 p-2 text-red-800 whitespace-pre-line">
+    {{ session('error') }}
+  </div>
+@endif
+@if (session('success'))
+  <div class="mb-4 rounded border border-green-300 bg-green-50 p-2 text-green-800">
+    {{ session('success') }}
+  </div>
+@endif
+
+
     <div class="max-w-4xl mx-auto mt-8 bg-white p-6 rounded-md shadow-md">
+    >
         <form method="POST" action="{{ route('camera-config.store', [$production->id, $item->id]) }}">
-            @csrf
+        @csrf
 
             {{-- Kamera (vorausgewählt, nicht änderbar) --}}
             <div class="mb-4">
@@ -95,6 +108,10 @@
                 <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-thin hover:font-extrabold py-1 px-4 rounded focus:outline-none focus:ring">
                     Speichern
                 </button>
+               
+  
+</form>
+
                 <a href="{{ route('productions.show', $production->id) }}" class="ml-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
                     Abbrechen
                 </a>

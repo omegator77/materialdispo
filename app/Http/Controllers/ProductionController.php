@@ -298,7 +298,7 @@ class ProductionController extends Controller
         return $pdf->download("{$production->bezeichnung}.pdf");
     }
 
-
+/*
     public function showCameraConfigForm($productionId, $itemId)
     {
         $production = \App\Models\Production::findOrFail($productionId);
@@ -327,9 +327,9 @@ class ProductionController extends Controller
     }
 
 
+*/
 
-
-
+/*
 public function storeCameraConfig(Request $request, $productionId, $itemId)
 {
     // (optional) harte Unit-Checks; kannst du auch rauslassen, wenn egal:
@@ -363,5 +363,5 @@ public function storeCameraConfig(Request $request, $productionId, $itemId)
     return redirect()->route('productions.show', $productionId)
         ->with('success', 'Kamera-Konfiguration gespeichert.');
 }
-
+*/
     }

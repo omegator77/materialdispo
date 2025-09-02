@@ -33,14 +33,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
     Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
-    Route::get('/productions/{production}/items/{item}/configure', [ProductionController::class, 'showCameraConfigForm'])->name('camera-config.create');
-    Route::post('/productions/{production}/items/{item}/configure', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
+//    Route::get('/productions/{production}/items/{item}/configure', [ProductionController::class, 'showCameraConfigForm'])->name('camera-config.create');
+//    Route::post('/productions/{production}/items/{item}/configure', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
 
-
-
-
 });
+
+
+
+// Formular öffnen
+ Route::get('/productions/{production}/items/{item}/configure',
+ [CameraConfigController::class, 'create'])->name('camera-config.create');
+
+// Formular speichern (nur Config anlegen)
+Route::post('/productions/{production}/items/{item}/configure',
+  [CameraConfigController::class, 'store'])->name('camera-config.store');
+
+// Aus Konfig buchen (mit Verfügbarkeitsprüfung via Service)
+//Route::post('/camera-configs/{config}/book',
+// [CameraConfigController::class, 'book'])->name('camera-config.book');
+
+
 
 
 
