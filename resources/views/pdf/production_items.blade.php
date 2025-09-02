@@ -51,10 +51,19 @@
             @foreach ($cameraConfigs as $config)
             <tr>
             <td><strong>{{ $config->item->bezeichnung }} {{ $config->item->nummer }}</strong><br>
-            <em>Objektiv:</em> {{ $config->lens ?? '/' }}<br>
-            <em>Stativ:</em> {{ $config->tripod ?? '/' }}<br>
-            <em>Position:</em> {{ $config->cam_position ?? '/' }}</td>
-            <td>ToDo: Notes einbinden</td>
+            <em>Objektiv:</em> {{ $config->lensItem?->bezeichnung ?? '/' }} No. {{ $config->lensItem?->nummer ?? '/' }}<br>
+            <em>Adapter:</em>  {{ $config->adapItem?->bezeichnung ?? '/' }} No. {{ $config->adapItem?->nummer ?? '/' }}<br>
+            <em>Stativ:</em> {{ $config->tripodItem?->bezeichnung ?? '/' }} No.{{ $config->tripodItem?->nummer ?? '/' }}<br>
+            <em>Stativkopf:</em> {{ $config->headItem?->bezeichnung ?? '/' }} No. {{ $config->headItem?->nummer ?? '/' }}<br>
+            <em>Kameranummer:</em> {{ $config->cam_number ?? '/' }}<br>
+            <em>Position:</em> {{ $config->cam_position ?? '/' }}
+            <td>@if(!empty($config->notes))
+  <div class="mt-2">
+    <strong>Notizen:</strong>
+    <div class="whitespace-pre-line">{{ $config->notes }}</div>
+    {{-- oder: {!! nl2br(e($config->notes)) !!} --}}
+  </div>
+@endif</td>
 
             </tr>
             @endforeach

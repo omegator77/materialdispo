@@ -100,9 +100,13 @@
         @foreach ($production->cameraConfigs as $config)
             <li class="flex items-center">
                 <span class="flex-1">
-                    Kamera-Konfiguration: {{ $config->item->bezeichnung }} {{ $config->item->nummer }} 
+                   <strong>Kamera-Konfiguration:</strong>  {{ $config->item->bezeichnung }} {{ $config->item->nummer }} 
                     <br>
-                    Objektiv: {{ $config->lens }}, Stativ: {{ $config->tripod }}, Stativkopf: {{ $config->tripod_head }}
+                    Objektiv: {{ $config->lensItem?->bezeichnung ?? '/' }} No. {{ $config->lensItem?->nummer ?? '/' }},<br>
+                    Adapter:  {{ $config->adapItem?->bezeichnung ?? '/' }} No. {{ $config->adapItem?->nummer ?? '/' }},<br> 
+                    Stativ: {{ $config->tripodItem?->bezeichnung ?? '/' }} No.{{ $config->tripodItem?->nummer ?? '/' }},<br> 
+                    Stativkopf: {{ $config->headItem?->bezeichnung ?? '/' }} No. {{ $config->headItem?->nummer ?? '/' }} 
+                    
                 </span>
                 <form action="{{ route('camera-config.destroy', [$config->id]) }}" method="POST" style="display:inline;">
                     @csrf

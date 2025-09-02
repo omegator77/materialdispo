@@ -35,11 +35,11 @@ class CameraConfig extends Model
         return $this->belongsTo(Production::class, 'production_id');
     }
 
-    /**
-     * Beziehung zur `Item`-Tabelle.
-     */
-    public function item()
-    {
-        return $this->belongsTo(Item::class, 'item_id');
-    }
+    // app/Models/CameraConfig.php
+public function item()       { return $this->belongsTo(\App\Models\Item::class, 'item_id'); }
+public function lensItem()   { return $this->belongsTo(\App\Models\Item::class, 'lens'); }
+public function tripodItem() { return $this->belongsTo(\App\Models\Item::class, 'tripod'); }
+public function headItem()   { return $this->belongsTo(\App\Models\Item::class, 'tripod_head'); }
+public function adapItem()   { return $this->belongsTo(\App\Models\Item::class, 'large_lens_adapter'); }
+
 }

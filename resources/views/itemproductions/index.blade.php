@@ -91,7 +91,7 @@
 
     <!-- Kamera-Konfigurationen -->
     @foreach ($cameraConfigs as $config)
-    <tr class="even:bg-green-200">
+    <tr class="even:bg-orange-200">
         <td class="text-left w-12 pl-4">
             <a href="{{ route('productions.pdf', $config->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
                 <i class="text-left text-red-500 fas fa-file-pdf"></i>
@@ -104,9 +104,20 @@
                 <span class="font-bold">{{ $config->item->nummer }}</span>
             @endisset
             <br>
-            <strong>Objektiv:</strong> {{ $config->lens ?? '/' }}<br>
-            <strong>Stativ:</strong> {{ $config->tripod ?? '/' }}<br>
+            <strong>Objektiv:</strong> {{ $config->lensItem?->bezeichnung ?? '/' }} No. {{ $config->lensItem?->nummer ?? '/' }}<br>
+            <strong>Adapter:</strong>  {{ $config->adapItem?->bezeichnung ?? '/' }} No. {{ $config->adapItem?->nummer ?? '/' }}<br>
+            <strong>Stativ:</strong> {{ $config->tripodItem?->bezeichnung ?? '/' }} No.{{ $config->tripodItem?->nummer ?? '/' }}<br>
+            <strong>Stativkopf:</strong> {{ $config->headItem?->bezeichnung ?? '/' }} No. {{ $config->headItem?->nummer ?? '/' }}<br>
+            <strong>Kameranummer:</strong> {{ $config->cam_number ?? '/' }}<br>
             <strong>Position:</strong> {{ $config->cam_position ?? '/' }}
+            @if(!empty($config->notes))
+  <div class="mt-2">
+    <strong>Notizen:</strong>
+    <div class="whitespace-pre-line">{{ $config->notes }}</div>
+    {{-- oder: {!! nl2br(e($config->notes)) !!} --}}
+  </div>
+@endif
+            
         </td>
         <td class="text-left pl-4">{{ $config->item->unit->bezeichnung ?? '/' }}</td>
     </tr>
