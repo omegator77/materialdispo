@@ -42,4 +42,21 @@ class CameraConfig extends Model
     {
         return $this->belongsTo(Item::class, 'item_id');
     }
+
+    public function lensItem()
+    {
+        return $this->belongsTo(Item::class, 'lens');
+    }
+    public function tripodItem()
+    {
+        return $this->belongsTo(Item::class, 'tripod');
+    }
+    public function headItem()
+    {
+        return $this->belongsTo(Item::class, 'tripod_head');
+    }
+    public function adapterItem()
+    {
+        return $this->belongsTo(Item::class, 'large_lens_adapter');
+    }
 }

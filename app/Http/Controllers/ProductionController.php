@@ -73,26 +73,34 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
      * Display the specified resource.
      */
     public function show($id, Request $request)
-    {
-        $production = Production::with(['items.unit', 'cameraConfigs.item.unit'])->findOrFail($id);
-    
-        $unitFilter = $request->get('unit', null);
-    
-        $availableItems = Item::whereDoesntHave('productions', function ($query) use ($id) {
-            $query->where('production_id', $id);
-        })->whereDoesntHave('cameraConfigs', function ($query) use ($id) {
-            $query->where('production_id', $id);
-        });
-    
-        if ($unitFilter) {
-            $availableItems->where('units_id', $unitFilter);
-        }
-    
-        $availableItems = $availableItems->get();
-        $allUnits = Unit::all();
-    
-        return view('productions.show', compact('production', 'availableItems', 'unitFilter', 'allUnits'));
+{
+    $production = Production::with([
+        'items.unit',
+        'cameraConfigs.item.unit',
+        'cameraConfigs.lensItem',
+        'cameraConfigs.tripodItem',
+        'cameraConfigs.headItem',
+        'cameraConfigs.adapterItem',
+    ])->findOrFail($id);
+
+    $unitFilter = $request->get('unit', null);
+
+    $availableItems = Item::whereDoesntHave('productions', function ($query) use ($id) {
+        $query->where('production_id', $id);
+    })->whereDoesntHave('cameraConfigs', function ($query) use ($id) {
+        $query->where('production_id', $id);
+    });
+
+    if ($unitFilter) {
+        $availableItems->where('units_id', $unitFilter);
     }
+
+    $availableItems = $availableItems->get();
+    $allUnits = Unit::all();
+
+    return view('productions.show', compact('production', 'availableItems', 'unitFilter', 'allUnits'));
+}
+
     
 
     /**
@@ -267,33 +275,52 @@ public function showCameraConfigForm($productionId, $itemId)
     return view('camera_configs.create', compact('production', 'item'));
 }
 
-public function storeCameraConfig(Request $request, $productionId, $itemId)
+public function storeCameraConfig(Request $request, Production $production)
 {
     $validated = $request->validate([
-        'cam_number' => 'required|string|max:255',
-        'cam_position' => 'nullable|string|max:255',
-        'lens' => 'nullable|string|max:255',
-        'tripod' => 'nullable|string|max:255',
-        'tripod_head' => 'nullable|string|max:255',
-        'large_lens_adapter' => 'nullable|string|max:255',
-        'notes' => 'nullable|string',
+        'cam_number'         => 'required|string|max:255',
+        'camera'             => 'required|exists:items,id',
+        'lens'               => 'nullable|exists:items,id',
+        'tripod'             => 'nullable|exists:items,id',
+        'tripod_head'        => 'nullable|exists:items,id',
+        'large_lens_adapter' => 'nullable|exists:items,id',
+        'notes'              => 'nullable|string|max:2000',
     ]);
 
-    CameraConfig::create([
-        'production_id' => $productionId,
-        'item_id' => $itemId,
-        'cam_number' => $validated['cam_number'],
-        'cam_position' => $validated['cam_position'],
-        'lens' => $validated['lens'],
-        'tripod' => $validated['tripod'],
-        'tripod_head' => $validated['tripod_head'],
-        'large_lens_adapter' => $validated['large_lens_adapter'],
-        'notes' => $validated['notes'],
-    ]);
+    // Neues CameraConfig erstellen
+    $config = new CameraConfig();
+    $config->production_id      = $production->id;
+    $config->item_id            = $validated['camera'];   // die gewählte Kamera
+    $config->lens               = $validated['lens'] ?? null;
+    $config->tripod             = $validated['tripod'] ?? null;
+    $config->tripod_head        = $validated['tripod_head'] ?? null;
+    $config->large_lens_adapter = $validated['large_lens_adapter'] ?? null;
+    $config->cam_number         = $validated['cam_number'];
+    $config->notes              = $validated['notes'] ?? null;
+    $config->save();
 
-    return redirect()->route('productions.show', $productionId)->with('success', 'Kamera erfolgreich konfiguriert und hinzugefügt!');
+    return redirect()
+        ->route('productions.show', $production)
+        ->with('success', 'Kamera-Konfiguration gespeichert.');
 }
 
+
+public function createCameraConfig(Production $production, Request $request)
+{
+    // Vorauswahl aus der Show-Seite: .../camera-config/create?camera_item_id=123
+    $preselectedCameraId = (int) $request->query('camera_item_id');
+
+    // Dropdown-Daten anhand deiner units_id aus dem Dump:
+    $cameras  = Item::where('units_id', 1)->orderBy('bezeichnung')->get();
+    $lenses   = Item::where('units_id', 2)->orderBy('bezeichnung')->get();
+    $tripods  = Item::where('units_id', 3)->orderBy('bezeichnung')->get();
+    $heads    = Item::where('units_id', 4)->orderBy('bezeichnung')->get();
+    $adapters = Item::where('units_id', 5)->orderBy('bezeichnung')->get();
+
+    return view('camera_configs.create', compact(
+        'production', 'cameras', 'lenses', 'tripods', 'heads', 'adapters', 'preselectedCameraId'
+    ));
+}
 
 
 }

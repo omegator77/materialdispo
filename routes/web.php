@@ -67,6 +67,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// routes/web.php
+Route::get('/productions/{production}/camera-config/create',
+    [ProductionController::class, 'createCameraConfig']
+)->name('camera-config.create');
+
+Route::post('/productions/{production}/camera-config',
+    [ProductionController::class, 'storeCameraConfig']
+)->name('camera-config.store');
 
 
 
