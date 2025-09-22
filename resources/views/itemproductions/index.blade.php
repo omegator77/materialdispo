@@ -128,7 +128,6 @@
                             @isset($config->tripodItem->nummer)
                             <span class="font-bold">{{ $config->tripodItem->nummer }}</span>                                                        
                             @endisset
-                            
                             <br>
 
                             <strong>Position:</strong> {{ $config->cam_position ?? '/' }}
