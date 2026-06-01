@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Materialdispo Dashboard
+            Materialdispo Version.0.1  Dashboard
         </h2>
     </x-slot>
 
@@ -38,6 +38,7 @@
                         <li>Packliste verbessern(Gruppieren nach Gerätegruppen, usw.).</li>
                         <li>PDF-Export finalisieren.</li>
                         <li>Rollen/Rechte für Benutzer vorbereiten.</li>
+                        <li>Kalenderansicht implementieren</li>
                     </ul>
                 </div>
             </div>
@@ -45,4 +46,3 @@
         </div>
     </div>
 </x-app-layout>
-EOF
