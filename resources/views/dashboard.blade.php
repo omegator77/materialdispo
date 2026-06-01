@@ -21,7 +21,8 @@
                     <ul class="list-disc list-inside space-y-2">
                         <li>Registrierungsmail / E-Mail-Funktion noch nicht eingerichtet.</li>
                         <li>Kamera-Konfig wird in der Packliste noch nicht sauber angezeigt.</li>
-                        <li>Adminer zeigt unter PHP 8.4 Warnungen an.</li>
+                        <li>Verfügbarkeitsprüfung berücksichtigt aktuell nur Einzelgeräte. Geräte innerhalb von Kamerakonfigurationen werden bei der Konfliktprüfung noch nicht vollständig einbezogen, wodurch Doppelbuchungen möglich sind.</li>
+                         <li>Adminer zeigt unter PHP 8.4 Warnungen an.</li>
                     </ul>
                 </div>
             </div>
