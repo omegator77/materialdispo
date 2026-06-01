@@ -16,7 +16,7 @@ return new class extends Migration
             ->references('id')
             ->on('units')
             ->onDelete('cascade');
-            $table->foreign('supplier_id')
+            $table->foreign('suppliers_id')
             ->references('id')
             ->on('suppliers')
             ->onDelete('cascade');

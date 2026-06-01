@@ -9,6 +9,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ItemproductionController;
 use App\Http\Controllers\PDFController;
+use App\Http\Controllers\CameraConfigController;
 
 Route::get('/', function () {
     return view('auth.register');
@@ -32,6 +33,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
     Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
+    Route::get('/productions/{production}/items/{item}/configure', [ProductionController::class, 'showCameraConfigForm'])->name('camera-config.create');
+    Route::post('/productions/{production}/items/{item}/configure', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
+    Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
+
+
 
 
 });
@@ -61,6 +67,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// routes/web.php
+Route::get('/productions/{production}/camera-config/create',
+    [ProductionController::class, 'createCameraConfig']
+)->name('camera-config.create');
+
+Route::post('/productions/{production}/camera-config',
+    [ProductionController::class, 'storeCameraConfig']
+)->name('camera-config.store');
 
 
 

@@ -20,5 +20,11 @@ class Production extends Model
         
           return $this->belongsToMany(Item::class, 'item_production');
     }
+
+    public function cameraConfigs()
+{
+    return $this->hasMany(CameraConfig::class, 'production_id');
+}
+
     
 }
