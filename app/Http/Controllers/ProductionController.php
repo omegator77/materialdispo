@@ -7,7 +7,7 @@ use App\Models\Unit;
 use App\Models\CameraConfig;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use Illuminate\Http\Request;
 
@@ -261,7 +261,7 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     ];
 
     // PDF generieren
-    $pdf = PDF::loadView('pdf.production_items', $data);
+    $pdf = Pdf::loadView('pdf.production_items', $data);
 
     return $pdf->download("{$production->bezeichnung}.pdf");
 }
