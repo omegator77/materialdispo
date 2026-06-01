@@ -106,7 +106,7 @@
                             @endisset
                             <br>
 
-                            <strong>Objektiv:</strong> {{ $config->lensItem->bezeichnung }}
+                            <strong>Objektiv:</strong> {{ $config->lensItem->bezeichnung  ?? '/' }}
                             @isset($config->lensItem->nummer)
                             <span class="font-bold">{{ $config->lensItem->nummer }}</span>
                             @endisset
