@@ -1,143 +1,196 @@
-    <x-app-layout>
-        <x-slot name="header">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Packliste') }}
-            </h2>
-        </x-slot>
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Packliste') }}
+        </h2>
+    </x-slot>
 
-
-        <!-- Filterformular -->
-        <div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
-            <form method="GET" action="{{ route('itemprods') }}">
-
-                <div class="flex flex-wrap gap-4">
-                    <div class="w-full flex-1 text-center">
-                        <!-- Filter nach Produktion -->
-                        <label for="productionFilter" class="block text-sm font-medium text-gray-700">Produktion:</label>
-                        <select class="rounded-md" id="productionFilter" name="production_id" onchange="this.form.submit()">
-                            <option value="">Alle Produktionen</option>
-                            @foreach($allProductions as $production)
-                            <option value="{{ $production->id }}"
-                                {{ ($filters['production_id'] ?? '') == $production->id ? 'selected' : '' }}>
+    {{-- Filterformular --}}
+    <div class="max-w-7xl w-4/5 mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
+        <form method="GET" action="{{ route('itemprods') }}">
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full flex-1 text-center">
+                    <label for="productionFilter" class="block text-sm font-medium text-gray-700">Produktion:</label>
+                    <select class="rounded-md" id="productionFilter" name="production_id" onchange="this.form.submit()">
+                        <option value="">Alle Produktionen</option>
+                        @foreach($allProductions as $production)
+                            <option value="{{ $production->id }}" {{ ($filters['production_id'] ?? '') == $production->id ? 'selected' : '' }}>
                                 {{ $production->bezeichnung }}
                             </option>
-                            @endforeach
-                        </select>
-                    </div>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="w-full flex-1 text-center">
-                        <!-- Filter nach Gruppe -->
-                        <label for="unitFilter" class="block text-sm font-medium text-gray-700">Gruppe:</label>
-                        <select class="rounded-md" id="unitFilter" name="unit_id" onchange="this.form.submit()">
-                            <option value="">Alle Gruppen</option>
-                            @foreach($allUnits as $unit)
-                            <option value="{{ $unit->id }}"
-                                {{ ($filters['unit_id'] ?? '') == $unit->id ? 'selected' : '' }}>
+                <div class="w-full flex-1 text-center">
+                    <label for="unitFilter" class="block text-sm font-medium text-gray-700">Gruppe:</label>
+                    <select class="rounded-md" id="unitFilter" name="unit_id" onchange="this.form.submit()">
+                        <option value="">Alle Gruppen</option>
+                        @foreach($allUnits as $unit)
+                            <option value="{{ $unit->id }}" {{ ($filters['unit_id'] ?? '') == $unit->id ? 'selected' : '' }}>
                                 {{ $unit->bezeichnung }}
                             </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="w-full flex-1 text-center">
-                        <!-- Filter nach Gerät -->
-                        <label for="itemFilter" class="block text-sm font-medium text-gray-700">Gerät:</label>
-                        <select class="rounded-md" id="itemFilter" name="item_id" onchange="this.form.submit()">
-                            <option value="">Alle Geräte</option>
-                            @foreach($allItems as $item)
-                            <option value="{{ $item->id }}"
-                                {{ ($filters['item_id'] ?? '') == $item->id ? 'selected' : '' }}>
-                                {{ $item->bezeichnung }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+                        @endforeach
+                    </select>
                 </div>
-            </form>
-            <form method="GET" action="{{ route('itemprods') }}">
-        </div>
 
+                <div class="w-full flex-1 text-center">
+                    <label for="itemFilter" class="block text-sm font-medium text-gray-700">Gerät:</label>
+                    <select class="rounded-md" id="itemFilter" name="item_id" onchange="this.form.submit()">
+                        <option value="">Alle Geräte</option>
+                        @foreach($allItems as $item)
+                            <option value="{{ $item->id }}" {{ ($filters['item_id'] ?? '') == $item->id ? 'selected' : '' }}>
+                                {{ $item->bezeichnung }}
+                                @isset($item->nummer)
+                                    {{ $item->nummer }}
+                                @endisset
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
 
-        <!-- Gefilterte Ergebnisse -->
-        <div class="overflow-x-auto w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
-            <table class="border-collapse w-full h-full table-auto bg-white">
-                <thead class="text-left bg-orange-400">
-                    <tr>
-                        {{-- <th class="text-left pl-4">Produktions ID</th> --}}
-                        <th class="text-left w-12 pl-4"></th>
-                        <th class="text-left pl-4">Produktion</th>
-                        {{-- <th class="text-left pl-4">Item ID</th>        --}}
-                        <th class="text-left pl-4">Gerät</th>
-                        <th class="text-left pl-4">Gerätegruppe</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Normale Item-Productions -->
-                    @foreach ($itemproductions as $itemproduction)
-                    <tr class="even:bg-orange-200">
-                        <td class="text-left w-12 pl-4">
-                            <a href="{{ route('productions.pdf', $itemproduction->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
-                                <i class="text-left text-red-500 fas fa-file-pdf"></i>
+    @php
+        $itemproductionsByProduction = $itemproductions->groupBy(fn ($row) => $row->production->id);
+        $cameraConfigsByProduction = $cameraConfigs->groupBy(fn ($config) => $config->production->id);
+
+        $productionIds = $itemproductionsByProduction
+            ->keys()
+            ->merge($cameraConfigsByProduction->keys())
+            ->unique();
+
+        $productionsById = $allProductions->keyBy('id');
+    @endphp
+
+    <div class="w-4/5 mx-auto mt-6 space-y-6">
+        @forelse($productionIds as $productionId)
+            @php
+                $production = $productionsById->get($productionId);
+                $productionItems = $itemproductionsByProduction->get($productionId, collect());
+                $productionConfigs = $cameraConfigsByProduction->get($productionId, collect());
+
+                $itemsByUnit = $productionItems->groupBy(function ($row) {
+                    return $row->item->unit->bezeichnung ?? 'Ohne Gruppe';
+                });
+            @endphp
+
+            <details class="bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden" open>
+                <summary class="cursor-pointer bg-orange-400 px-4 py-3 font-bold text-gray-900">
+                    {{ $production->bezeichnung ?? 'Unbekannte Produktion' }}
+
+                    <span class="font-normal text-sm ml-2">
+                        {{ $productionConfigs->count() }} Kamerazug/Kamerazüge,
+                        {{ $productionItems->count() }} Einzelgerät(e)
+                    </span>
+                </summary>
+
+                <div class="p-4 space-y-6">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <div class="text-sm text-gray-600">
+                            @if($production)
+                                Zeitraum:
+                                <strong>{{ $production->booking_start }}</strong>
+                                bis
+                                <strong>{{ $production->booking_end }}</strong>
+                            @endif
+                        </div>
+
+                        @if($production)
+                            <a href="{{ route('productions.pdf', $production->id) }}"
+                               class="text-red-600 font-bold hover:underline"
+                               title="PDF exportieren">
+                                PDF exportieren
                             </a>
-                        </td>
-                        <td class="text-left pl-4">{{ $itemproduction->production->bezeichnung }}</td>
-                        <td class="text-left pl-4">{{ $itemproduction->item->bezeichnung ?? '/' }}
-                            @isset($itemproduction->item->nummer)
-                            <span class="font-bold">{{ $itemproduction->item->nummer }}</span>
-                            @endisset
-                        </td>
-                        <td class="text-left pl-4">{{ $itemproduction->item->unit->bezeichnung ?? '/' }}</td>
-                    </tr>
-                    @endforeach
+                        @endif
+                    </div>
 
-                    <!-- Kamera-Konfigurationen -->
-                    @foreach ($cameraConfigs as $config)
-                    <tr class="even:bg-green-200">
-                        <td class="text-left w-12 pl-4">
-                            <a href="{{ route('productions.pdf', $config->production->id) }}" class="btn btn-primary" title="PDF Exportieren">
-                                <i class="text-left text-red-500 fas fa-file-pdf"></i>
-                            </a>
-                        </td>
-                        <td class="text-left pl-4">{{ $config->production->bezeichnung }}</td>
-                        <td class="text-left pl-4">
-                            <strong>Kamera:</strong> {{ $config->item->bezeichnung ?? '/' }}
-                            @isset($config->item->nummer)
-                            <span class="font-bold">{{ $config->item->nummer }}</span>
-                            @endisset
-                            <br>
+                    @if($productionConfigs->count())
+                        <section>
+                            <h3 class="text-lg font-bold mb-3">Kamerazüge</h3>
 
-                            <strong>Objektiv:</strong> {{ $config->lensItem->bezeichnung  ?? '/' }}
-                            @isset($config->lensItem->nummer)
-                            <span class="font-bold">{{ $config->lensItem->nummer }}</span>
-                            @endisset
-                            <br>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                @foreach($productionConfigs as $config)
+                                    <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                                        <div class="font-bold text-lg mb-3">
+                                            {{ $config->cam_position ?? 'Kamera' }}
+                                        </div>
 
-                            <strong>Largelens-Adapter:</strong> {{ $config->adapterItem->bezeichnung ?? '/' }}
-                            @isset($config->adapterItem->nummer)
-                            <span class="font-bold">{{ $config->adapterItem->nummer }}</span>
-                            @endisset
-                            <br>
+                                        <div class="space-y-1 text-sm">
+                                            <div>
+                                                <span class="font-semibold">Kamera:</span>
+                                                <strong>{{ $config->item->nummer ?? '' }}</strong>
+                                                {{ $config->item->bezeichnung ?? '/' }}
+                                            </div>
 
-                            <strong>Stativkopf:</strong> {{ $config->headItem->bezeichnung ?? '/' }}
-                            @isset($config->headItem->nummer)
-                            <span class="font-bold">{{ $config->headItem->nummer }}</span>                                                        
-                            @endisset
-                            <br>
+                                            <div>
+                                                <span class="font-semibold">Objektiv:</span>
+                                                <strong>{{ $config->lensItem->nummer ?? '' }}</strong>
+                                                {{ $config->lensItem->bezeichnung ?? '/' }}
+                                            </div>
 
-                            <strong>Stativ:</strong> {{ $config->tripodItem->bezeichnung ?? '/' }}
-                            @isset($config->tripodItem->nummer)
-                            <span class="font-bold">{{ $config->tripodItem->nummer }}</span>                                                        
-                            @endisset
-                            <br>
+                                            <div>
+                                                <span class="font-semibold">Adapter:</span>
+                                                <strong>{{ $config->adapterItem->nummer ?? '' }}</strong>
+                                                {{ $config->adapterItem->bezeichnung ?? '/' }}
+                                            </div>
 
-                            <strong>Position:</strong> {{ $config->cam_position ?? '/' }}
-                        </td>
-                        <td class="text-left pl-4">{{ $config->item->unit->bezeichnung ?? '/' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
+                                            <div>
+                                                <span class="font-semibold">Stativkopf:</span>
+                                                <strong>{{ $config->headItem->nummer ?? '' }}</strong>
+                                                {{ $config->headItem->bezeichnung ?? '/' }}
+                                            </div>
 
-            </table>
+                                            <div>
+                                                <span class="font-semibold">Stativ:</span>
+                                                <strong>{{ $config->tripodItem->nummer ?? '' }}</strong>
+                                                {{ $config->tripodItem->bezeichnung ?? '/' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
 
-        </div>
-    </x-app-layout>
+                    @if($itemsByUnit->count())
+                        <section>
+                            <h3 class="text-lg font-bold mb-3">Weitere Geräte</h3>
+
+                            <div class="space-y-4">
+                                @foreach($itemsByUnit as $unitName => $rows)
+                                    <div class="border border-gray-300 rounded-lg overflow-hidden">
+                                        <div class="bg-gray-200 px-4 py-2 font-bold">
+                                            {{ $unitName }}
+                                            <span class="font-normal text-sm">({{ $rows->count() }})</span>
+                                        </div>
+
+                                        <table class="w-full bg-white">
+                                            <tbody>
+                                                @foreach($rows as $row)
+                                                    <tr class="border-t even:bg-gray-50">
+                                                        <td class="px-4 py-2 w-2/3">
+                                                            <strong>{{ $row->item->nummer ?? '' }}</strong>
+                                                            {{ $row->item->bezeichnung ?? '/' }}
+                                                        </td>
+                                                        <td class="px-4 py-2 text-gray-600">
+                                                            {{ $row->notes ?? $row->pivot->notes ?? '' }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+                </div>
+            </details>
+        @empty
+            <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-600">
+                Keine Einträge gefunden.
+            </div>
+        @endforelse
+    </div>
+</x-app-layout>
