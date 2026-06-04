@@ -206,7 +206,7 @@
         if (unitId === '1') { // UNIT_ID 1 ist für Kameras
             configButton.classList.remove('hidden');
             addButton.classList.add('hidden');
-            form.action = `{{ route('camera-config.create', [$production->id, 0]) }}`.replace('/0', `/${selectedItemId}`);
+              form.action = `{{ route('camera-config.create', $production) }}?camera_item_id=${selectedItemId}`;
         } else {
             configButton.classList.add('hidden');
             addButton.classList.remove('hidden');

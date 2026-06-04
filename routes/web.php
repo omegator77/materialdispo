@@ -33,8 +33,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
     Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
-    Route::get('/productions/{production}/items/{item}/configure', [ProductionController::class, 'showCameraConfigForm'])->name('camera-config.create');
-    Route::post('/productions/{production}/items/{item}/configure', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
 
 
