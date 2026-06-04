@@ -266,15 +266,6 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     return $pdf->download("{$production->bezeichnung}.pdf");
 }
 
-
-public function showCameraConfigForm($productionId, $itemId)
-{
-    $production = Production::findOrFail($productionId);
-    $item = Item::findOrFail($itemId);
-
-    return view('camera_configs.create', compact('production', 'item'));
-}
-
 public function storeCameraConfig(Request $request, Production $production)
 {
     $validated = $request->validate([
