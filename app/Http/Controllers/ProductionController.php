@@ -72,7 +72,10 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     /**
      * Display the specified resource.
      */
-    public function show($id, Request $request)
+    /**
+ * Display the specified resource.
+ */
+public function show($id, Request $request)
 {
     $production = Production::with([
         'items.unit',
@@ -83,24 +86,96 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
         'cameraConfigs.adapterItem',
     ])->findOrFail($id);
 
-    $unitFilter = $request->get('unit', null);
+    $unitFilter = $request->get('unit');
+    $showUnavailable = $request->boolean('show_unavailable');
 
-    $availableItems = Item::whereDoesntHave('productions', function ($query) use ($id) {
-        $query->where('production_id', $id);
-    })->whereDoesntHave('cameraConfigs', function ($query) use ($id) {
-        $query->where('production_id', $id);
-    });
+    /*
+     * Items laden, die in DIESER Produktion noch nicht gepackt sind.
+     *
+     * Wichtig:
+     * - Direkt gepackte Items aus dieser Produktion werden ausgeblendet.
+     * - Items aus CameraConfigs dieser Produktion werden ebenfalls ausgeblendet.
+     * - Items aus ANDEREN Produktionen bleiben erstmal drin.
+     *   Ihre Verfügbarkeit wird danach geprüft.
+     */
+    $itemsQuery = Item::query()
+        ->whereDoesntHave('productions', function ($query) use ($id) {
+            $query->where('productions.id', $id);
+        })
+        ->where(function ($query) use ($id) {
+            $query
+                ->whereDoesntHave('cameraConfigs', function ($q) use ($id) {
+                    $q->where('production_id', $id);
+                })
+                ->whereNotIn('id', function ($q) use ($id) {
+                    $q->select('lens')
+                        ->from('camera_configs')
+                        ->where('production_id', $id)
+                        ->whereNotNull('lens');
+                })
+                ->whereNotIn('id', function ($q) use ($id) {
+                    $q->select('tripod')
+                        ->from('camera_configs')
+                        ->where('production_id', $id)
+                        ->whereNotNull('tripod');
+                })
+                ->whereNotIn('id', function ($q) use ($id) {
+                    $q->select('tripod_head')
+                        ->from('camera_configs')
+                        ->where('production_id', $id)
+                        ->whereNotNull('tripod_head');
+                })
+                ->whereNotIn('id', function ($q) use ($id) {
+                    $q->select('large_lens_adapter')
+                        ->from('camera_configs')
+                        ->where('production_id', $id)
+                        ->whereNotNull('large_lens_adapter');
+                });
+        });
 
     if ($unitFilter) {
-        $availableItems->where('units_id', $unitFilter);
+        $itemsQuery->where('units_id', $unitFilter);
     }
 
-    $availableItems = $availableItems->get();
-    $allUnits = Unit::all();
+    /*
+     * Verfügbarkeit markieren:
+     * - verfügbar: normal auswählbar
+     * - nicht verfügbar: disabled im Dropdown
+     */
+    $availableItems = $itemsQuery
+        ->orderBy('bezeichnung')
+        ->get()
+        ->map(function ($item) use ($production) {
+            $availability = $this->checkItemAvailability($item, $production);
 
-    return view('productions.show', compact('production', 'availableItems', 'unitFilter', 'allUnits'));
+            $item->is_available = $availability['available'];
+            $item->availability_reason = $availability['reason'];
+
+            return $item;
+        });
+
+    /*
+     * Standardverhalten:
+     * - nicht verfügbare Items ausblenden
+     *
+     * Wenn show_unavailable=1 gesetzt ist:
+     * - nicht verfügbare Items anzeigen, aber disabled
+     */
+    if (! $showUnavailable) {
+        $availableItems = $availableItems
+            ->filter(fn ($item) => $item->is_available)
+            ->values();
+    }
+
+    $allUnits = Unit::orderBy('bezeichnung')->get();
+
+    return view('productions.show', compact(
+        'production',
+        'availableItems',
+        'unitFilter',
+        'allUnits'
+    ));
 }
-
     
 
     /**
@@ -160,79 +235,60 @@ $bookingEnd = $request->booking_end ? \Carbon\Carbon::createFromFormat('d.m.Y', 
     }
 
     public function attachItem(Request $request, $id)
-    {
-        $request->validate([
-            'item_id' => 'required|exists:items,id',
-        ]);
-    
-        try {
-            $production = Production::findOrFail($id);
-    
-            // Retrieve booking dates
-            $newStart = $production->booking_start;
-            $newEnd = $production->booking_end;
-    
-            // Retrieve item details
-            $item = Item::findOrFail($request->item_id);
+{
+    $request->validate([
+        'item_id' => 'required|exists:items,id',
+    ]);
 
-            $item = Item::findOrFail($request->item_id);
+    try {
+        $production = Production::findOrFail($id);
+        $item = Item::findOrFail($request->item_id);
 
-$availability = $this->checkItemAvailability($item, $production);
+        /*
+         * Aktuelle Filterauswahl merken,
+         * damit sie nach dem Speichern erhalten bleibt.
+         */
+        $redirectParams = [
+            'production' => $id,
+            'unit' => $request->unit,
+            'show_unavailable' => $request->show_unavailable,
+        ];
 
-if (! $availability['available']) {
-    return redirect()->route('productions.show', [
-        'production' => $id,
-        'unit' => $request->unit,
-    ])->with('error', $availability['reason']);
-}
-    
-            if ($item->is_rented) {
-                // Validate rental period overlap
-                $rentStart = $item->rent_start;
-                $rentEnd = $item->rent_end;
-            
-    
-                if (!($rentStart <= $newStart && $rentEnd >= $newEnd)) {
-                    // Production period falls outside the rental period
-                    return redirect()->route('productions.show', [
-                        'production' => $id,
-                        'unit' => $request->unit,
-                    ])->with('error', 'Das gemietete Item kann nicht zugewiesen werden, da der Produktionszeitraum außerhalb des Mietzeitraums liegt.');
-                }
-            } else {
-                // Check for booking conflicts for owned items
-                $conflict = DB::table('item_production')
-                    ->join('productions', 'item_production.production_id', '=', 'productions.id')
-                    ->where('item_production.item_id', $request->item_id)
-                    ->where(function ($query) use ($newStart, $newEnd) {
-                        $query->where('productions.booking_start', '<=', $newEnd)
-                              ->where('productions.booking_end', '>=', $newStart);
-                    })
-                    ->exists();
-    
-                if ($conflict) {
-                    return redirect()->route('productions.show', [
-                        'production' => $id,
-                        'unit' => $request->unit,
-                    ])->with('error', 'Das Item ist im angegebenen Zeitraum bereits gebucht.');
-                }
-            }
-    
-            // Perform the attachment in a transaction
-            DB::transaction(function () use ($production, $request) {
-                $production->items()->attach($request->item_id);
-            });
-    
-            return redirect()->route('productions.show', [
-                'production' => $id,
-                'unit' => $request->unit,
-            ])->with('success', 'Item erfolgreich zugewiesen.');
-        } catch (ModelNotFoundException $e) {
-            return redirect()->route('productions.index')->with('error', 'Production oder Item nicht gefunden.');
-        } catch (\Exception $e) {
-            return redirect()->route('productions.index')->with('error', 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        /*
+         * Neue zentrale Verfügbarkeitsprüfung:
+         * prüft Mietzeitraum, direkte Buchungen und CameraConfigs.
+         */
+        $availability = $this->checkItemAvailability($item, $production);
+
+        if (! $availability['available']) {
+            return redirect()
+                ->route('productions.show', $redirectParams)
+                ->with('error', $availability['reason']);
         }
+
+        /*
+         * Item zu Produktion hinzufügen.
+         * syncWithoutDetaching verhindert versehentliche Doppel-Einträge.
+         */
+        DB::transaction(function () use ($production, $item) {
+            $production->items()->syncWithoutDetaching([$item->id]);
+        });
+
+        return redirect()
+            ->route('productions.show', $redirectParams)
+            ->with('success', 'Item erfolgreich zugewiesen.');
+
+    } catch (ModelNotFoundException $e) {
+        return redirect()
+            ->route('productions.index')
+            ->with('error', 'Production oder Item nicht gefunden.');
+
+    } catch (\Exception $e) {
+        return redirect()
+            ->route('productions.index')
+            ->with('error', 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     }
+}
     
     
 
