@@ -10,6 +10,28 @@
 @endphp
 
 <x-app-layout>
+
+@if (session('success'))
+    <div class="mb-4 rounded bg-green-100 p-4 text-green-800">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if (session('error'))
+    <div class="mb-4 rounded bg-red-100 p-4 text-red-800">
+        {{ session('error') }}
+    </div>
+@endif
+
+@if ($errors->any())
+    <div class="mb-4 rounded bg-red-100 p-4 text-red-800">
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Kamera-Konfiguration hinzufügen
@@ -117,8 +139,11 @@
             </div>
         </form>
 
+        
+
         @if(!empty($preselectedCameraId))
             <p class="text-xs text-gray-500 mt-4">Vorausgewählte Kamera‑ID: {{ $preselectedCameraId }}</p>
         @endif
     </div>
+
 </x-app-layout>
