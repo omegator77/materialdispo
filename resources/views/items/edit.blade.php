@@ -59,12 +59,12 @@
 
         <div class="w-full md:flex-1"> 
             <label for="rent_start">Mietbeginn</label>
-            <input type="text" name="rent_start" id="rent_start" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '' }}" class="form-control">
+            <input type="text" name="rent_start" id="rent_start" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '' }}" class="form-control datepicker">
         </div>
 
         <div class="w-full md:flex-1"> 
             <label for="rent_end">Mietende</label>
-            <input type="text" name="rent_end" id="rent_end" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '' }}" class="form-control">
+            <input type="text" name="rent_end" id="rent_end" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '' }}" class="form-control datepicker">
             <br>
         </div>
         

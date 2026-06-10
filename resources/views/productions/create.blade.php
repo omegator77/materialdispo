@@ -22,12 +22,12 @@
 <!-- Eingabefeld für Mietbeginn (booking_start) -->
  <div class="w-full md:flex-1">
 <label for="booking_start" class="block text-sm font-medium text-gray-700">Mietbeginn:</label>
-    <input type="text" name="booking_start" id="booking_start" class="form-control" placeholder="TT.MM.JJJJ"><br>
+    <input type="text" name="booking_start" id="booking_start" class="form-control datepicker" placeholder="TT.MM.JJJJ"><br>
     </div>
     <div class="w-full md:flex-1">
     <!-- Eingabefeld für Mietende (booking_end) -->
     <label for="booking_end" class="block text-sm font-medium text-gray-700">Mietende:</label>
-    <input type="text" name="booking_end" id="booking_end" class="form-control" placeholder="TT.MM.JJJJ"><br>
+    <input type="text" name="booking_end" id="booking_end" class="form-control datepicker" placeholder="TT.MM.JJJJ"><br>
     </div>
     <div class="text-right">
 <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-thin hover:font-extrabold py-1 px-4 rounded focus:outline-none focus:ring">
