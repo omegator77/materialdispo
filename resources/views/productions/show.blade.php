@@ -211,7 +211,13 @@
                                         @endif
                                     </div>
 
-                                    <div class="mt-3 flex justify-end">
+                                    <div class="mt-3 flex justify-end gap-2">
+                                        <a
+    href="{{ route('camera-config.edit', $config->id) }}"
+    class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded font-semibold"
+>
+    Bearbeiten
+</a>
                                         <form action="{{ route('camera-config.destroy', [$config->id]) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
