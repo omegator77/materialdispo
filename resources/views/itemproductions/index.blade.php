@@ -90,9 +90,9 @@
                         <div class="text-sm text-gray-600">
                             @if($production)
                                 Zeitraum:
-                                <strong>{{ $production->booking_start }}</strong>
-                                bis
-                                <strong>{{ $production->booking_end }}</strong>
+                                <strong>{{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}</strong>
+bis
+<strong>{{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}</strong>
                             @endif
                         </div>
 

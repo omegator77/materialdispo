@@ -21,12 +21,12 @@ value="{{ $production->bezeichnung }}"><br>
     <div class="w-full md:flex-1">
 <!-- Eingabefeld für Mietbeginn (booking_start) -->
     <label for="booking_start" class="block text-sm font-medium text-gray-700">Mietbeginn:</label>
-    <input type="text" name="booking_start" id="booking_start" class="form-control" value="{{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}"><br>
+    <input type="text" name="booking_start" id="booking_start" class="form-control datepicker" value="{{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}"><br>
     </div>
     <div class="w-full md:flex-1">
     <!-- Eingabefeld für Mietende (booking_end) -->
     <label for="booking_end" class="block text-sm font-medium text-gray-700">Mietende:</label>
-    <input type="text" name="booking_end" id="booking_end" class="form-control" value="{{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}"><br>
+    <input type="text" name="booking_end" id="booking_end" class="form-control datepicker" value="{{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}"><br>
     </div>
 <button type="submit" style=" background-color: orange;
     color: white;

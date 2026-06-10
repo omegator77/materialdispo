@@ -69,13 +69,12 @@
     
     <div class="w-full md:flex-1">
         <label for="rent_start"  class="block text-sm font-medium text-gray-700">Mietbeginn:</label>
-        <input type="text" name="rent_start" id="rent_start" placeholder="TT.MM.JJJJ"><br>
+        <input type="text" name="rent_start" id="rent_start" class="form-control datepicker" placeholder="TT.MM.JJJJ"><br>
     </div>
     <div class="w-full md:flex-1">
 
     <label for="rent_end"  class="block text-sm font-medium text-gray-700">Mietende:</label>
-    <input type="text" name="rent_end" id="rent_end" placeholder="TT.MM.JJJJ">
-    </div>
+    <input type="text" name="rent_end" id="rent_end" class="form-control datepicker" placeholder="TT.MM.JJJJ">   </div>
 
     <div class="w-full md:w-auto mt-4 md:mt-0 md:ml-auto">
         <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-thin hover:font-extrabold py-1 px-4 rounded focus:outline-none focus:ring">

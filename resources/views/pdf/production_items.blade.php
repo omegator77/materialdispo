@@ -35,7 +35,9 @@
 
 <body>
     <h1>Packliste für Produktion: {{ $production->bezeichnung }}</h1>
-    <p><strong>Zeitraum:</strong> {{ $production->booking_start }} bis {{ $production->booking_end }}</p>
+    <p><strong>Zeitraum:</strong> {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
+bis
+{{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}</p>
 
     <table>
         <thead>

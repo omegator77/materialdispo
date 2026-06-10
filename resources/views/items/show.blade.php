@@ -19,8 +19,8 @@
 {{-- <p><strong>Angemietet:</strong> {{ $item->is_rented ? 'Ja':'Nein' }}</p> --}}
 @if ($item->is_rented)
 <p><strong>Vermieter:</strong> {{$item->supplier->bezeichnung ?? 'Eigentum'}}</p>
-<p><strong>Mietbeginn:</strong> {{ $item->rent_start }}</p>
-<p><strong>Mietende:</strong> {{ $item->rent_end }}</p>    
+{{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '/' }} bis 
+{{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '/' }}   
 @endif
 
         </div>
