@@ -86,7 +86,7 @@ bis
         @endisset
         <br>
 
-        <em>Position:</em> {{ $config->cam_position ?? '/' }}
+        <em>Position:</em> {{ $config->cam_number ?? '/' }}
     </td>
 
     <td>ToDo: Notes einbinden</td>
