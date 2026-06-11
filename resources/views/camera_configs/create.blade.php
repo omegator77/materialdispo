@@ -44,7 +44,7 @@
             @csrf
 
             <div class="mb-4">
-                <label for="cam_number" class="block font-semibold mb-1">Kameranummer *</label>
+                <label for="cam_number" class="block font-semibold mb-1">Kameranummer / Position *</label>
                 <input type="text"
                        name="cam_number" id="cam_number"
                        class="w-full border rounded p-2"
@@ -61,7 +61,7 @@
                         <option value="{{ $it->id }}"
                                 @selected((int)old('camera', $preselectedCameraId ?? 0) === (int)$it->id)>
                             {{ $it->bezeichnung  ?? $it->name ?? 'Item #'.$it->id }}
-                            @if(!empty($it->nummer)) ({{ $it->nummer }}) @endif
+                            @if(!empty($it->nummer)) NR. {{ $it->nummer }} @endif
                         </option>
                     @endforeach
                 </select>
@@ -76,7 +76,7 @@
                         @foreach(($lenses ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('lens') == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
-                                @if (!empty($it->numer)) (NR. {{ $it->nummer }})
+                                @if (!empty($it->nummer)) NR. {{ $it->nummer }}
                                     
                                 @endif
                             </option>
@@ -92,12 +92,12 @@
                         @foreach(($adapters ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('large_lens_adapter') == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
-                                @if (!empty($it->nummer)) ({{ $it->nummer }})
+                                @if (!empty($it->nummer)) NR. {{ $it->nummer }}
                                 @endif
                             </option>
                         @endforeach
                     </select>
-                    @error('large_lens_adapter') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                                        @error('large_lens_adapter') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
