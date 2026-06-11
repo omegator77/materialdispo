@@ -80,7 +80,7 @@
                     {{ $production->bezeichnung ?? 'Unbekannte Produktion' }}
 
                     <span class="font-normal text-sm ml-2">
-                        {{ $productionConfigs->count() }} Kamerazug/Kamerazüge,
+                        {{ $productionConfigs->count() }} Kamerazüge,
                         {{ $productionItems->count() }} Einzelgerät(e)
                     </span>
                 </summary>
@@ -113,7 +113,7 @@ bis
                                 @foreach($productionConfigs as $config)
                                     <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
                                         <div class="font-bold text-lg mb-3">
-                                            {{ $config->cam_position ?? 'Kamera' }}
+                                            {{ $config->cam_number ?? 'Kamera' }}
                                         </div>
 
                                         <div class="space-y-1 text-sm">
