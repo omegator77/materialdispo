@@ -1,44 +1,123 @@
 <x-app-layout>
-<x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Einheiten') }}
-        </h2>
+    <x-slot name="header">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    Materialdetails
+                </h2>
+            </div>
+
+            <div class="flex gap-2">
+                <a href="{{ route('items.edit', $item->id) }}"
+                   class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                    Bearbeiten
+                </a>
+
+                <a href="{{ route('items.index') }}"
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    Zurück
+                </a>
+            </div>
+        </div>
     </x-slot>
-    <div class="max-w-7xl w-4/5  mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
 
-    <h1 class="font-bold text-2xl mb-4">Material Details</h1>
+    <div class="max-w-5xl w-11/12 mx-auto mt-6">
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
 
-    <div class="flex flex-wrap md:flex-nowrap gap-8">
-        <div class="w-full md:w-1/2">
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900">
+                    {{ $item->bezeichnung }}
+                </h3>
 
-<p><strong>ID:</strong> {{ $item->id }}</p>
-<p><strong>Bezeichnung:</strong> {{ $item->bezeichnung }}</p>
-<p><strong>Nummer:</strong> {{$item->nummer }}</p>
-<p><strong>Gruppe:</strong> {{ $item->unit->bezeichnung }}</p>
-<p><strong>Beschreibung:</strong> {{ $item->description }}</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ $item->unit->bezeichnung ?? 'Keine Gruppe' }}
+                </p>
+            </div>
 
-@if ($item->suppliers_id)
-<p><strong>Vermieter:</strong> {{$item->supplier->bezeichnung ?? 'Eigentum'}}</p>
-{{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '/' }} bis 
-{{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '/' }}   
-@endif
+            <section class="border-t pt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                    Stammdaten
+                </h4>
+
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Nummer</dt>
+                        <dd class="text-gray-900">{{ $item->nummer ?: '—' }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Gruppe</dt>
+                        <dd class="text-gray-900">{{ $item->unit->bezeichnung ?? '—' }}</dd>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Bemerkung</dt>
+                        <dd class="text-gray-900 whitespace-pre-line">
+                            {{ $item->description ?: '—' }}
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="border-t pt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                    Mietstatus
+                </h4>
+
+                <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="text-gray-900">
+                            {{ $item->suppliers_id ? 'Mietmaterial' : 'Eigenmaterial' }}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Vermieter</dt>
+                        <dd class="text-gray-900">
+                            {{ $item->supplier->bezeichnung ?? '—' }}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Mietzeitraum</dt>
+                        <dd class="text-gray-900">
+                            @if($item->suppliers_id)
+                                {{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '—' }}
+                                –
+                                {{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '—' }}
+                            @else
+                                —
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <a href="{{ route('items.index') }}"
+                   class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    Zurück
+                </a>
+
+                <a href="{{ route('items.edit', $item->id) }}"
+                   class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                    Bearbeiten
+                </a>
+
+                <form action="{{ route('items.destroy', $item->id) }}"
+                      method="POST"
+                      onsubmit="return confirm('Dieses Material wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
+                    @csrf
+                    @method('DELETE')
+
+                    <button type="submit"
+                            class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                        Löschen
+                    </button>
+                </form>
+            </div>
 
         </div>
-        <div class=" w-full  md:w-1/2 p-4 flex flex-col gap-4 will-change-auto">
-<a href="{{ route('items.edit', $item->id) }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">Ändern</a>
-
-<form action="/items/{{$item->id}}"
-method="POST">
-@csrf
-@method("DELETE")
-<input type="submit" value="Löschen" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">
-</form>
-
-
-<a href="{{ route('items.index') }}" class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold w-fit">Zurück</a>
-        </div> 
-    </div>    
-</div>
-
-
-    </x-app-layout>
+    </div>
+</x-app-layout>

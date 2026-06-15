@@ -1,294 +1,324 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Productions') }}
-        </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Produktion packen
+            </h2>
+
+            <a href="{{ route('productions.index') }}"
+               class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                Zurück
+            </a>
+        </div>
     </x-slot>
 
-    <div class="max-w-7xl w-4/5 mx-auto mt-6 bg-white p-6 border border-gray-400 rounded-md shadow-md">
-        <div class="flex flex-wrap md:flex-nowrap gap-8">
+    <div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-6">
 
-            {{-- Linke Spalte: Produktion + Material hinzufügen --}}
-            <div class="w-full md:w-1/2">
-                <h1 class="font-bold text-2xl mb-4">
-                    Produktion: {{ $production->bezeichnung }}
-                </h1>
+        @if(session('success'))
+            <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
+                {{ session('success') }}
+            </div>
+        @endif
 
-                <p class="font-bold mb-4">
-                    Buchungszeitraum:
-                    {{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '/' }}
-                    bis
-                    {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '/' }}
-                </p>
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
+                {{ session('error') }}
+            </div>
+        @endif
 
-                <h2 class="text-xl font-semibold mt-8 mb-4">Items hinzufügen</h2>
+        {{-- Produktionskopf --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-gray-900">
+                {{ $production->bezeichnung }}
+            </h1>
 
-                {{-- Filter: Gruppe + belegte Geräte anzeigen --}}
-                <form method="GET" action="{{ route('productions.show', $production->id) }}" class="mb-4">
-                    <label for="unit" class="block font-semibold mb-2">Gruppe filtern:</label>
+            <p class="text-gray-600 mt-2">
+                {{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '—' }}
+                –
+                {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}
+            </p>
+        </div>
 
-                    <select
-                        name="unit"
-                        id="unit"
-                        class="w-full p-2 border border-gray-300 rounded mb-3"
-                        onchange="this.form.submit()"
-                    >
-                        <option value="">Alle Gruppen</option>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-                        @foreach ($allUnits as $unit)
-                            <option
-                                value="{{ $unit->id }}"
-                                {{ request('unit') == $unit->id ? 'selected' : '' }}
-                            >
-                                {{ $unit->bezeichnung }}
-                            </option>
-                        @endforeach
-                    </select>
+            {{-- Links: Material hinzufügen --}}
+            <div class="lg:col-span-2">
+                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        Material hinzufügen
+                    </h2>
 
-                    <label class="flex items-center gap-2 text-sm mb-4">
-                        <input
-                            type="checkbox"
-                            name="show_unavailable"
-                            value="1"
-                            class="rounded border-gray-300"
-                            onchange="this.form.submit()"
-                            {{ request('show_unavailable') ? 'checked' : '' }}
-                        >
-                        Nicht verfügbare Geräte anzeigen
-                    </label>
-                </form>
+                    <form method="GET" action="{{ route('productions.show', $production->id) }}" class="space-y-4">
+                        <div>
+                            <label for="unit" class="block text-sm font-medium text-gray-700 mb-1">
+                                Gruppe filtern
+                            </label>
 
-                {{-- Item-Auswahl --}}
-                <form id="item-selection-form" method="POST" action="">
-    @csrf
+                            <select name="unit"
+                                    id="unit"
+                                    class="form-control w-full"
+                                    onchange="this.form.submit()">
+                                <option value="">Alle Gruppen</option>
 
-    <input type="hidden" name="unit" value="{{ request('unit') }}">
-    <input type="hidden" name="show_unavailable" value="{{ request('show_unavailable') }}">
+                                @foreach ($allUnits as $unit)
+                                    <option value="{{ $unit->id }}" {{ request('unit') == $unit->id ? 'selected' : '' }}>
+                                        {{ $unit->bezeichnung }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                    <label for="item_id" class="block font-semibold mb-2">Item auswählen:</label>
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox"
+                                   name="show_unavailable"
+                                   value="1"
+                                   class="rounded border-gray-300"
+                                   onchange="this.form.submit()"
+                                   {{ request('show_unavailable') ? 'checked' : '' }}>
+                            Nicht verfügbare Geräte anzeigen
+                        </label>
+                    </form>
 
-                    <select
-                        name="item_id"
-                        id="item_id"
-                        class="w-full p-2 border border-gray-300 rounded mb-4"
-                        required
-                    >
-                        <option value="">Bitte Item auswählen</option>
+                    <form id="item-selection-form"
+                          method="POST"
+                          action="{{ route('productions.attachItem', $production->id) }}"
+                          class="space-y-4">
+                        @csrf
 
-                        @foreach ($availableItems as $item)
-                            <option
-                                value="{{ $item->id }}"
-                                data-unit-id="{{ $item->units_id }}"
-                                data-available="{{ $item->is_available ? '1' : '0' }}"
-                                @disabled(! $item->is_available)
-                            >
-                                {{ $item->bezeichnung }} ({{ $item->nummer }})
-                            </option>
-                        @endforeach
-                    </select>
+                        <input type="hidden" name="unit" value="{{ request('unit') }}">
+                        <input type="hidden" name="show_unavailable" value="{{ request('show_unavailable') }}">
 
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        {{-- Standard hinzufügen: bucht das gewählte Item direkt --}}
-                        <button
-                            type="submit"
-                            id="add-button"
-                            class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                            Standard hinzufügen
-                        </button>
+                        <div>
+                            <label for="item_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                Item auswählen
+                            </label>
 
-                        {{-- Konfigurieren: nur bei Kameras sichtbar --}}
-                        <a
-                            href="#"
-                            id="config-button"
-                            class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                            Konfigurieren
-                        </a>
-                    </div>
-                </form>
+                            <select name="item_id"
+                                    id="item_id"
+                                    class="form-control w-full"
+                                    required>
+                                <option value="">Bitte Item auswählen</option>
+
+                                @foreach ($availableItems as $item)
+                                    <option value="{{ $item->id }}"
+                                            data-unit-id="{{ $item->units_id }}"
+                                            data-available="{{ $item->is_available ? '1' : '0' }}"
+                                            @disabled(! $item->is_available)>
+                                        {{ $item->bezeichnung }}{{ $item->nummer ? ' (' . $item->nummer . ')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button type="submit"
+                                    id="add-button"
+                                    class="flex-1 bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                                Standard hinzufügen
+                            </button>
+
+                            <a href="#"
+                               id="config-button"
+                               class="hidden flex-1 text-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                                Konfigurieren
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            {{-- Rechte Spalte: Gepacktes Material --}}
-            <div class="w-full md:w-1/2">
-                <h2 class="text-xl font-semibold mb-4">Gepacktes Material</h2>
+            {{-- Rechts: Gepacktes Material --}}
+            <div class="lg:col-span-3 space-y-6">
 
-                <ul class="list-disc pl-5 space-y-3">
-                    @foreach ($production->items as $item)
-                        <li class="flex items-center gap-3">
-                            <span class="flex-1">
-                                {{ $item->bezeichnung }} {{ $item->nummer }} ({{ $item->unit->bezeichnung }})
-                            </span>
+                {{-- Einzelmaterial gruppiert --}}
+                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        Gepacktes Einzelmaterial
+                    </h2>
 
-                            <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
+                    @php
+                        $groupedItems = $production->items->groupBy(fn($item) => $item->unit->bezeichnung ?? 'Ohne Gruppe');
 
-                                <button
-                                    type="submit"
-                                    class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-bold"
-                                >
-                                    Entfernen
-                                </button>
-                            </form>
-                        </li>
-                    @endforeach
-                </ul>
+                        $label = function ($it) {
+                            if (! $it) {
+                                return '—';
+                            }
 
-                @php
-                    // Helfer für einheitliche Anzeige: Bezeichnung (Nummer)
-                    $label = function ($it) {
-                        if (! $it) {
-                            return '—';
-                        }
+                            return $it->bezeichnung . ($it->nummer ? ' (' . $it->nummer . ')' : '');
+                        };
+                    @endphp
 
-                        return $it->bezeichnung . ($it->nummer ? ' (' . $it->nummer . ')' : '');
-                    };
-                @endphp
+                    @forelse($groupedItems as $unitName => $items)
+                        <div class="mb-5 last:mb-0">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                {{ $unitName }}
+                            </h3>
 
-                {{-- Kamera-Konfigurationen --}}
-                <ul class="space-y-3 mt-4">
-                    @foreach ($production->cameraConfigs as $config)
-                        <li class="border border-gray-200 rounded-lg shadow-sm bg-white">
-                            <details class="group">
-                                <summary class="flex items-center justify-between gap-3 cursor-pointer select-none p-3">
-                                    <div class="min-w-0">
-                                        <div class="text-sm text-gray-500">
-                                            Kamera-Konfiguration {{ $config->cam_number ?? '—' }}
+                            <div class="space-y-2">
+                                @foreach($items as $item)
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                        <div>
+                                            <a href="{{ route('items.show', $item->id) }}"
+                                               class="font-semibold text-gray-900 hover:text-orange-500">
+                                                {{ $label($item) }}
+                                            </a>
+
+                                            @if($item->supplier)
+                                                <p class="text-sm text-gray-500">
+                                                    Mietmaterial: {{ $item->supplier->bezeichnung }}
+                                                </p>
+                                            @endif
                                         </div>
 
-                                        <div class="font-semibold truncate">
-                                            {{ $label($config->item ?? null) }}
-                                        </div>
-                                    </div>
-
-                                    <svg
-                                        class="h-5 w-5 text-gray-400 group-open:rotate-180 transition-transform"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.172l3.71-3.94a.75.75 0 011.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                </summary>
-
-                                <div class="px-3 pb-3">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                        <div class="flex gap-2">
-                                            <span class="w-28 text-gray-500">Kamera</span>
-                                            <span class="font-medium">{{ $label($config->item ?? null) }}</span>
-                                        </div>
-
-                                        <div class="flex gap-2">
-                                            <span class="w-28 text-gray-500">Objektiv</span>
-                                            <span class="font-medium">{{ $label($config->lensItem ?? null) }}</span>
-                                        </div>
-
-                                        <div class="flex gap-2">
-                                            <span class="w-28 text-gray-500">Adapter</span>
-                                            <span class="font-medium">{{ $label($config->adapterItem ?? null) }}</span>
-                                        </div>
-
-                                        <div class="flex gap-2">
-                                            <span class="w-28 text-gray-500">Stativ</span>
-                                            <span class="font-medium">{{ $label($config->tripodItem ?? null) }}</span>
-                                        </div>
-
-                                        <div class="flex gap-2">
-                                            <span class="w-28 text-gray-500">Stativkopf</span>
-                                            <span class="font-medium">{{ $label($config->headItem ?? null) }}</span>
-                                        </div>
-
-                                        @if (! empty($config->notes))
-                                            <div class="md:col-span-2 flex gap-2">
-                                                <span class="w-28 text-gray-500">Notiz</span>
-                                                <span class="font-medium">{{ $config->notes }}</span>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    <div class="mt-3 flex justify-end gap-2">
-                                        <a
-    href="{{ route('camera-config.edit', $config->id) }}"
-    class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded font-semibold"
->
-    Bearbeiten
-</a>
-                                        <form action="{{ route('camera-config.destroy', [$config->id]) }}" method="POST">
+                                        <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}"
+                                              method="POST"
+                                              onsubmit="return confirm('Dieses Material wirklich aus der Produktion entfernen?');">
                                             @csrf
                                             @method('DELETE')
 
-                                            <button
-                                                type="submit"
-                                                class="bg-orange-500 hover:bg-orange-600 text-white py-1 px-4 rounded font-semibold"
-                                            >
+                                            <button type="submit"
+                                                    class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded">
                                                 Entfernen
                                             </button>
                                         </form>
                                     </div>
-                                </div>
-                            </details>
-                        </li>
-                    @endforeach
-                </ul>
+                                @endforeach
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-gray-500">
+                            Noch kein Einzelmaterial gepackt.
+                        </p>
+                    @endforelse
+                </div>
+
+                {{-- Kamera-Konfigurationen --}}
+                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        Kamera-Konfigurationen
+                    </h2>
+
+                    <div class="space-y-3">
+                        @forelse($production->cameraConfigs as $config)
+                            <div class="border border-gray-200 rounded-lg bg-gray-50">
+                                <details class="group">
+                                    <summary class="flex items-center justify-between gap-3 cursor-pointer select-none p-4">
+                                        <div class="min-w-0">
+                                            <div class="text-sm text-gray-500">
+                                                Kamera-Konfiguration {{ $config->cam_number ?? '—' }}
+                                            </div>
+
+                                            <div class="font-semibold truncate text-gray-900">
+                                                {{ $label($config->item ?? null) }}
+                                            </div>
+                                        </div>
+
+                                        <svg class="h-5 w-5 text-gray-400 group-open:rotate-180 transition-transform"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor"
+                                             aria-hidden="true">
+                                            <path fill-rule="evenodd"
+                                                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.172l3.71-3.94a.75.75 0 011.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z"
+                                                  clip-rule="evenodd" />
+                                        </svg>
+                                    </summary>
+
+                                    <div class="px-4 pb-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                            <div>
+                                                <span class="block text-gray-500">Kamera</span>
+                                                <span class="font-medium">{{ $label($config->item ?? null) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <span class="block text-gray-500">Objektiv</span>
+                                                <span class="font-medium">{{ $label($config->lensItem ?? null) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <span class="block text-gray-500">Adapter</span>
+                                                <span class="font-medium">{{ $label($config->adapterItem ?? null) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <span class="block text-gray-500">Stativ</span>
+                                                <span class="font-medium">{{ $label($config->tripodItem ?? null) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <span class="block text-gray-500">Stativkopf</span>
+                                                <span class="font-medium">{{ $label($config->headItem ?? null) }}</span>
+                                            </div>
+
+                                            @if(! empty($config->notes))
+                                                <div class="md:col-span-2">
+                                                    <span class="block text-gray-500">Notiz</span>
+                                                    <span class="font-medium whitespace-pre-line">{{ $config->notes }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
+                                            <a href="{{ route('camera-config.edit', $config->id) }}"
+                                               class="text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                                                Bearbeiten
+                                            </a>
+
+                                            <form action="{{ route('camera-config.destroy', $config->id) }}"
+                                                  method="POST"
+                                                  onsubmit="return confirm('Diese Kamera-Konfiguration wirklich entfernen?');">
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button type="submit"
+                                                        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                                                    Entfernen
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        @empty
+                            <p class="text-gray-500">
+                                Noch keine Kamera-Konfigurationen vorhanden.
+                            </p>
+                        @endforelse
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    {{-- Flash-Meldungen --}}
-    @if (session('success'))
-        <div id="success-message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mt-4 fixed top-4 right-4 z-50">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4 fixed top-4 right-4 z-50">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    {{-- Button-Logik: Kamera kann einzeln oder als Konfiguration hinzugefügt werden --}}
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('item-selection-form');
+        document.addEventListener('DOMContentLoaded', function () {
             const itemSelect = document.getElementById('item_id');
             const configButton = document.getElementById('config-button');
-            const addButton = document.getElementById('add-button');
 
-            const attachUrl = "{{ route('productions.attachItem', $production->id) }}";
-            const configBaseUrl = "{{ route('camera-config.create', $production) }}";
-
-            function updateButtons() {
+            function updateConfigButton() {
                 const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-                const selectedItemId = itemSelect.value;
-                const unitId = selectedOption ? selectedOption.getAttribute('data-unit-id') : null;
 
-                form.action = attachUrl;
-                addButton.classList.remove('hidden');
-
-                if (unitId === '1' && selectedItemId) {
-                    configButton.href = `${configBaseUrl}?camera_item_id=${encodeURIComponent(selectedItemId)}`;
-                    configButton.classList.remove('hidden');
-                } else {
-                    configButton.href = '#';
+                if (!selectedOption || !selectedOption.value) {
                     configButton.classList.add('hidden');
+                    configButton.href = '#';
+                    return;
+                }
+
+                const unitId = selectedOption.dataset.unitId;
+                const itemId = selectedOption.value;
+
+                if (unitId === '1') {
+                    configButton.classList.remove('hidden');
+                    configButton.href = "{{ route('camera-config.create', $production->id) }}" + "?camera_item_id=" + itemId;
+                } else {
+                    configButton.classList.add('hidden');
+                    configButton.href = '#';
                 }
             }
 
-            configButton.addEventListener('click', (event) => {
-                if (configButton.href.endsWith('#')) {
-                    event.preventDefault();
-                }
-            });
-
-            itemSelect.addEventListener('change', updateButtons);
-
-            updateButtons();
+            itemSelect.addEventListener('change', updateConfigButton);
+            updateConfigButton();
         });
     </script>
 </x-app-layout>

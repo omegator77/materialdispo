@@ -1,16 +1,20 @@
 <x-app-layout>
 <x-slot name="header">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Productions') }}
         </h2>
+        <a href="{{ route('productions.create') }}"
+               class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                Neue Produktion
+            </a>
+    </div>
     </x-slot>
 
 @include('productions._table', ['ShowDelete' => true])
 
 
-<div class="w-4/5 mx-auto pt-4 text-right"><a href="productions/create" class="bg-orange-400 hover:bg-orange-500 hover:font-extrabold text-white font-thin py-1 px-4 rounded focus:outline-none focus:ring">
-            Neue Produktion
-            </a></div>
+
 
 
 </x-app-layout>
