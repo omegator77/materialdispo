@@ -435,7 +435,7 @@ private function itemIsInCameraConfigQuery($query, int $itemId)
 private function checkItemAvailability(Item $item, Production $production): array
 {
     // Mietgerät außerhalb des Mietzeitraums
-    if ($item->is_rented) {
+    if ($item->suppliers_id) {
 
         if (
             $item->rent_start &&

@@ -27,7 +27,7 @@
 {{-- <th>Menge</th> --}}
 <th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'units_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="text-left pl-4">Gruppe</a></th>
 {{-- <th>Gruppe</th> --}}
-<th class="text-left pl-4">Angemietet</th>
+{{-- <th class="text-left pl-4">Angemietet</th> --}}    
 <th class="text-left pl-4">Vermieter</th>
 <th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_start', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="text-left pl-4">Miete von</a></th>
 <th><a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'rent_end', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="text-left pl-4">Miete bis</a></th>
@@ -43,8 +43,7 @@
 {{-- <td>{{$item->description}}</td>  --}}
 <td class="text-left pl-4">{{$item->nummer}}</td>
 {{-- <td>{{$item->quantity}}</td> --}}
-<td class="text-left pl-4">{{$item->unit->bezeichnung}}</td>
-<td class="text-left pl-4">{{$item->is_rented == 1 ? 'Ja' : 'Nein' }}</td>
+<td class="text-left pl-4">{{$item->unit->bezeichnung}}</td>    
 <td class="text-left pl-4">{{$item->supplier->bezeichnung ?? 'Eigentum'}}</td>
 <td class="text-left pl-4">{{$item->rent_start ? \Carbon\Carbon::parse ($item->rent_start)->format('d.m.Y') : '/' }}</td>
 <td class="text-left pl-4">{{$item->rent_end ? \Carbon\Carbon::parse ($item->rent_end)->format('d.m.Y') : '/' }}</td>
