@@ -1,33 +1,149 @@
 <x-app-layout>
-<x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Vermieter') }}
-        </h2>
+    <x-slot name="header">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Vermieter
+            </h2>
+
+            <a href="{{ route('suppliers.create') }}"
+               class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                Neuer Vermieter
+            </a>
+        </div>
     </x-slot>
 
-<div class="overflow-x-auto  w-4/5 mx-auto mt-4 bg bg-white border-gray-400 border rounded-md shadow-md overflow-hidden">
-<table class="border-collapse w-full h-full bg-white">
-<thead class="text-left bg-orange-400">
-<tr>
-<th class="text-left pl-4">Bezeichnung</th>
-<th class="text-left pl-4">Kontakt</th>
-<th class="text-left pl-4">Telefon</th>
-<th class="text-left pl-4">Email</th>
+    <div class="max-w-7xl w-11/12 mx-auto mt-6">
 
-</tr>
-</thead>
-<tbody>
-@foreach ( $suppliers as $supplier )
-<tr class="even:bg-orange-200">
+        {{-- Desktop / Tablet --}}
+        <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 border-b">
+                    <tr>
+                        <th class="text-left px-4 py-3">Name / Firma</th>
+                        <th class="text-left px-4 py-3">Kontakt</th>
+                        <th class="text-left px-4 py-3">Telefon</th>
+                        <th class="text-left px-4 py-3">E-Mail</th>
+                        <th class="text-right px-4 py-3">Aktionen</th>
+                    </tr>
+                </thead>
 
-<td class="text-left pl-4" >{{$supplier->bezeichnung}}</td>
-<td class="text-left pl-4">{{$supplier->kontakt}}</td>
-<td class="text-left pl-4">{{$supplier->phone}}</td>
-<td class="text-left pl-4">{{$supplier->email}}</td>
+                <tbody>
+                    @forelse($suppliers as $supplier)
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium">
+                                <a href="{{ route('suppliers.show', $supplier->id) }}"
+                                   class="text-gray-900 hover:text-orange-500">
+                                    {{ $supplier->bezeichnung }}
+                                </a>
+                            </td>
 
-</tr>
-@endforeach
-</tbody>
-</table>
-</div>
+                            <td class="px-4 py-3">
+                                {{ $supplier->kontakt ?: '—' }}
+                            </td>
+
+                            <td class="px-4 py-3">
+                                {{ $supplier->phone ?: '—' }}
+                            </td>
+
+                            <td class="px-4 py-3">
+                                @if($supplier->email)
+                                    <a href="mailto:{{ $supplier->email }}"
+                                       class="text-orange-600 hover:underline">
+                                        {{ $supplier->email }}
+                                    </a>
+                                @else
+                                    —
+                                @endif
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <div class="flex justify-end gap-2">
+                                    <a href="{{ route('suppliers.show', $supplier->id) }}"
+                                       class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
+                                        Details
+                                    </a>
+
+                                    <a href="{{ route('suppliers.edit', $supplier->id) }}"
+                                       class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
+                                        Bearbeiten
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-gray-500">
+                                Noch keine Vermieter angelegt.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Handy --}}
+        <div class="md:hidden space-y-3">
+
+            @forelse($suppliers as $supplier)
+
+                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+
+                    <div>
+                        <a href="{{ route('suppliers.show', $supplier->id) }}"
+                           class="text-lg font-semibold text-gray-900 hover:text-orange-500">
+                            {{ $supplier->bezeichnung }}
+                        </a>
+
+                        <p class="text-sm text-gray-500">
+                            {{ $supplier->kontakt ?: 'Kein Ansprechpartner hinterlegt' }}
+                        </p>
+                    </div>
+
+                    <div class="mt-3 space-y-1 text-sm text-gray-700">
+                        <p>
+                            <span class="font-medium">Telefon:</span>
+                            {{ $supplier->phone ?: '—' }}
+                        </p>
+
+                        <p>
+                            <span class="font-medium">E-Mail:</span>
+
+                            @if($supplier->email)
+                                <a href="mailto:{{ $supplier->email }}"
+                                   class="text-orange-600 hover:underline">
+                                    {{ $supplier->email }}
+                                </a>
+                            @else
+                                —
+                            @endif
+                        </p>
+                    </div>
+
+                    <div class="mt-4 flex gap-2">
+
+                        <a href="{{ route('suppliers.show', $supplier->id) }}"
+                           class="flex-1 text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                            Details
+                        </a>
+
+                        <a href="{{ route('suppliers.edit', $supplier->id) }}"
+                           class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
+                            Bearbeiten
+                        </a>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+                    Noch keine Vermieter angelegt.
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </div>
 </x-app-layout>

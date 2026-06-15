@@ -8,7 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Supplier extends Model
 {
     use HasFactory;
-    public function items () {  
+
+    protected $fillable = [
+        'bezeichnung',
+        'kontakt',
+        'phone',
+        'email',
+    ];
+
+    public function items()
+    {
         return $this->hasMany(Item::class, 'suppliers_id');
-        }
+    }
 }

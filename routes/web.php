@@ -47,8 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 //Route::get('/productions', [ProductionController::class, 'index'])->middleware(['auth', 'verified'])->name('productions');
 //Route::get('productions/{id}', [ProductionController::class, 'show'])->name('productions.show');
 
-Route::get('/suppliers', [SupplierController::class,
-'index'])->middleware(['auth', 'verified'])->name('suppliers');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/suppliers', SupplierController::class);
+});
 
 Route::get('/bookings', [BookingController::class,
 'index'])->middleware(['auth', 'verified'])->name('bookings');

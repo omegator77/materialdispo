@@ -28,7 +28,7 @@
                         {{ __('Productions') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('suppliers')" :active="request()->routeIs('suppliers')">
+                    <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
                         {{ __('Vermieter') }}
                     </x-nav-link>
 
@@ -103,7 +103,7 @@
                         {{ __('Productions') }}
                     </x-responsive-nav-link>
 
-                    <x-responsive-nav-link :href="route('suppliers')" :active="request()->routeIs('suppliers')">
+                    <x-responsive-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
                         {{ __('Vermieter') }}
                     </x-responsive-nav-link> 
 
