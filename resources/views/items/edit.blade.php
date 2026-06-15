@@ -51,22 +51,34 @@
             </select>
         </div>
 
-     <div class="flex flex-wrap gap-4">    
-        <div class="w-full md:flex-1"> 
-            <input type="checkbox" name="is_rented" id="is_rented" class="form-check-input" {{ $item->is_rented ? 'checked' : '' }}>
-            <label for="is_rented" class="form-check-label">Angemietet</label>
-        </div>
+     
 
-        <div class="w-full md:flex-1"> 
-            <label for="rent_start">Mietbeginn</label>
-            <input type="text" name="rent_start" id="rent_start" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '' }}" class="form-control datepicker">
-        </div>
+        <div id="rental-fields" @if(!$item->suppliers_id) style="display:none;" @endif>
+    <div class="w-full md:flex-1"> 
+        <label for="rent_start">Mietbeginn</label>
+        <input 
+            type="text" 
+            name="rent_start" 
+            id="rent_start" 
+            value="{{ $item->rent_start }}"
+            class="form-control datepicker"
+            placeholder="TT.MM.JJJJ"
+        >
+    </div>
 
-        <div class="w-full md:flex-1"> 
-            <label for="rent_end">Mietende</label>
-            <input type="text" name="rent_end" id="rent_end" value="{{ $item->is_rented ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '' }}" class="form-control datepicker">
-            <br>
-        </div>
+    <div class="w-full md:flex-1"> 
+        <label for="rent_end">Mietende</label>
+        <input 
+            type="text" 
+            name="rent_end" 
+            id="rent_end" 
+            value="{{ $item->rent_end }}"
+            class="form-control datepicker"
+            placeholder="TT.MM.JJJJ"
+        >
+        <br>
+    </div>
+</div>
         
 
 
@@ -91,4 +103,26 @@
     </form>
  </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const supplier = document.getElementById('suppliers_id');
+    const rentalFields = document.getElementById('rental-fields');
+    const rentStart = document.getElementById('rent_start');
+    const rentEnd = document.getElementById('rent_end');
+
+    function toggleRentalFields() {
+        if (supplier.value) {
+            rentalFields.style.display = 'block';
+        } else {
+            rentalFields.style.display = 'none';
+            rentStart.value = '';
+            rentEnd.value = '';
+        }
+    }
+
+    supplier.addEventListener('change', toggleRentalFields);
+
+    toggleRentalFields();
+});
+</script>
 </x-app-layout>

@@ -16,8 +16,8 @@
 <p><strong>Nummer:</strong> {{$item->nummer }}</p>
 <p><strong>Gruppe:</strong> {{ $item->unit->bezeichnung }}</p>
 <p><strong>Beschreibung:</strong> {{ $item->description }}</p>
-{{-- <p><strong>Angemietet:</strong> {{ $item->is_rented ? 'Ja':'Nein' }}</p> --}}
-@if ($item->is_rented)
+
+@if ($item->suppliers_id)
 <p><strong>Vermieter:</strong> {{$item->supplier->bezeichnung ?? 'Eigentum'}}</p>
 {{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '/' }} bis 
 {{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '/' }}   

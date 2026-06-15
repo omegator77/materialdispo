@@ -26,7 +26,6 @@ class Item extends Model
             'description',
             'units_id',
             'suppliers_id',
-            'is_rented',
             'rent_start', 
             'rent_end',
         ];

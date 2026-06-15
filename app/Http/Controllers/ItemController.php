@@ -56,36 +56,43 @@ class ItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'units_id' => 'required|exists:units,id',
-            'suppliers_id' => 'exists:suppliers,id|nullable',
-            'bezeichnung' => 'required',
-            // Validierung der Datumsfelder im Format TT.MM.JJJJ
-            'rent_start' => 'date_format:d.m.Y|nullable',
-            'rent_end' => 'date_format:d.m.Y|after_or_equal:rent_start|nullable',
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'units_id' => 'required|exists:units,id',
+        'suppliers_id' => 'nullable|exists:suppliers,id',
+        'bezeichnung' => 'required',
+        'rent_start' => 'required_with:suppliers_id|date_format:d.m.Y',
+        'rent_end' => 'required_with:suppliers_id|date_format:d.m.Y|after_or_equal:rent_start',
+    ]);
 
-        // Die Datumsfelder für die Speicherung in der Datenbank formatieren
-$rentStart = $request->rent_start ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d') : null;
-$rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d') : null;
+    /*
+     * Mietlogik:
+     * Ein Item gilt als Mietmaterial, sobald ein Vermieter angegeben ist.
+     * Ohne Vermieter werden Mietbeginn und Mietende automatisch gelöscht.
+     */
+    $supplierId = $request->suppliers_id ?: null;
 
+    $rentStart = $supplierId && $request->rent_start
+        ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d')
+        : null;
 
-        Item::create([
-            'units_id' => $request->units_id,
-            'suppliers_id' => $request->suppliers_id,
-            'bezeichnung' => $request->bezeichnung,
-            'nummer' => $request->nummer,
-            'description' => $request->description,
-            'is_rented' => $request->has('is_rented') ? 1 : 0, // Setze auf 1 oder 0
-            'rent_start' => $rentStart,
-            'rent_end' => $rentEnd,
-            // Weitere Felder speichern
-        ]);
+    $rentEnd = $supplierId && $request->rent_end
+        ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d')
+        : null;
 
-        return redirect(route('items.index'));
-    }
+    Item::create([
+        'units_id'      => $request->units_id,
+        'suppliers_id'  => $supplierId,
+        'bezeichnung'   => $request->bezeichnung,
+        'nummer'        => $request->nummer,
+        'description'   => $request->description,
+        'rent_start'    => $rentStart,
+        'rent_end'      => $rentEnd,
+    ]);
+
+    return redirect(route('items.index'));
+}
 
     /**
      * Display the specified resource.
@@ -119,38 +126,44 @@ $rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $reque
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $units = Unit::all(); // Alle Units abrufen
-        $suppliers = Supplier::all(); // Alle Supplier abrufen
-        $item = Item::findOrFail($id);
+{
+    $item = Item::findOrFail($id);
 
-        $request->validate([
-            'bezeichnung' => 'required',
-            'nummer' => 'nullable',
-            'rent_start' => 'nullable',
-            'rent_end' => 'nullable',
-        ]);
-    
-        // Die Datumsfelder für die Speicherung in der Datenbank formatieren
+    $request->validate([
+        'bezeichnung' => 'required',
+        'nummer' => 'nullable',
+        'suppliers_id' => 'nullable|exists:suppliers,id',
+        'rent_start' => 'required_with:suppliers_id|date_format:d.m.Y',
+        'rent_end' => 'required_with:suppliers_id|date_format:d.m.Y|after_or_equal:rent_start',
+    ]);
 
-            $rentStart = $request->rent_start ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d') : null;
-            $rentEnd = $request->rent_end ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d') : null;
+    /*
+     * Mietlogik:
+     * Ein Item gilt als Mietmaterial, sobald ein Vermieter angegeben ist.
+     * Wird der Vermieter entfernt, werden Mietbeginn und Mietende gelöscht.
+     */
+    $supplierId = $request->suppliers_id ?: null;
 
-        //$item = Item::findOrFail($id);
-        $item->update([
-            'units_id' => $request->units_id,
-            'suppliers_id' => $request->suppliers_id,
-            'bezeichnung' => $request->input('bezeichnung'),
-            'nummer' => $request->input('nummer'),
-            'description' => $request->input('description'),
-            'is_rented' => $request->has('is_rented') ? 1 : 0, // Setze auf 1 oder 0
-            'rent_start' => $rentStart ?: null,
-            'rent_end' => $rentEnd ?: null,
-        ]);
-    
-        return redirect('items');
-       // dd($item);
-    }
+    $rentStart = $supplierId && $request->rent_start
+        ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d')
+        : null;
+
+    $rentEnd = $supplierId && $request->rent_end
+        ? \Carbon\Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d')
+        : null;
+
+    $item->update([
+        'units_id'      => $request->units_id,
+        'suppliers_id'  => $supplierId,
+        'bezeichnung'   => $request->bezeichnung,
+        'nummer'        => $request->nummer,
+        'description'   => $request->description,
+        'rent_start'    => $rentStart,
+        'rent_end'      => $rentEnd,
+    ]);
+
+    return redirect('items');
+}
 
     /**
      * Remove the specified resource from storage.
