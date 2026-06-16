@@ -10,6 +10,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ItemproductionController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\CameraConfigController;
+use App\Http\Controllers\TimelineController;
 
 // Route::get('/', function () {
 //     return view('auth.register');
@@ -38,7 +39,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/camera-configs/{config}/edit', [CameraConfigController::class, 'edit'])->name('camera-config.edit');
     Route::put('/camera-configs/{config}', [CameraConfigController::class, 'update'])->name('camera-config.update');
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
-
+    Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/timeline/items', [TimelineController::class, 'items'])
+        ->name('timeline.items');
+});
 
 
 

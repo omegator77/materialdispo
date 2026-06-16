@@ -35,6 +35,10 @@
                     <x-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
                         {{ __('Packliste') }}
                         </x-nav-link>
+
+                    <x-nav-link :href="route('timeline.items')" :active="request()->routeIs('timeline.items')">
+                        {{ __('Timeline') }}    
+                    </x-nav-link>    
                 </div>
             </div>
 
