@@ -115,6 +115,11 @@
                         {{ __('Packliste') }}
                     </x-responsive-nav-link>
 
+                    <x-responsive-nav-link :href="route('timeline.items')" :active="request()->routeIs('timeline.items')">
+                        {{ __('Timeline') }}    
+                    </x-responsive-nav-link>
+                    
+
         </div>
 
         <!-- Responsive Settings Options -->
