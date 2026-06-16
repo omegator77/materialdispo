@@ -11,9 +11,11 @@ use App\Http\Controllers\ItemproductionController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\CameraConfigController;
 
-Route::get('/', function () {
-    return view('auth.register');
-});
+// Route::get('/', function () {
+//     return view('auth.register');
+// });
+
+Route::redirect('/', '/login');
 
 Route::get('pdf', [PDFController::class, 'index']);
 
