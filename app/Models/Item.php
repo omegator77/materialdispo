@@ -35,4 +35,9 @@ class Item extends Model
     return $this->hasMany(CameraConfig::class, 'item_id');
 }
 
+public function cameraDetail()
+{
+    return $this->hasOne(CameraDetail::class);
+}
+
 }
