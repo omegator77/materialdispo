@@ -79,6 +79,17 @@ Route::post('/productions/{production}/camera-config',
     [ProductionController::class, 'storeCameraConfig']
 )->name('camera-config.store');
 
+Route::get('/mailtest', function () {
 
+    \Illuminate\Support\Facades\Mail::raw(
+        'MaterialDispo Mailtest',
+        function ($message) {
+            $message->to('DEINE_PRIVATE_MAIL@...')
+                ->subject('MaterialDispo Test');
+        }
+    );
+
+    return 'Mail versendet';
+});
 
 require __DIR__.'/auth.php';
