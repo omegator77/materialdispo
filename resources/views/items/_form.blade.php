@@ -115,6 +115,88 @@
         </div>
     </section>
 
+    @if((int) $item->units_id === 1)
+    <section class="border-t pt-6 mt-6">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            Kamera-Details
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Body Seriennummer</label>
+                <input type="text" name="body_serial"
+                       value="{{ old('body_serial', $item->cameraDetail->body_serial ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Fiber Adapter Seriennummer</label>
+                <input type="text" name="fiber_adapter_serial"
+                       value="{{ old('fiber_adapter_serial', $item->cameraDetail->fiber_adapter_serial ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Großer Sucher Modell</label>
+                <input type="text" name="large_viewfinder_model"
+                       value="{{ old('large_viewfinder_model', $item->cameraDetail->large_viewfinder_model ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Großer Sucher Seriennummer</label>
+                <input type="text" name="large_viewfinder_serial"
+                       value="{{ old('large_viewfinder_serial', $item->cameraDetail->large_viewfinder_serial ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Modell</label>
+                <input type="text" name="small_viewfinder_model"
+                       value="{{ old('small_viewfinder_model', $item->cameraDetail->small_viewfinder_model ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Seriennummer</label>
+                <input type="text" name="small_viewfinder_serial"
+                       value="{{ old('small_viewfinder_serial', $item->cameraDetail->small_viewfinder_serial ?? '') }}"
+                       class="mt-1 block w-full rounded border-gray-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Großer Sucher Typ</label>
+                <select name="large_viewfinder_type"
+                        class="mt-1 block w-full rounded border-gray-300">
+                    <option value="">—</option>
+                    <option value="OLED" @selected(old('large_viewfinder_type', $item->cameraDetail->large_viewfinder_type ?? '') === 'OLED')>OLED</option>
+                    <option value="LCD" @selected(old('large_viewfinder_type', $item->cameraDetail->large_viewfinder_type ?? '') === 'LCD')>LCD</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Typ</label>
+                <select name="small_viewfinder_type"
+                        class="mt-1 block w-full rounded border-gray-300">
+                    <option value="">—</option>
+                    <option value="OLED" @selected(old('small_viewfinder_type', $item->cameraDetail->small_viewfinder_type ?? '') === 'OLED')>OLED</option>
+                    <option value="LCD" @selected(old('small_viewfinder_type', $item->cameraDetail->small_viewfinder_type ?? '') === 'LCD')>LCD</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox"
+                           name="ssl_license"
+                           value="1"
+                           @checked(old('ssl_license', $item->cameraDetail->ssl_license ?? false))>
+                    <span class="text-sm font-medium text-gray-700">SSL Lizenz vorhanden</span>
+                </label>
+            </div>
+        </div>
+    </section>
+@endif
+
     {{-- Aktionen --}}
     <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
         <a href="{{ route('items.index') }}"
