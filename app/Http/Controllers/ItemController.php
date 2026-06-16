@@ -62,8 +62,13 @@ class ItemController extends Controller
             'units_id' => 'required|exists:units,id',
             'suppliers_id' => 'nullable|exists:suppliers,id',
             'bezeichnung' => 'required',
-            'rent_start' => 'required_with:suppliers_id|date_format:d.m.Y',
-            'rent_end' => 'required_with:suppliers_id|date_format:d.m.Y|after_or_equal:rent_start',
+            'rent_start' => $request->filled('suppliers_id')
+                ? 'required|date_format:d.m.Y'
+                : 'nullable',
+
+            'rent_end' => $request->filled('suppliers_id')
+                ? 'required|date_format:d.m.Y|after_or_equal:rent_start'
+                : 'nullable',
         ]);
 
         /*
@@ -134,8 +139,12 @@ class ItemController extends Controller
             'bezeichnung' => 'required',
             'nummer' => 'nullable',
             'suppliers_id' => 'nullable|exists:suppliers,id',
-            'rent_start' => 'required_with:suppliers_id|date_format:d.m.Y',
-            'rent_end' => 'required_with:suppliers_id|date_format:d.m.Y|after_or_equal:rent_start',
+            'rent_start' => $request->filled('suppliers_id')
+                ? 'required|date_format:d.m.Y'
+                : 'nullable',
+            'rent_end' => $request->filled('suppliers_id')
+                ? 'required|date_format:d.m.Y|after_or_equal:rent_start'
+                : 'nullable',
             'body_serial' => 'nullable|string|max:255',
             'fiber_adapter_serial' => 'nullable|string|max:255',
             'large_viewfinder_model' => 'nullable|string|max:255',
