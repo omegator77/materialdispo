@@ -11,20 +11,16 @@
     </x-slot>
     <!-- @include('items._table') -->
     <!-- @include('items.tables._overview') -->
-    
+
 
     @if((int) request('unit_id') === 1)
-
     @include('items.tables._cameras')
-
+    @elseif((int) request('unit_id') === 2)
+    @include('items.tables._lenses')
     @elseif(in_array((int) request('unit_id'), [9, 10], true))
-
     @include('items.tables._monitors')
-
     @else
-
     @include('items.tables._overview')
-
     @endif
 
 

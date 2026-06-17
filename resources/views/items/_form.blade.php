@@ -192,6 +192,98 @@
     </section>
     @endif
 
+    @if((int) ($item->units_id ?? 0) === 2)
+<section class="border-t pt-6 mt-6">
+    <h4 class="text-lg font-semibold text-gray-800 mb-4">
+        Objektiv-Details
+    </h4>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Hersteller</label>
+            <input type="text"
+                name="lens_manufacturer"
+                value="{{ old('lens_manufacturer', $item->lensDetail->manufacturer ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Modell</label>
+            <input type="text"
+                name="lens_model"
+                value="{{ old('lens_model', $item->lensDetail->model ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <input type="text"
+                name="lens_serial_number"
+                value="{{ old('lens_serial_number', $item->lensDetail->serial_number ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Zoomfaktor</label>
+            <input type="text"
+                name="lens_zoom_factor"
+                value="{{ old('lens_zoom_factor', $item->lensDetail->zoom_factor ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+    </div>
+
+    <h5 class="mt-6 font-medium text-gray-700">
+        Zoomgriff
+    </h5>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Typ</label>
+            <input type="text"
+                name="lens_zoom_servo_model"
+                value="{{ old('lens_zoom_servo_model', $item->lensDetail->zoom_servo_model ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <input type="text"
+                name="lens_zoom_servo_serial_number"
+                value="{{ old('lens_zoom_servo_serial_number', $item->lensDetail->zoom_servo_serial_number ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+    </div>
+
+    <h5 class="mt-6 font-medium text-gray-700">
+        Schärfegriff
+    </h5>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Typ</label>
+            <input type="text"
+                name="lens_focus_servo_model"
+                value="{{ old('lens_focus_servo_model', $item->lensDetail->focus_servo_model ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <input type="text"
+                name="lens_focus_servo_serial_number"
+                value="{{ old('lens_focus_servo_serial_number', $item->lensDetail->focus_servo_serial_number ?? '') }}"
+                class="mt-1 block w-full rounded border-gray-300">
+        </div>
+
+    </div>
+</section>
+@endif
+    
     @if(in_array((int) ($item->units_id ?? 0), [9, 10], true))
     <section class="border-t pt-6 mt-6">
         <h4 class="text-lg font-semibold text-gray-800 mb-4">
@@ -286,6 +378,8 @@
         </div>
     </section>
     @endif
+
+
 
     {{-- Aktionen --}}
     <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
