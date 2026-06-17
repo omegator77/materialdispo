@@ -9,7 +9,8 @@
                 Neues Gerät
             </a>
     </x-slot>
-    @include('items._table')
+    <!-- @include('items._table') -->   
+     @include('items.tables._overview')
     
     
 </x-app-layout>  
