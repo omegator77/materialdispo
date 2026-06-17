@@ -145,6 +145,80 @@
             </section>
             @endif
 
+            @if($item->monitorDetail)
+            <section class="border-t pt-6 mt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                    Monitor-Details
+                </h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div>
+                        <span class="font-semibold">Hersteller:</span>
+                        {{ $item->monitorDetail->manufacturer ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Modell:</span>
+                        {{ $item->monitorDetail->model ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Seriennummer:</span>
+                        {{ $item->monitorDetail->serial_number ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Bildschirmgröße:</span>
+                        {{ $item->monitorDetail->screen_size ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Max. Eingabeformat:</span>
+                        {{ $item->monitorDetail->max_input_format ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Standfuß:</span>
+                        @if($item->monitorDetail->has_stand)
+                        Ja
+                        @if($item->monitorDetail->stand_number)
+                        (Nr. {{ $item->monitorDetail->stand_number }})
+                        @endif
+                        @else
+                        Nein
+                        @endif
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Lautsprecher:</span>
+                        {{ $item->monitorDetail->has_speakers ? 'Ja' : 'Nein' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Kopfhörer:</span>
+                        {{ $item->monitorDetail->has_headphone ? 'Ja' : 'Nein' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Wandler Nr.:</span>
+                        {{ $item->monitorDetail->converter_number ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Wandler:</span>
+                        {{ $item->monitorDetail->converter_model ?: '—' }}
+                    </div>
+
+                    <div>
+                        <span class="font-semibold">Wandler Audio:</span>
+                        {{ $item->monitorDetail->converter_audio ? 'Ja' : 'Nein' }}
+                    </div>
+
+                </div>
+            </section>
+            @endif
+
             <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <a href="{{ route('items.index') }}"
                     class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">

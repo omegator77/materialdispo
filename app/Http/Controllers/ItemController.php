@@ -36,12 +36,21 @@ class ItemController extends Controller
     }
 
     public function create()
-    {
-        $units = Unit::all();
-        $suppliers = Supplier::all();
+{
+    $units = Unit::all();
+    $suppliers = Supplier::all();
 
-        return view('items.create', compact('units', 'suppliers'));
-    }
+    $item = new Item();
+
+    // Wird für die eingebundene items._table benötigt.
+    // Sonst wirft /items/create: Undefined variable $items.
+    $items = Item::with(['unit', 'supplier', 'monitorDetail'])
+        ->orderBy('units_id', 'asc')
+        ->orderBy('nummer', 'asc')
+        ->get();
+
+    return view('items.create', compact('units', 'suppliers', 'item', 'items'));
+}
 
     public function store(Request $request)
     {

@@ -13,7 +13,5 @@
         </form>
     </div>
 
-    <div class="max-w-7xl mx-auto mt-6">
-        @include('items._table')
-    </div>
+   
 </x-app-layout>
