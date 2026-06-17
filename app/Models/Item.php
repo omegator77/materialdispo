@@ -40,4 +40,8 @@ public function cameraDetail()
     return $this->hasOne(CameraDetail::class);
 }
 
+public function monitorDetail()
+{
+    return $this->hasOne(MonitorDetail::class);
+}
 }
