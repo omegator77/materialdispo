@@ -146,6 +146,7 @@
             @endif
 
             @if($item->monitorDetail)
+
             <section class="border-t pt-6 mt-6">
                 <h4 class="text-lg font-semibold text-gray-800 mb-4">
                     Monitor-Details
@@ -220,10 +221,11 @@
             @endif
 
             @if($item->lensDetail)
-            <div class="card mt-4">
-                <div class="card-header">
+
+            <section class="border-t pt-6 mt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
                     Objektiv-Details
-                </div>
+                </h4>
 
                 <div class="card-body">
                     <p><strong>Hersteller:</strong> {{ $item->lensDetail->manufacturer ?? '-' }}</p>
