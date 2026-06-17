@@ -21,7 +21,7 @@
                     </x-nav-link>
 
                     <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
-                        {{ __('Einheiten') }}
+                        {{ __('Geräte') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
@@ -100,7 +100,7 @@
                     </x-responsive-nav-link>
 
                     <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
-                        {{ __('Einheiten') }}
+                        {{ __('Geräte') }}
                     </x-responsive-nav-link>
 
                     <x-responsive-nav-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">

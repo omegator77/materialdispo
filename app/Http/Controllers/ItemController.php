@@ -36,21 +36,23 @@ class ItemController extends Controller
     }
 
     public function create()
-{
-    $units = Unit::all();
-    $suppliers = Supplier::all();
+    {
+        $units = Unit::all();
+        $suppliers = Supplier::all();
 
-    $item = new Item();
+        $item = new Item();
 
-    // Wird für die eingebundene items._table benötigt.
-    // Sonst wirft /items/create: Undefined variable $items.
-    $items = Item::with(['unit', 'supplier', 'monitorDetail'])
-        ->orderBy('units_id', 'asc')
-        ->orderBy('nummer', 'asc')
-        ->get();
+        // Wird für die eingebundene items._table benötigt.
+        // Sonst wirft /items/create: Undefined variable $items.
+        $items = Item::with(['unit', 'supplier', 'monitorDetail', 'cameraDetail', 'lensDetail'])
+            ->orderBy('units_id', 'asc')
+            ->orderBy('nummer', 'asc')
+            ->get();
 
-    return view('items.create', compact('units', 'suppliers', 'item', 'items'));
-}
+
+
+        return view('items.create', compact('units', 'suppliers', 'item', 'items'));
+    }
 
     public function store(Request $request)
     {
@@ -60,6 +62,7 @@ class ItemController extends Controller
         $item = Item::create(array_merge($validated, $rentData));
 
         $this->syncMonitorDetails($request, $item);
+        $this->syncLensDetails($request, $item);
 
         return redirect()->route('items.index');
     }
@@ -72,6 +75,7 @@ class ItemController extends Controller
             'productions',
             'cameraDetail',
             'monitorDetail',
+            'lensDetail',
         ])->findOrFail($id);
 
         return view('items.show', compact('item'));
@@ -82,7 +86,7 @@ class ItemController extends Controller
         $units = Unit::all();
         $suppliers = Supplier::all();
 
-        $item = Item::with(['cameraDetail', 'monitorDetail'])->findOrFail($id);
+        $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail'])->findOrFail($id);
 
         $item->rent_start = $item->rent_start
             ? Carbon::parse($item->rent_start)->format('d.m.Y')
@@ -106,6 +110,7 @@ class ItemController extends Controller
 
         $this->syncCameraDetails($request, $item);
         $this->syncMonitorDetails($request, $item);
+        $this->syncLensDetails($request, $item);
 
         return redirect()->route('items.index');
     }
@@ -187,6 +192,17 @@ class ItemController extends Controller
 
             'has_stand' => ['nullable', 'boolean'],
             'stand_number' => ['nullable', 'string', 'max:50'],
+
+
+            /* Objektiv-Metadaten */
+            'lens_manufacturer' => ['nullable', 'string', 'max:255'],
+            'lens_model' => ['nullable', 'string', 'max:255'],
+            'lens_serial_number' => ['nullable', 'string', 'max:255'],
+            'lens_zoom_factor' => ['nullable', 'string', 'max:50'],
+            'lens_zoom_servo_model' => ['nullable', 'string', 'max:255'],
+            'lens_zoom_servo_serial_number' => ['nullable', 'string', 'max:255'],
+            'lens_focus_servo_model' => ['nullable', 'string', 'max:255'],
+            'lens_focus_servo_serial_number' => ['nullable', 'string', 'max:255'],
         ]);
     }
 
@@ -264,6 +280,29 @@ class ItemController extends Controller
 
         $item->monitorDetail()->delete();
     }
+
+    private function syncLensDetails(Request $request, Item $item): void
+{
+    if ((int) $request->units_id === 2) {
+        $item->lensDetail()->updateOrCreate(
+            ['item_id' => $item->id],
+            [
+                'manufacturer' => $request->lens_manufacturer,
+                'model' => $request->lens_model,
+                'serial_number' => $request->lens_serial_number,
+                'zoom_factor' => $request->lens_zoom_factor,
+                'zoom_servo_model' => $request->lens_zoom_servo_model,
+                'zoom_servo_serial_number' => $request->lens_zoom_servo_serial_number,
+                'focus_servo_model' => $request->lens_focus_servo_model,
+                'focus_servo_serial_number' => $request->lens_focus_servo_serial_number,
+            ]
+        );
+
+        return;
+    }
+
+    $item->lensDetail()->delete();
+}
 
     private function isMonitorUnit(int|string|null $unitId): bool
     {

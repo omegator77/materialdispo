@@ -50,4 +50,9 @@ class Item extends Model
     {
         return $this->hasOne(MonitorDetail::class);
     }
+
+    public function lensDetail()
+{
+    return $this->hasOne(LensDetail::class);
+}
 }

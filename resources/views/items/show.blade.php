@@ -219,6 +219,33 @@
             </section>
             @endif
 
+            @if($item->lensDetail)
+            <div class="card mt-4">
+                <div class="card-header">
+                    Objektiv-Details
+                </div>
+
+                <div class="card-body">
+                    <p><strong>Hersteller:</strong> {{ $item->lensDetail->manufacturer ?? '-' }}</p>
+                    <p><strong>Modell:</strong> {{ $item->lensDetail->model ?? '-' }}</p>
+                    <p><strong>Zoomfaktor:</strong> {{ $item->lensDetail->zoom_factor ?? '-' }}</p>
+                    <p><strong>Seriennummer:</strong> {{ $item->lensDetail->serial_number ?? '-' }}</p>
+
+                    <hr>
+
+                    <h5>Zoomgriff</h5>
+                    <p><strong>Typ:</strong> {{ $item->lensDetail->zoom_servo_model ?? '-' }}</p>
+                    <p><strong>Seriennummer:</strong> {{ $item->lensDetail->zoom_servo_serial_number ?? '-' }}</p>
+
+                    <hr>
+
+                    <h5>Schärfegriff</h5>
+                    <p><strong>Typ:</strong> {{ $item->lensDetail->focus_servo_model ?? '-' }}</p>
+                    <p><strong>Seriennummer:</strong> {{ $item->lensDetail->focus_servo_serial_number ?? '-' }}</p>
+                </div>
+            </div>
+            @endif
+
             <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <a href="{{ route('items.index') }}"
                     class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
