@@ -12,19 +12,20 @@ class Production extends Model
         'booking_start',
         'booking_end',
         'created_at',
+        'packlist_notes',
         // Weitere Spalten, falls benötigt
-         ];
+    ];
 
     public function items()
     {
-        
-          return $this->belongsToMany(Item::class, 'item_production');
+
+        return $this->belongsToMany(Item::class, 'item_production')
+            ->withPivot('notes')
+            ->withTimestamps();
     }
 
     public function cameraConfigs()
-{
-    return $this->hasMany(CameraConfig::class, 'production_id');
-}
-
-    
+    {
+        return $this->hasMany(CameraConfig::class, 'production_id');
+    }
 }

@@ -33,7 +33,9 @@ class Item extends Model
 
     public function productions()
     {
-        return $this->belongsToMany(Production::class, 'item_production');
+        return $this->belongsToMany(Production::class, 'item_production')
+            ->withPivot('notes')
+            ->withTimestamps();
     }
 
     public function cameraConfigs()
@@ -52,7 +54,7 @@ class Item extends Model
     }
 
     public function lensDetail()
-{
-    return $this->hasOne(LensDetail::class);
-}
+    {
+        return $this->hasOne(LensDetail::class);
+    }
 }

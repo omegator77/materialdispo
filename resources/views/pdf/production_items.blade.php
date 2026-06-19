@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Packliste {{ $production->bezeichnung }}</title>
@@ -33,8 +34,26 @@
         }
 
         .meta {
-            margin-bottom: 18px;
+            margin-bottom: 12px;
             font-size: 12px;
+        }
+
+        .print-meta {
+            margin-bottom: 18px;
+            font-size: 10px;
+            color: #555;
+        }
+
+        .packlist-notes {
+            margin: 14px 0 18px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #fff8dc;
+        }
+
+        .packlist-notes-title {
+            font-weight: bold;
+            margin-bottom: 4px;
         }
 
         table {
@@ -48,7 +67,8 @@
             font-weight: bold;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #ccc;
             padding: 6px;
             vertical-align: top;
@@ -63,116 +83,157 @@
             font-weight: bold;
         }
 
-        .number {
-            font-weight: bold;
+        .config-line {
+            margin-bottom: 3px;
         }
 
-        .page-break {
-            page-break-before: always;
+        .note {
+            margin-top: 5px;
+            padding-top: 4px;
+            border-top: 1px dotted #bbb;
+        }
+
+        .empty {
+            color: #777;
         }
     </style>
 </head>
 
 <body>
 
-@php
-    $itemLabel = function ($item) {
-        if (! $item) {
-            return '—';
-        }
+    @php
+        $itemLabel = function ($item) {
+            if (! $item) {
+                return null;
+            }
 
-        return $item->nummer
-            ? $item->bezeichnung . ' (' . $item->nummer . ')'
-            : $item->bezeichnung;
-    };
+            return $item->nummer
+                ? $item->bezeichnung . ' (' . $item->nummer . ')'
+                : $item->bezeichnung;
+        };
 
-    $itemsByUnit = $items->groupBy(fn($item) => $item->unit->bezeichnung ?? 'Ohne Gruppe');
-@endphp
+        $itemsByUnit = $items->groupBy(fn($item) => $item->unit->bezeichnung ?? 'Ohne Gruppe');
+    @endphp
 
-<h1>Packliste: {{ $production->bezeichnung }}</h1>
+    <h1>Packliste: {{ $production->bezeichnung }}</h1>
 
-<div class="meta">
-    <strong>Zeitraum:</strong>
-    {{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '—' }}
-    bis
-    {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}
-</div>
+    <div class="meta">
+        <strong>Zeitraum:</strong>
+        {{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '—' }}
+        bis
+        {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}
+    </div>
 
-@if($cameraConfigs->count())
-    <h2>Kamerazüge</h2>
+    <div class="print-meta">
+        <strong>Gedruckt von:</strong> {{ auth()->user()->name ?? 'Unbekannt' }}<br>
+        <strong>Gedruckt am:</strong> {{ now()->format('d.m.Y H:i') }}
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 18%;">Position</th>
-                <th style="width: 82%;">Konfiguration</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($cameraConfigs as $config)
-                <tr>
-                    <td>
-                        <strong>{{ $config->cam_number ?? '—' }}</strong>
-                    </td>
+    @if(!empty($production->packlist_notes))
+        <div class="packlist-notes">
+            <div class="packlist-notes-title">Packlisten-Notiz</div>
+            <div>{!! nl2br(e($production->packlist_notes)) !!}</div>
+        </div>
+    @endif
 
-                    <td>
-                        <div><span class="small">Kamera:</span> <span class="item-name">{{ $itemLabel($config->item ?? null) }}</span></div>
-                        <div><span class="small">Objektiv:</span> {{ $itemLabel($config->lensItem ?? null) }}</div>
-                        <div><span class="small">Adapter:</span> {{ $itemLabel($config->adapterItem ?? null) }}</div>
-                        <div><span class="small">Stativkopf:</span> {{ $itemLabel($config->headItem ?? null) }}</div>
-                        <div><span class="small">Stativ:</span> {{ $itemLabel($config->tripodItem ?? null) }}</div>
-
-                        @if(!empty($config->notes))
-                            <div style="margin-top: 4px;">
-                                <span class="small">Notiz:</span> {{ $config->notes }}
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-@endif
-
-@if($itemsByUnit->count())
-    <h2>Weitere Geräte</h2>
-
-    @foreach($itemsByUnit as $unitName => $unitItems)
-        <h3>{{ $unitName }}</h3>
+    @if($cameraConfigs->count())
+        <h2>Kamerazüge</h2>
 
         <table>
             <thead>
                 <tr>
-                    <th style="width: 70%;">Gerät</th>
-                    <th style="width: 30%;">Notizen</th>
+                    <th style="width: 18%;">Position</th>
+                    <th style="width: 82%;">Konfiguration</th>
                 </tr>
             </thead>
-
             <tbody>
-                @foreach ($unitItems as $item)
+                @foreach ($cameraConfigs as $config)
                     <tr>
                         <td>
-                            <span class="item-name">{{ $itemLabel($item) }}</span>
-
-                            @if($item->supplier)
-                                <br>
-                                <span class="small">Mietmaterial: {{ $item->supplier->bezeichnung }}</span>
-                            @endif
+                            <strong>{{ $config->cam_number ?? '—' }}</strong>
                         </td>
 
                         <td>
-                            {{ $item->pivot->notes ?? '—' }}
+                            @php
+                                $configRows = [
+                                    'Kamera' => $config->item ?? null,
+                                    'Objektiv' => $config->lensItem ?? null,
+                                    'Adapter' => $config->adapterItem ?? null,
+                                    'Stativkopf' => $config->headItem ?? null,
+                                    'Stativ' => $config->tripodItem ?? null,
+                                ];
+                            @endphp
+
+                            @foreach($configRows as $labelName => $configItem)
+                                @if($configItem)
+                                    <div class="config-line">
+                                        <span class="small">{{ $labelName }}:</span>
+                                        @if($labelName === 'Kamera')
+                                            <span class="item-name">{{ $itemLabel($configItem) }}</span>
+                                        @else
+                                            {{ $itemLabel($configItem) }}
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+
+                            @if(!empty($config->notes))
+                                <div class="note">
+                                    <span class="small">Notiz:</span><br>
+                                    {!! nl2br(e($config->notes)) !!}
+                                </div>
+                            @endif
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
-    @endforeach
-@endif
+    @endif
 
-@if(!$items->count() && !$cameraConfigs->count())
-    <p>Keine Geräte in dieser Packliste.</p>
-@endif
+    @if($itemsByUnit->count())
+        <h2>Weitere Geräte</h2>
+
+        @foreach($itemsByUnit as $unitName => $unitItems)
+            <h3>{{ $unitName }}</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 70%;">Gerät</th>
+                        <th style="width: 30%;">Notizen</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($unitItems as $item)
+                        <tr>
+                            <td>
+                                <span class="item-name">{{ $itemLabel($item) }}</span>
+
+                                @if($item->supplier)
+                                    <br>
+                                    <span class="small">Mietmaterial: {{ $item->supplier->bezeichnung }}</span>
+                                @endif
+                            </td>
+
+                            <td>
+                                @if(!empty($item->pivot->notes))
+                                    {!! nl2br(e($item->pivot->notes)) !!}
+                                @else
+                                    <span class="empty">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endforeach
+    @endif
+
+    @if(!$items->count() && !$cameraConfigs->count())
+        <p>Keine Geräte in dieser Packliste.</p>
+    @endif
 
 </body>
+
 </html>
