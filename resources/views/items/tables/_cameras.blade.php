@@ -133,4 +133,68 @@
         </table>
     </div>
 
+    {{-- Mobile Kartenansicht --}}
+<div class="md:hidden space-y-4">
+    @forelse($items as $item)
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+            <a href="{{ route('items.show', $item->id) }}"
+               class="block text-lg font-semibold text-gray-900 hover:text-orange-500">
+                {{ $item->bezeichnung }}
+            </a>
+
+           <div class="mt-3 text-sm text-gray-700 space-y-1">
+    <p><strong>Nr.:</strong> {{ $item->nummer ?: '—' }}</p>
+    <p><strong>Body SN:</strong> {{ $item->cameraDetail->body_serial ?? '—' }}</p>
+
+    <p>
+        <strong>Großer Sucher:</strong>
+        @if($item->cameraDetail?->large_viewfinder_model || $item->cameraDetail?->large_viewfinder_type)
+            {{ $item->cameraDetail->large_viewfinder_model }}
+            @if($item->cameraDetail->large_viewfinder_type)
+                <span class="text-gray-500">
+                    ({{ $item->cameraDetail->large_viewfinder_type }})
+                </span>
+            @endif
+        @else
+            —
+        @endif
+    </p>
+
+    <p>
+        <strong>Kleiner Sucher:</strong>
+        @if($item->cameraDetail?->small_viewfinder_model || $item->cameraDetail?->small_viewfinder_type)
+            {{ $item->cameraDetail->small_viewfinder_model }}
+            @if($item->cameraDetail->small_viewfinder_type)
+                <span class="text-gray-500">
+                    ({{ $item->cameraDetail->small_viewfinder_type }})
+                </span>
+            @endif
+        @else
+            —
+        @endif
+    </p>
+
+    <p><strong>SSL:</strong> {{ ($item->cameraDetail->ssl_license ?? false) ? 'Ja' : 'Nein' }}</p>
+    <p><strong>Vermieter:</strong> {{ $item->supplier->bezeichnung ?? 'Eigentum' }}</p>
+</div>
+
+            <div class="mt-4 flex gap-2">
+                <a href="{{ route('items.show', $item->id) }}"
+                   class="flex-1 text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                    Details
+                </a>
+
+                <a href="{{ route('items.edit', $item->id) }}"
+                   class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
+                    Bearbeiten
+                </a>
+            </div>
+        </div>
+    @empty
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 text-center text-gray-500">
+            Keine Kameras gefunden.
+        </div>
+    @endforelse
+</div>
+
 </div>
