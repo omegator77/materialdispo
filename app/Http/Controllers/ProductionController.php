@@ -34,31 +34,39 @@ class ProductionController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $productions = Production::all();
+        $productions = Production::orderBy('booking_start', 'desc')->get();
+        $preset = $request->filled('from') ? Production::find($request->from) : null;
 
-        return view('productions.create', compact('productions'));
+        return view('productions.create', compact('productions', 'preset'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'bezeichnung' => 'required',
+            'bezeichnung'   => 'required',
             'booking_start' => 'date_format:d.m.Y|required',
-            'booking_end' => 'date_format:d.m.Y|after_or_equal:booking_start|required',
+            'booking_end'   => 'date_format:d.m.Y|after_or_equal:booking_start|required',
             'packlist_notes' => 'nullable|string',
         ]);
 
         $bookingStart = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingEnd   = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
 
-        Production::create([
-            'bezeichnung' => $request->input('bezeichnung'),
-            'booking_start' => $bookingStart,
-            'booking_end' => $bookingEnd,
+        $production = Production::create([
+            'bezeichnung'    => $request->input('bezeichnung'),
+            'booking_start'  => $bookingStart,
+            'booking_end'    => $bookingEnd,
             'packlist_notes' => $request->packlist_notes,
         ]);
+
+        if ($request->filled('from_production_id')) {
+            $source = Production::find($request->from_production_id);
+            if ($source) {
+                return redirect()->route('productions.importFrom', [$production, $source]);
+            }
+        }
 
         return redirect('/productions');
     }
@@ -320,6 +328,108 @@ class ProductionController extends Controller
         return redirect()
             ->route('productions.show', $production)
             ->with('success', 'Kamera-Konfiguration gespeichert.');
+    }
+
+    public function importFrom(Production $production, Production $source)
+    {
+        $source->load([
+            'items.unit',
+            'cameraConfigs.item.unit',
+            'cameraConfigs.lensItem',
+            'cameraConfigs.tripodItem',
+            'cameraConfigs.headItem',
+            'cameraConfigs.adapterItem',
+        ]);
+
+        // Einzelgeräte prüfen
+        $itemResults = $source->items->map(function ($item) use ($production) {
+            $check = $this->availability->check($item, $production);
+            $alternatives = collect();
+            if (! $check['available']) {
+                $alternatives = Item::where('units_id', $item->units_id)
+                    ->where('id', '!=', $item->id)
+                    ->orderBy('bezeichnung')
+                    ->get()
+                    ->filter(fn ($alt) => $this->availability->check($alt, $production)['available'])
+                    ->values();
+            }
+            return [
+                'item'         => $item,
+                'available'    => $check['available'],
+                'reason'       => $check['reason'],
+                'notes'        => $item->pivot->notes ?? null,
+                'alternatives' => $alternatives,
+            ];
+        });
+
+        // Kamerazüge prüfen
+        $configResults = $source->cameraConfigs->map(function ($config) use ($production) {
+            $slots = [
+                'Kamera'      => $config->item,
+                'Objektiv'    => $config->lensItem,
+                'Stativ'      => $config->tripodItem,
+                'Stativkopf'  => $config->headItem,
+                'Adapter'     => $config->adapterItem,
+            ];
+            $conflicts = [];
+            foreach ($slots as $label => $item) {
+                if (! $item) continue;
+                $check = $this->availability->check($item, $production);
+                if (! $check['available']) {
+                    $conflicts[$label] = ['item' => $item, 'reason' => $check['reason']];
+                }
+            }
+            return [
+                'config'    => $config,
+                'slots'     => array_filter($slots),
+                'available' => empty($conflicts),
+                'conflicts' => $conflicts,
+            ];
+        });
+
+        return view('productions.import-from', compact('production', 'source', 'itemResults', 'configResults'));
+    }
+
+    public function storeImport(Request $request, Production $production, Production $source)
+    {
+        // Einzelgeräte übernehmen
+        foreach ($request->input('items', []) as $itemId => $data) {
+            $action = $data['action'] ?? 'skip';
+
+            if ($action === 'keep') {
+                $production->items()->syncWithoutDetaching([
+                    $itemId => ['notes' => $data['notes'] ?? null],
+                ]);
+            } elseif ($action === 'replace' && ! empty($data['replacement_id'])) {
+                $replacement = Item::find($data['replacement_id']);
+                if ($replacement && $this->availability->check($replacement, $production)['available']) {
+                    $production->items()->syncWithoutDetaching([
+                        $data['replacement_id'] => ['notes' => $data['notes'] ?? null],
+                    ]);
+                }
+            }
+        }
+
+        // Kamerazüge übernehmen
+        foreach ($request->input('configs', []) as $configId => $action) {
+            if ($action !== 'import') continue;
+            $config = $source->cameraConfigs->firstWhere('id', $configId);
+            if (! $config) continue;
+
+            $newConfig = new CameraConfig();
+            $newConfig->production_id      = $production->id;
+            $newConfig->item_id            = $config->item_id;
+            $newConfig->lens               = $config->lens;
+            $newConfig->tripod             = $config->tripod;
+            $newConfig->tripod_head        = $config->tripod_head;
+            $newConfig->large_lens_adapter = $config->large_lens_adapter;
+            $newConfig->cam_number         = $config->cam_number;
+            $newConfig->notes              = $config->notes;
+            $newConfig->save();
+        }
+
+        return redirect()->route('productions.show', $production)
+            ->with('success', 'Geräte aus Vorlage übernommen.');
     }
 
     public function createCameraConfig(Production $production, Request $request)
