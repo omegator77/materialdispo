@@ -6,6 +6,7 @@ use App\Models\CameraConfig;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
+use App\Services\ItemAvailabilityService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Redirect;
 
 class ProductionController extends Controller
 {
+    public function __construct(private ItemAvailabilityService $availability) {}
+
     public function index(Request $request)
     {
         $selectedProduction = $request->get('production_id');
@@ -117,10 +120,10 @@ class ProductionController extends Controller
             ->orderBy('bezeichnung')
             ->get()
             ->map(function ($item) use ($production) {
-                $availability = $this->checkItemAvailability($item, $production);
+                $check = $this->availability->check($item, $production);
 
-                $item->is_available = $availability['available'];
-                $item->availability_reason = $availability['reason'];
+                $item->is_available = $check['available'];
+                $item->availability_reason = $check['reason'];
 
                 return $item;
             });
@@ -200,7 +203,7 @@ class ProductionController extends Controller
                 $redirectParams['show_unavailable'] = 1;
             }
 
-            $availability = $this->checkItemAvailability($item, $production);
+            $availability = $this->availability->check($item, $production);
 
             if (! $availability['available']) {
                 return redirect()
@@ -293,7 +296,7 @@ class ProductionController extends Controller
         foreach ($selectedItemIds as $itemId) {
             $item = Item::findOrFail($itemId);
 
-            $availability = $this->checkItemAvailability($item, $production);
+            $availability = $this->availability->check($item, $production);
 
             if (! $availability['available']) {
                 return redirect()
@@ -326,7 +329,7 @@ class ProductionController extends Controller
         if ($preselectedCameraId) {
             $camera = Item::findOrFail($preselectedCameraId);
 
-            $availability = $this->checkItemAvailability($camera, $production);
+            $availability = $this->availability->check($camera, $production);
 
             if (! $availability['available']) {
                 return redirect()
@@ -352,74 +355,4 @@ class ProductionController extends Controller
         ));
     }
 
-    private function cameraConfigItemColumns(): array
-    {
-        return ['item_id', 'lens', 'tripod', 'tripod_head', 'large_lens_adapter'];
-    }
-
-    private function itemIsInCameraConfigQuery($query, int $itemId)
-    {
-        $query->where(function ($q) use ($itemId) {
-            foreach ($this->cameraConfigItemColumns() as $column) {
-                $q->orWhere($column, $itemId);
-            }
-        });
-    }
-
-    private function checkItemAvailability(Item $item, Production $production): array
-    {
-        if ($item->suppliers_id) {
-            if ($item->rent_start && $item->rent_start > $production->booking_start) {
-                return [
-                    'available' => false,
-                    'reason' => 'Mietbeginn zu spät',
-                ];
-            }
-
-            if ($item->rent_end && $item->rent_end < $production->booking_end) {
-                return [
-                    'available' => false,
-                    'reason' => 'Mietende zu früh',
-                ];
-            }
-        }
-
-        $conflict = $item->productions()
-            ->where('productions.id', '!=', $production->id)
-            ->where('booking_start', '<=', $production->booking_end)
-            ->where('booking_end', '>=', $production->booking_start)
-            ->first();
-
-        if ($conflict) {
-            return [
-                'available' => false,
-                'reason' => 'Gebucht in Produktion: ' . $conflict->bezeichnung,
-            ];
-        }
-
-        $configConflict = CameraConfig::query()
-            ->where('production_id', '!=', $production->id)
-            ->whereHas('production', function ($q) use ($production) {
-                $q->where('booking_start', '<=', $production->booking_end)
-                    ->where('booking_end', '>=', $production->booking_start);
-            });
-
-        $this->itemIsInCameraConfigQuery($configConflict, $item->id);
-
-        $configConflict = $configConflict
-            ->with('production')
-            ->first();
-
-        if ($configConflict) {
-            return [
-                'available' => false,
-                'reason' => 'In Kamerakonfiguration: ' . $configConflict->production->bezeichnung,
-            ];
-        }
-
-        return [
-            'available' => true,
-            'reason' => null,
-        ];
-    }
 }

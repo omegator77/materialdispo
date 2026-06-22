@@ -133,7 +133,7 @@
                 @empty
                     <tr>
                         <td colspan="7" class="text-center py-6 text-gray-500">
-                            Keine Einheiten gefunden.
+                            Keine Geräte gefunden.
                         </td>
                     </tr>
                 @endforelse
@@ -191,7 +191,7 @@
             </div>
         @empty
             <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
-                Keine Einheiten gefunden.
+                Keine Geräte gefunden.
             </div>
         @endforelse
     </div>
