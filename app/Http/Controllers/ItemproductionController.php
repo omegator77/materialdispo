@@ -48,9 +48,9 @@ class ItemproductionController extends Controller
     $cameraConfigs = $configQuery->get();
 
     // Alle Produktionen, Geräte und Gruppen für die Filteroptionen abrufen
-    $allProductions = Production::all();
-    $allUnits = Unit::all();
-    $allItems = Item::all();
+    $allProductions = Production::orderBy('booking_start')->get();
+    $allUnits = Unit::orderBy('bezeichnung')->get();
+    $allItems = Item::orderBy('bezeichnung')->get();
 
     // View mit Daten zurückgeben
     return view('itemproductions.index', [

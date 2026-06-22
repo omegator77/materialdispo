@@ -1,29 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Geräte-Timeline
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Geräte-Timeline
+            </h2>
+            {{-- Zoom-Steuerung (Desktop sichtbar, Mobile im Timeline-Header) --}}
+            <div class="hidden sm:flex items-center gap-2" id="zoom-controls-header">
+                <span class="text-xs text-gray-500">Zoom:</span>
+                <button onclick="timelineZoom(-1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">−</button>
+                <span id="zoom-label-header" class="text-xs font-mono w-10 text-center text-gray-700">100%</span>
+                <button onclick="timelineZoom(+1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">+</button>
+                <button onclick="timelineZoomReset()" class="text-xs text-blue-600 hover:underline ml-1">Reset</button>
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-full mx-auto px-4">
 
+            {{-- Filter --}}
             <div class="bg-white shadow-sm rounded-lg p-4 mb-4">
                 <form method="GET" action="{{ route('timeline.items') }}" class="flex flex-wrap gap-4 items-end">
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Von</label>
-                        <input type="date" name="start" value="{{ $start }}" class="mt-1 rounded-md border-gray-300 shadow-sm">
+                        <input type="date" name="start" value="{{ $start }}"
+                            class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Bis</label>
-                        <input type="date" name="end" value="{{ $end }}" class="mt-1 rounded-md border-gray-300 shadow-sm">
+                        <input type="date" name="end" value="{{ $end }}"
+                            class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Gruppe</label>
-                        <select name="unit_id" class="mt-1 rounded-md border-gray-300 shadow-sm">
+                        <select name="unit_id" class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
                             <option value="">Alle Gruppen</option>
                             @foreach($units as $unit)
                                 <option value="{{ $unit->id }}" @selected((string)$unitId === (string)$unit->id)>
@@ -32,165 +42,338 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
                             Anzeigen
                         </button>
                     </div>
-
                 </form>
             </div>
 
-            <div class="bg-white shadow-sm rounded-lg p-4 overflow-x-auto">
+            {{-- Timeline-Container --}}
+            <div class="bg-white shadow-sm rounded-lg overflow-hidden">
 
-                @php
-                    $timelineStart = \Carbon\Carbon::parse($start)->startOfDay();
-                    $timelineEnd = \Carbon\Carbon::parse($end)->startOfDay();
-
-                    $days = [];
-                    $cursor = $timelineStart->copy();
-
-                    while ($cursor->lte($timelineEnd)) {
-                        $days[] = $cursor->copy();
-                        $cursor->addDay();
-                    }
-
-                    $gridColumns = max(count($days), 1);
-                @endphp
-
-                <div class="min-w-[1400px]">
-
-                    {{-- Kopfzeile --}}
-                    <div
-                        class="grid border-b border-gray-300 pb-2 mb-2 sticky top-0 bg-white z-10"
-                        style="grid-template-columns: 15rem minmax(0, 1fr);"
-                    >
-                        <div class="font-bold text-sm">
-                            Gerät
-                        </div>
-
-                        <div
-                            class="grid"
-                            style="grid-template-columns: repeat({{ $gridColumns }}, minmax(42px, 1fr));"
-                        >
-                            @foreach($days as $day)
-                                <div class="text-center text-xs font-semibold {{ $day->isWeekend() ? 'text-red-600' : 'text-gray-700' }}">
-                                    <div>{{ $day->format('d.m') }}</div>
-                                    <div class="text-[10px] font-normal">
-                                        {{ $day->locale('de')->isoFormat('dd') }}
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                {{-- Mobile Zoom-Bar --}}
+                <div class="sm:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gray-50">
+                    <span class="text-xs text-gray-500">Zoom &amp; Scrollen</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="timelineZoom(-1)"
+                            class="w-8 h-8 rounded border border-gray-300 bg-white flex items-center justify-center text-base font-bold">−</button>
+                        <span id="zoom-label-mobile" class="text-xs font-mono w-10 text-center text-gray-700">100%</span>
+                        <button onclick="timelineZoom(+1)"
+                            class="w-8 h-8 rounded border border-gray-300 bg-white flex items-center justify-center text-base font-bold">+</button>
                     </div>
+                </div>
 
-                    @forelse($items->groupBy(fn($item) => $item->unit?->bezeichnung ?? 'Ohne Gruppe') as $unitName => $groupedItems)
+                {{-- Scrollbarer Bereich --}}
+                <div id="timeline-scroll"
+                    class="overflow-x-auto overflow-y-auto"
+                    style="max-height: 75vh; cursor: grab; user-select: none;"
+                >
+                    @php
+                        $timelineStart = \Carbon\Carbon::parse($start)->startOfDay();
+                        $timelineEnd   = \Carbon\Carbon::parse($end)->startOfDay();
+                        $days = [];
+                        $cursor = $timelineStart->copy();
+                        while ($cursor->lte($timelineEnd)) {
+                            $days[] = $cursor->copy();
+                            $cursor->addDay();
+                        }
+                        $today = \Carbon\Carbon::today();
+                    @endphp
 
-                        <div x-data="{ open: true }">
+                    {{-- Innere Breite wird per JS gesteuert --}}
+                    <div id="timeline-inner" style="min-width: max-content;" x-data="{ groups: {} }">
 
-                            {{-- Gruppenkopf --}}
-                            <button
-                                type="button"
-                                @click="open = !open"
-                                class="w-full bg-gray-100 text-gray-700 font-semibold text-xs px-2 py-1 border-y flex items-center gap-2 hover:bg-gray-200"
-                            >
-                                <span x-text="open ? '▼' : '▶'"></span>
-                                <span>{{ $unitName }}</span>
-                                <span class="text-gray-400 font-normal">
-                                    {{ $groupedItems->count() }} Geräte
-                                </span>
-                            </button>
-
-                            {{-- Geräte der Gruppe --}}
-                            <div x-show="open">
-
-                                @foreach($groupedItems as $item)
-
-                                    <div
-                                        class="grid border-b border-gray-200 min-h-8"
-                                        style="grid-template-columns: 15rem minmax(0, 1fr);"
+                        {{-- Sticky Kopfzeile --}}
+                        <div id="timeline-header"
+                            class="flex border-b border-gray-300 bg-white sticky top-0 z-20"
+                        >
+                            {{-- Fixe Geräte-Spalte --}}
+                            <div id="col-device-header"
+                                class="shrink-0 font-bold text-xs px-2 py-2 bg-white border-r border-gray-200 flex items-end sticky left-0 z-30"
+                                style="width: var(--col-width, 200px);">
+                                Gerät
+                            </div>
+                            {{-- Tage --}}
+                            <div id="days-header" class="flex">
+                                @foreach($days as $day)
+                                    @php $isToday = $day->isSameDay($today); @endphp
+                                    <div class="day-col text-center border-l border-gray-200 px-1 py-1 flex flex-col justify-end
+                                        {{ $day->isWeekend() ? 'bg-red-50' : 'bg-white' }}
+                                        {{ $isToday ? 'ring-2 ring-inset ring-blue-400' : '' }}"
+                                        style="width: var(--day-width, 44px); min-width: var(--day-width, 44px);"
                                     >
-                                        {{-- Gerät --}}
-                                        <a
-                                            href="{{ route('items.show', $item->id) }}"
-                                            class="px-2 py-1 text-xs bg-white hover:bg-blue-50 flex items-center"
-                                            title="Gerät öffnen"
-                                        >
-                                            <span class="font-semibold">
-                                                {{ $item->nummer ?: '—' }}
-                                            </span>
-
-                                            <span class="mx-2 text-gray-400">•</span>
-
-                                            <span class="text-gray-700 truncate">
-                                                {{ $item->bezeichnung }}
-                                            </span>
-                                        </a>
-
-                                        {{-- Timeline --}}
-                                        <div class="relative h-8">
-
-                                            {{-- Hintergrundraster --}}
-                                            <div
-                                                class="absolute inset-0 grid"
-                                                style="grid-template-columns: repeat({{ $gridColumns }}, minmax(42px, 1fr));"
-                                            >
-                                                @foreach($days as $day)
-                                                    <div class="border-l border-gray-200 {{ $day->isWeekend() ? 'bg-gray-50' : 'bg-white' }}"></div>
-                                                @endforeach
-                                            </div>
-
-                                            {{-- Produktionsbalken --}}
-                                            <div
-                                                class="absolute inset-0 grid pointer-events-none"
-                                                style="grid-template-columns: repeat({{ $gridColumns }}, minmax(42px, 1fr));"
-                                            >
-                                                @foreach($item->productions as $production)
-
-                                                    @php
-                                                        $prodStart = \Carbon\Carbon::parse($production->booking_start)->startOfDay();
-                                                        $prodEnd = \Carbon\Carbon::parse($production->booking_end)->startOfDay();
-
-                                                        $visibleStart = $prodStart->lt($timelineStart) ? $timelineStart : $prodStart;
-                                                        $visibleEnd = $prodEnd->gt($timelineEnd) ? $timelineEnd : $prodEnd;
-
-                                                        $offset = $timelineStart->diffInDays($visibleStart);
-                                                        $length = $visibleStart->diffInDays($visibleEnd) + 1;
-                                                    @endphp
-
-                                                    <a
-                                                        href="{{ route('productions.show', $production->id) }}"
-                                                        class="pointer-events-auto self-center h-6 bg-blue-600 hover:bg-blue-700 text-white text-[11px] rounded px-1 flex items-center overflow-hidden whitespace-nowrap z-10"
-                                                        title="{{ $production->bezeichnung }} ({{ $prodStart->format('d.m.Y') }} - {{ $prodEnd->format('d.m.Y') }})"
-                                                        style="
-                                                            grid-column: {{ $offset + 1 }} / span {{ $length }};
-                                                            grid-row: 1;
-                                                        "
-                                                    >
-                                                        {{ $production->bezeichnung }}
-                                                    </a>
-
-                                                @endforeach
-                                            </div>
-
+                                        <div class="text-[11px] font-semibold leading-tight
+                                            {{ $day->isWeekend() ? 'text-red-600' : ($isToday ? 'text-blue-700' : 'text-gray-700') }}">
+                                            {{ $day->format('d.m') }}
+                                        </div>
+                                        <div class="text-[9px] leading-tight text-gray-400">
+                                            {{ $day->locale('de')->isoFormat('dd') }}
                                         </div>
                                     </div>
-
                                 @endforeach
-
                             </div>
                         </div>
 
-                    @empty
-                        <div class="p-6 text-gray-500">
-                            Keine Geräte gefunden.
-                        </div>
-                    @endforelse
+                        {{-- Gruppen & Geräte --}}
+                        @forelse($items->groupBy(fn($item) => $item->unit?->bezeichnung ?? 'Ohne Gruppe') as $unitName => $groupedItems)
+                            @php $gi = $loop->index; @endphp
 
+                                {{-- Gruppenheader --}}
+                                <div class="flex border-y border-gray-200" style="min-height: 28px;">
+                                    <button type="button" @click="groups[{{ $gi }}] = !(groups[{{ $gi }}] ?? true)"
+                                        class="shrink-0 flex items-center gap-2 px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 sticky left-0 z-20"
+                                        style="width: var(--col-width, 200px);"
+                                    >
+                                        <span x-text="(groups[{{ $gi }}] ?? true) ? '▼' : '▶'" class="text-[10px]"></span>
+                                        <span>{{ $unitName }}</span>
+                                        <span class="text-gray-400 font-normal">({{ $groupedItems->count() }})</span>
+                                    </button>
+                                    <div class="flex">
+                                        @foreach($days as $day)
+                                            <div class="day-col border-l border-gray-200 {{ $day->isWeekend() ? 'bg-gray-200/60' : 'bg-gray-100' }}"
+                                                style="width: var(--day-width, 44px); min-width: var(--day-width, 44px);"></div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Gerätezeilen --}}
+                                <div x-show="groups[{{ $gi }}] ?? true"
+                                    x-transition:enter="transition-opacity duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition-opacity duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+                                    @foreach($groupedItems as $item)
+                                        <div class="flex border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
+                                            style="min-height: 36px;">
+
+                                            {{-- Gerätename – sticky links --}}
+                                            <a href="{{ route('items.show', $item->id) }}"
+                                                class="shrink-0 flex items-center px-2 py-1 text-xs bg-white hover:bg-blue-50 border-r border-gray-200 sticky left-0 z-20 transition-colors"
+                                                style="width: var(--col-width, 200px);"
+                                                title="Gerät öffnen">
+                                                <span class="font-semibold text-gray-800 whitespace-nowrap">
+                                                    {{ $item->nummer ?: '—' }}
+                                                </span>
+                                                <span class="mx-1.5 text-gray-300">•</span>
+                                                <span class="text-gray-600 truncate">
+                                                    {{ $item->bezeichnung }}
+                                                </span>
+                                            </a>
+
+                                            {{-- Timeline-Zellen --}}
+                                            <div class="relative flex" style="height: 36px;">
+
+                                                {{-- Hintergrundraster --}}
+                                                @foreach($days as $day)
+                                                    @php $isToday = $day->isSameDay($today); @endphp
+                                                    <div class="day-col border-l border-gray-100 h-full shrink-0
+                                                        {{ $day->isWeekend() ? 'bg-red-50/60' : 'bg-white' }}
+                                                        {{ $isToday ? 'bg-blue-50' : '' }}"
+                                                        style="width: var(--day-width, 44px); min-width: var(--day-width, 44px);">
+                                                    </div>
+                                                @endforeach
+
+                                                {{-- Produktionsbalken --}}
+                                                <div class="absolute inset-0 flex items-center pointer-events-none px-0">
+                                                    @foreach($item->productions as $production)
+                                                        @php
+                                                            $prodStart   = \Carbon\Carbon::parse($production->booking_start)->startOfDay();
+                                                            $prodEnd     = \Carbon\Carbon::parse($production->booking_end)->startOfDay();
+                                                            $visStart    = $prodStart->lt($timelineStart) ? $timelineStart : $prodStart;
+                                                            $visEnd      = $prodEnd->gt($timelineEnd)     ? $timelineEnd   : $prodEnd;
+                                                            $offset      = $timelineStart->diffInDays($visStart);
+                                                            $length      = $visStart->diffInDays($visEnd) + 1;
+                                                        @endphp
+                                                        <a href="{{ route('productions.show', $production->id) }}"
+                                                            class="production-bar absolute pointer-events-auto flex items-center h-6 rounded px-1.5
+                                                                   bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+                                                                   text-white text-[11px] font-medium
+                                                                   overflow-hidden whitespace-nowrap
+                                                                   shadow-sm transition-colors z-10
+                                                                   focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+                                                            title="{{ $production->bezeichnung }} ({{ $prodStart->format('d.m.Y') }} – {{ $prodEnd->format('d.m.Y') }})"
+                                                            data-offset="{{ $offset }}"
+                                                            data-length="{{ $length }}"
+                                                            style="top: 50%; transform: translateY(-50%);"
+                                                        >
+                                                            <span class="bar-label">{{ $production->bezeichnung }}</span>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                </div>
+
+                        @empty
+                            <div class="p-8 text-center text-gray-400 text-sm">
+                                Keine Geräte gefunden.
+                            </div>
+                        @endforelse
+
+                    </div>
+                </div>
+
+                {{-- Scrollbar-Hint Mobile --}}
+                <div class="sm:hidden text-center py-1 text-[10px] text-gray-400 border-t border-gray-100">
+                    ← Horizontal scrollen oder pinch-to-zoom →
                 </div>
             </div>
 
         </div>
     </div>
+
+    {{-- ===================== JAVASCRIPT ===================== --}}
+    <script>
+    (function () {
+        // ── Zoom-Stufen in px pro Tag
+        const ZOOM_STEPS = [24, 32, 44, 60, 80, 110, 150];
+        const DEFAULT_STEP = 2; // Index für 44px = 100%
+        let currentStep = DEFAULT_STEP;
+
+        const COL_WIDTH_BASE = 200; // px – Gerätespalte
+
+        function dayWidth() { return ZOOM_STEPS[currentStep]; }
+
+        function applyZoom() {
+            const dw = dayWidth();
+            document.documentElement.style.setProperty('--day-width', dw + 'px');
+            document.documentElement.style.setProperty('--col-width', COL_WIDTH_BASE + 'px');
+
+            // Balken neu positionieren
+            document.querySelectorAll('.production-bar').forEach(bar => {
+                const offset = parseInt(bar.dataset.offset);
+                const length = parseInt(bar.dataset.length);
+                bar.style.left  = (offset * dw) + 'px';
+                bar.style.width = (length * dw - 2) + 'px';
+            });
+
+            // Label ausblenden wenn Balken zu schmal
+            document.querySelectorAll('.bar-label').forEach(label => {
+                label.style.display = dw < 36 ? 'none' : '';
+            });
+
+            // Zoom-Anzeige
+            const pct = Math.round((dw / ZOOM_STEPS[DEFAULT_STEP]) * 100) + '%';
+            ['zoom-label-header', 'zoom-label-mobile'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = pct;
+            });
+        }
+
+        window.timelineZoom = function (dir) {
+            currentStep = Math.max(0, Math.min(ZOOM_STEPS.length - 1, currentStep + dir));
+            applyZoom();
+        };
+
+        window.timelineZoomReset = function () {
+            currentStep = DEFAULT_STEP;
+            applyZoom();
+        };
+
+        // ── Pinch-to-Zoom (Touch)
+        let lastPinchDist = null;
+
+        const scroll = document.getElementById('timeline-scroll');
+
+        scroll.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                lastPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+
+        scroll.addEventListener('touchmove', e => {
+            if (e.touches.length === 2 && lastPinchDist !== null) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                if (dist - lastPinchDist > 30) {
+                    timelineZoom(+1);
+                    lastPinchDist = dist;
+                } else if (lastPinchDist - dist > 30) {
+                    timelineZoom(-1);
+                    lastPinchDist = dist;
+                }
+            }
+        }, { passive: true });
+
+        scroll.addEventListener('touchend', () => { lastPinchDist = null; });
+
+        // ── Maus-Drag zum Scrollen (Desktop)
+        let isDragging = false, startX, startY, scrollLeft, scrollTop;
+
+        scroll.addEventListener('mousedown', e => {
+            // Nicht auslösen wenn man auf einen Link klickt
+            if (e.target.closest('a, button')) return;
+            isDragging = true;
+            startX = e.pageX - scroll.offsetLeft;
+            startY = e.pageY - scroll.offsetTop;
+            scrollLeft = scroll.scrollLeft;
+            scrollTop  = scroll.scrollTop;
+            scroll.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            scroll.style.cursor = 'grab';
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - scroll.offsetLeft;
+            const y = e.pageY - scroll.offsetTop;
+            scroll.scrollLeft = scrollLeft - (x - startX);
+            scroll.scrollTop  = scrollTop  - (y - startY);
+        });
+
+        // ── Mausrad-Zoom (Ctrl+Scroll)
+        scroll.addEventListener('wheel', e => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                timelineZoom(e.deltaY < 0 ? +1 : -1);
+            }
+        }, { passive: false });
+
+        // ── Initialisierung
+        applyZoom();
+
+        // ── Heute-Linie: scroll zu heute beim Laden
+        @php
+            $todayIndex = null;
+            foreach ($days as $i => $d) {
+                if ($d->isSameDay($today)) { $todayIndex = $i; break; }
+            }
+        @endphp
+        const todayIndex = {{ $todayIndex !== null ? $todayIndex : 'null' }};
+        if (todayIndex !== null) {
+            setTimeout(() => {
+                const dw = dayWidth();
+                scroll.scrollLeft = Math.max(0, (todayIndex * dw) - 80);
+            }, 50);
+        }
+
+    })();
+    </script>
+
+    <style>
+        #timeline-scroll { -webkit-overflow-scrolling: touch; }
+    </style>
+    <script>
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        if (e.key === '+' || e.key === '=') { e.preventDefault(); timelineZoom(+1); }
+        if (e.key === '-' || e.key === '_') { e.preventDefault(); timelineZoom(-1); }
+        if (e.key === '0')                  { e.preventDefault(); timelineZoomReset(); }
+    });
+    </script>
+
 </x-app-layout>

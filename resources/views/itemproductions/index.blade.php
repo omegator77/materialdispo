@@ -8,75 +8,63 @@
     </x-slot>
 
     {{-- Filter --}}
-    <div class="max-w-7xl w-11/12 mx-auto mt-6">
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
-            <form method="GET" action="{{ route('itemprods') }}">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="productionFilter" class="block text-sm font-medium text-gray-700 mb-1">
-                            Produktion
-                        </label>
-                        <select id="productionFilter" name="production_id" class="form-control w-full" onchange="this.form.submit()">
-                            <option value="">Alle Produktionen</option>
-                            @foreach($allProductions as $production)
-                            <option value="{{ $production->id }}" {{ ($filters['production_id'] ?? '') == $production->id ? 'selected' : '' }}>
-                                {{ $production->bezeichnung }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+    <div class="mt-4 px-4">
+        <form method="GET" action="{{ route('itemprods') }}"
+              class="flex flex-wrap justify-center items-center gap-2">
+            <select name="production_id" class="form-control text-sm py-1.5 w-auto" onchange="this.form.submit()">
+                <option value="">Alle Produktionen</option>
+                @foreach($allProductions as $production)
+                    <option value="{{ $production->id }}" {{ ($filters['production_id'] ?? '') == $production->id ? 'selected' : '' }}>
+                        {{ $production->bezeichnung }}
+                    </option>
+                @endforeach
+            </select>
 
-                    <div>
-                        <label for="unitFilter" class="block text-sm font-medium text-gray-700 mb-1">
-                            Gruppe
-                        </label>
-                        <select id="unitFilter" name="unit_id" class="form-control w-full" onchange="this.form.submit()">
-                            <option value="">Alle Gruppen</option>
-                            @foreach($allUnits as $unit)
-                            <option value="{{ $unit->id }}" {{ ($filters['unit_id'] ?? '') == $unit->id ? 'selected' : '' }}>
-                                {{ $unit->bezeichnung }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+            <select name="unit_id" class="form-control text-sm py-1.5 w-auto" onchange="this.form.submit()">
+                <option value="">Alle Gruppen</option>
+                @foreach($allUnits as $unit)
+                    <option value="{{ $unit->id }}" {{ ($filters['unit_id'] ?? '') == $unit->id ? 'selected' : '' }}>
+                        {{ $unit->bezeichnung }}
+                    </option>
+                @endforeach
+            </select>
 
-                    <div>
-                        <label for="itemFilter" class="block text-sm font-medium text-gray-700 mb-1">
-                            Gerät
-                        </label>
-                        <select id="itemFilter" name="item_id" class="form-control w-full" onchange="this.form.submit()">
-                            <option value="">Alle Geräte</option>
-                            @foreach($allItems as $item)
-                            <option value="{{ $item->id }}" {{ ($filters['item_id'] ?? '') == $item->id ? 'selected' : '' }}>
-                                {{ $item->bezeichnung }} {{ $item->nummer ?? '' }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+            <select name="item_id" class="form-control text-sm py-1.5 w-auto" onchange="this.form.submit()">
+                <option value="">Alle Geräte</option>
+                @foreach($allItems as $item)
+                    <option value="{{ $item->id }}" {{ ($filters['item_id'] ?? '') == $item->id ? 'selected' : '' }}>
+                        {{ $item->bezeichnung }} {{ $item->nummer ?? '' }}
+                    </option>
+                @endforeach
+            </select>
 
-                @if(($filters['production_id'] ?? null) || ($filters['unit_id'] ?? null) || ($filters['item_id'] ?? null))
-                <div class="mt-4 flex justify-end">
-                    <a href="{{ route('itemprods') }}"
-                        class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
-                        Filter zurücksetzen
-                    </a>
-                </div>
-                @endif
-            </form>
-        </div>
+            @if(($filters['production_id'] ?? null) || ($filters['unit_id'] ?? null) || ($filters['item_id'] ?? null))
+                <a href="{{ route('itemprods') }}"
+                   class="text-sm text-gray-400 hover:text-gray-700 hover:underline">
+                    ✕ zurücksetzen
+                </a>
+            @endif
+        </form>
     </div>
 
     @php
     $itemproductionsByProduction = $itemproductions->groupBy(fn ($row) => $row->production->id);
     $cameraConfigsByProduction = $cameraConfigs->groupBy(fn ($config) => $config->production->id);
 
-    $productionIds = $itemproductionsByProduction
-    ->keys()
-    ->merge($cameraConfigsByProduction->keys())
-    ->unique();
-
     $productionsById = $allProductions->keyBy('id');
+    $today = \Carbon\Carbon::today();
+
+    $productionIds = $itemproductionsByProduction
+        ->keys()
+        ->merge($cameraConfigsByProduction->keys())
+        ->unique()
+        ->sortBy(function ($id) use ($productionsById, $today) {
+            $p = $productionsById->get($id);
+            $expired = $p && $p->booking_end && \Carbon\Carbon::parse($p->booking_end)->lt($today) ? 1 : 0;
+            $start   = $p && $p->booking_start ? $p->booking_start : '9999-12-31';
+            return $expired . '_' . $start;
+        })
+        ->values();
 
     $itemLabel = function ($item) {
     if (! $item) {
@@ -102,7 +90,7 @@
         });
         @endphp
 
-        <details class="bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden" open>
+        <details class="bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
             <summary class="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
@@ -127,23 +115,14 @@
             </summary>
 
             <div class="p-4 md:p-6 space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
-                    <div class="text-sm text-gray-600">
-                        @if($production)
-                        Zeitraum:
-                        <strong>{{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '—' }}</strong>
-                        bis
-                        <strong>{{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}</strong>
-                        @endif
-                    </div>
-
-                    @if($production)
+                @if($production)
+                <div class="flex justify-end border-b pb-4">
                     <a href="{{ route('productions.pdf', $production->id) }}"
                         class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
                         PDF exportieren
                     </a>
-                    @endif
                 </div>
+                @endif
 
                 @if(!empty($production->packlist_notes))
                 <div class="mt-4 mb-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg p-4">
