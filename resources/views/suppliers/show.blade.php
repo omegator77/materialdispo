@@ -20,6 +20,7 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
+                    @if(Auth::user()->isUser())
                     <a href="{{ route('suppliers.edit', $supplier->id) }}"
                        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                         Bearbeiten
@@ -36,6 +37,7 @@
                             Löschen
                         </button>
                     </form>
+                    @endif
 
                     <a href="{{ route('suppliers.index') }}"
                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">

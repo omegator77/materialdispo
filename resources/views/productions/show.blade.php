@@ -49,6 +49,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
             {{-- Links: Material hinzufügen --}}
+            @if(Auth::user()->isUser())
             <div class="lg:col-span-2">
                 <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
                     <h2 class="text-lg font-semibold text-gray-800">
@@ -147,9 +148,10 @@
                     </form>
                 </div>
             </div>
+            @endif
 
             {{-- Rechts: Gepacktes Material --}}
-            <div class="lg:col-span-3 space-y-6">
+            <div class="{{ Auth::user()->isUser() ? 'lg:col-span-3' : 'lg:col-span-5' }} space-y-6">
 
                 {{-- Einzelmaterial gruppiert --}}
                 <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -197,6 +199,7 @@
                                     @endif
                                 </div>
 
+                                @if(Auth::user()->isUser())
                                 <form action="{{ route('productions.detachItem', [$production->id, $item->id]) }}"
                                     method="POST"
                                     onsubmit="return confirm('Dieses Material wirklich aus der Produktion entfernen?');">
@@ -208,6 +211,7 @@
                                         Entfernen
                                     </button>
                                 </form>
+                                @endif
                             </div>
                             @endforeach
                         </div>
@@ -279,6 +283,7 @@
                                         @endif
                                     </div>
 
+                                    @if(Auth::user()->isUser())
                                     <div class="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
                                         <a href="{{ route('camera-config.edit', $config->id) }}"
                                             class="text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
@@ -297,6 +302,7 @@
                                             </button>
                                         </form>
                                     </div>
+                                    @endif
                                 </div>
                             </details>
                         </div>

@@ -8,10 +8,12 @@
             </div>
 
             <div class="flex gap-2">
+                @if(Auth::user()->isUser())
                 <a href="{{ route('items.edit', $item->id) }}"
                     class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                     Bearbeiten
                 </a>
+                @endif
 
                 <a href="{{ route('items.index') }}"
                     class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
@@ -254,6 +256,7 @@
                     Zurück
                 </a>
 
+                @if(Auth::user()->isUser())
                 <a href="{{ route('items.edit', $item->id) }}"
                     class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                     Bearbeiten
@@ -270,6 +273,7 @@
                         Löschen
                     </button>
                 </form>
+                @endif
             </div>
 
         </div>

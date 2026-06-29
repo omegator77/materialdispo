@@ -5,10 +5,12 @@
                 Gruppen
             </h2>
 
+            @if(Auth::user()->isUser())
             <a href="{{ route('units.create') }}"
                class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                 Neue Gruppe
             </a>
+            @endif
         </div>
     </x-slot>
 

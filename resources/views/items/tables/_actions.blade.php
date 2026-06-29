@@ -2,7 +2,7 @@
 {{-- Erwartet: $item, $productions --}}
 <div class="flex justify-end items-center gap-2">
 
-    @if($productions->count())
+    @if(Auth::user()->isUser() && $productions->count())
     <button type="button"
             onclick="openProductionDropdown({{ $item->id }}, {{ $item->units_id }}, this)"
             class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded whitespace-nowrap">
@@ -14,8 +14,11 @@
        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded text-xs">
         Details
     </a>
+
+    @if(Auth::user()->isUser())
     <a href="{{ route('items.edit', $item->id) }}"
        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded text-xs">
         Bearbeiten
     </a>
+    @endif
 </div>
