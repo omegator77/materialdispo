@@ -4,7 +4,7 @@
 
     @if($productions->count())
     <button type="button"
-            onclick="openProductionDropdown({{ $item->id }}, this)"
+            onclick="openProductionDropdown({{ $item->id }}, {{ $item->units_id }}, this)"
             class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded whitespace-nowrap">
         + Produktion
     </button>
