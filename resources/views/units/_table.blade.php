@@ -32,10 +32,12 @@
                                     Details
                                 </a>
 
+                                @if(Auth::user()->isUser())
                                 <a href="{{ route('units.edit', $unit->id) }}"
                                    class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
                                     Bearbeiten
                                 </a>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -71,10 +73,12 @@
                         Details
                     </a>
 
+                    @if(Auth::user()->isUser())
                     <a href="{{ route('units.edit', $unit->id) }}"
                        class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
                         Bearbeiten
                     </a>
+                    @endif
                 </div>
             </div>
         @empty

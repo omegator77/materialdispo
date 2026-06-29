@@ -12,81 +12,55 @@ use App\Http\Controllers\PDFController;
 use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\DashboardController;
-
-// Route::get('/', function () {
-//     return view('auth.register');
-// });
+use App\Http\Controllers\UserController;
 
 Route::redirect('/', '/login');
 
 Route::get('pdf', [PDFController::class, 'index']);
 
+// Alle eingeloggten User (inkl. Viewer) — nur lesend
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('/units', UnitController::class)->only(['index', 'show']);
+    Route::resource('/items', ItemController::class)->only(['index', 'show']);
+    Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
+    Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('/units', UnitController::class);
-});   
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('/items', ItemController::class);
-});
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('/productions', ProductionController::class);
-    Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
-    Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
-    Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
+    Route::get('/itemprods', [ItemproductionController::class, 'index'])->name('itemprods');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
-    Route::get('productions/{production}/import-from/{source}', [ProductionController::class, 'importFrom'])->name('productions.importFrom');
-    Route::post('productions/{production}/import-from/{source}', [ProductionController::class, 'storeImport'])->name('productions.storeImport');
-    Route::get('/camera-configs/{config}/edit', [CameraConfigController::class, 'edit'])->name('camera-config.edit');
-    Route::put('/camera-configs/{config}', [CameraConfigController::class, 'update'])->name('camera-config.update');
-    Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
-    Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/timeline/items', [TimelineController::class, 'items'])
-        ->name('timeline.items');
-});
+    Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
 
+    Route::get('/timeline/items', [TimelineController::class, 'items'])->name('timeline.items');
+    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');
 
-
-});
-
-
-
-//Route::get('/productions', [ProductionController::class, 'index'])->middleware(['auth', 'verified'])->name('productions');
-//Route::get('productions/{id}', [ProductionController::class, 'show'])->name('productions.show');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('/suppliers', SupplierController::class);
-});
-
-Route::get('/bookings', [BookingController::class,
-'index'])->middleware(['auth', 'verified'])->name('bookings');
-
-Route::get('/itemprods', [ItemproductionController::class,
-'index'])->middleware(['auth', 'verified'])->name('itemprods');
-
-
-
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// routes/web.php
-Route::get('/productions/{production}/camera-config/create',
-    [ProductionController::class, 'createCameraConfig']
-)->name('camera-config.create');
+// Admin + Benutzer — Schreibzugriff
+Route::middleware(['auth', 'role:admin,user'])->group(function () {
+    Route::resource('/units', UnitController::class)->except(['index', 'show']);
+    Route::resource('/items', ItemController::class)->except(['index', 'show']);
+    Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
 
-Route::post('/productions/{production}/camera-config',
-    [ProductionController::class, 'storeCameraConfig']
-)->name('camera-config.store');
+    Route::resource('/productions', ProductionController::class)->except(['index', 'show']);
+    Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
+    Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
+    Route::get('productions/{production}/import-from/{source}', [ProductionController::class, 'importFrom'])->name('productions.importFrom');
+    Route::post('productions/{production}/import-from/{source}', [ProductionController::class, 'storeImport'])->name('productions.storeImport');
 
+    Route::get('/camera-configs/{config}/edit', [CameraConfigController::class, 'edit'])->name('camera-config.edit');
+    Route::put('/camera-configs/{config}', [CameraConfigController::class, 'update'])->name('camera-config.update');
+    Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
+    Route::get('/productions/{production}/camera-config/create', [ProductionController::class, 'createCameraConfig'])->name('camera-config.create');
+    Route::post('/productions/{production}/camera-config', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
+});
 
+// Admin only — Benutzerverwaltung
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::resource('/users', UserController::class);
+});
 
 require __DIR__.'/auth.php';

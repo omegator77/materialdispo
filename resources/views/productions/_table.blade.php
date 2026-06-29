@@ -48,6 +48,7 @@
                                     Details
                                 </a>
 
+                                @if(Auth::user()->isUser())
                                 <a href="{{ route('productions.show', $production->id) }}"
                                    class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
                                     Packen
@@ -73,6 +74,7 @@
                                         </form>
                                     @endif
                                 @endisset
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -110,6 +112,7 @@
                         Details
                     </a>
 
+                    @if(Auth::user()->isUser())
                     <a href="{{ route('productions.show', $production->id) }}"
                        class="text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
                         Packen
@@ -135,6 +138,7 @@
                             </form>
                         @endif
                     @endisset
+                    @endif
                 </div>
             </div>
         @empty

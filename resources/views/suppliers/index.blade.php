@@ -5,10 +5,12 @@
                 Vermieter
             </h2>
 
+            @if(Auth::user()->isUser())
             <a href="{{ route('suppliers.create') }}"
                class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                 Neuer Vermieter
             </a>
+            @endif
         </div>
     </x-slot>
 
@@ -63,10 +65,12 @@
                                         Details
                                     </a>
 
+                                    @if(Auth::user()->isUser())
                                     <a href="{{ route('suppliers.edit', $supplier->id) }}"
                                        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
                                         Bearbeiten
                                     </a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -126,10 +130,12 @@
                             Details
                         </a>
 
+                        @if(Auth::user()->isUser())
                         <a href="{{ route('suppliers.edit', $supplier->id) }}"
                            class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
                             Bearbeiten
                         </a>
+                        @endif
 
                     </div>
 

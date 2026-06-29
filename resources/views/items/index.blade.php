@@ -4,10 +4,12 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Geräte') }}
             </h2>
+            @if(Auth::user()->isUser())
             <a href="{{ route('items.create') }}"
                 class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                 Neues Gerät
             </a>
+            @endif
         </div>
     </x-slot>
 
@@ -25,7 +27,7 @@
     @include('items.tables.' . $partial)
 
     {{-- Geteiltes Produktions-Dropdown (einmal im DOM, per JS positioniert) --}}
-    @if($productions->count())
+    @if(Auth::user()->isUser() && $productions->count())
     <div id="production-dropdown"
          class="hidden fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden w-64">
 

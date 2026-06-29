@@ -4,10 +4,12 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Productions') }}
         </h2>
+        @if(Auth::user()->isUser())
         <a href="{{ route('productions.create') }}"
                class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
                 Neue Produktion
             </a>
+        @endif
     </div>
     </x-slot>
 
