@@ -27,24 +27,50 @@
     {{-- Geteiltes Produktions-Dropdown (einmal im DOM, per JS positioniert) --}}
     @if($productions->count())
     <div id="production-dropdown"
-         class="hidden fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 w-56"
-         style="min-width: 14rem;">
-        <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100">
-            Zur Produktion hinzufügen
+         class="hidden fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden w-64">
+
+        {{-- Zur Packliste --}}
+        <div class="flex items-center gap-2 px-3 py-2 bg-blue-600">
+            <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12v4m0 0l-2-2m2 2l2-2"/>
+            </svg>
+            <span class="text-xs font-semibold text-white uppercase tracking-wide">Zur Packliste</span>
         </div>
         @foreach($productions as $production)
         <form method="POST" action="{{ route('productions.attachItem', $production->id) }}" class="production-attach-form">
             @csrf
             <input type="hidden" name="item_id" class="dropdown-item-id" value="">
-            <button type="submit" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">
-                {{ $production->bezeichnung }}
-                <span class="block text-xs text-gray-400">
+            <button type="submit" class="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-50 last:border-0 transition-colors">
+                <span class="font-medium">{{ $production->bezeichnung }}</span>
+                <span class="block text-xs text-gray-400 mt-0.5">
                     {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
                     – {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
                 </span>
             </button>
         </form>
         @endforeach
+
+        {{-- Als Kamerazug (nur für Kameras) --}}
+        <div id="camera-config-section" class="hidden border-t-2 border-gray-200">
+            <div class="flex items-center gap-2 px-3 py-2 bg-orange-500">
+                <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+                </svg>
+                <span class="text-xs font-semibold text-white uppercase tracking-wide">Als Kamerazug</span>
+            </div>
+            @foreach($productions as $production)
+            <a class="camera-config-link block px-3 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 border-b border-gray-50 last:border-0 transition-colors"
+               data-base-url="{{ route('camera-config.create', $production->id) }}"
+               href="#">
+                <span class="font-medium">{{ $production->bezeichnung }}</span>
+                <span class="block text-xs text-gray-400 mt-0.5">
+                    {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
+                    – {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
+                </span>
+            </a>
+            @endforeach
+        </div>
+
     </div>
 
     <script>
@@ -52,16 +78,27 @@
         const dropdown = document.getElementById('production-dropdown');
         let activeButton = null;
 
-        window.openProductionDropdown = function (itemId, btn) {
+        const cameraSection = document.getElementById('camera-config-section');
+
+        window.openProductionDropdown = function (itemId, unitId, btn) {
             if (activeButton === btn && !dropdown.classList.contains('hidden')) {
                 closeDropdown();
                 return;
             }
 
-            // item_id in alle Forms setzen
+            // item_id in alle Packlisten-Forms setzen
             dropdown.querySelectorAll('.dropdown-item-id').forEach(input => {
                 input.value = itemId;
             });
+
+            // Kamerazug-Sektion: nur für Kameras (unit_id = 1)
+            const isCamera = unitId === 1;
+            cameraSection.classList.toggle('hidden', !isCamera);
+            if (isCamera) {
+                dropdown.querySelectorAll('.camera-config-link').forEach(link => {
+                    link.href = link.dataset.baseUrl + '?camera_item_id=' + itemId;
+                });
+            }
 
             // Kurz sichtbar machen (off-screen) um Höhe zu messen
             dropdown.style.top  = '-9999px';
