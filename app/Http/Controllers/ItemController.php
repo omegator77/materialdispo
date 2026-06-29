@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\Production;
 use App\Models\Unit;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -12,7 +13,14 @@ class ItemController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Item::with(['unit', 'supplier', 'monitorDetail']);
+        $detailRelations = match((int) $request->get('unit_id', 0)) {
+            1     => ['cameraDetail'],
+            2     => ['lensDetail'],
+            9, 10 => ['monitorDetail'],
+            default => ['monitorDetail'],
+        };
+
+        $query = Item::with(array_merge(['unit', 'supplier'], $detailRelations));
 
         if ($request->filled('unit_id')) {
             $query->where('units_id', $request->unit_id);
@@ -30,9 +38,12 @@ class ItemController extends Controller
         }
 
         $items = $query->get();
-        $units = Unit::all();
+        $units = Unit::orderBy('bezeichnung')->get();
+        $productions = Production::where('booking_end', '>=', today()->toDateString())
+            ->orderBy('booking_start')
+            ->get();
 
-        return view('items.index', compact('items', 'units'));
+        return view('items.index', compact('items', 'units', 'productions'));
     }
 
     public function create()
