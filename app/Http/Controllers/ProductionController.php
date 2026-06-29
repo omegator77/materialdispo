@@ -211,6 +211,12 @@ class ProductionController extends Controller
                 $redirectParams['show_unavailable'] = 1;
             }
 
+            if ($production->items()->where('items.id', $item->id)->exists()) {
+                return redirect()
+                    ->route('productions.show', $redirectParams)
+                    ->with('error', 'Dieses Gerät ist bereits in dieser Produktion.');
+            }
+
             $availability = $this->availability->check($item, $production);
 
             if (! $availability['available']) {
