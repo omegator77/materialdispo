@@ -27,6 +27,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
 
+    Route::get('productions/templates-search', [ProductionController::class, 'searchTemplates'])->name('productions.searchTemplates');
     Route::resource('/productions', ProductionController::class)->except(['index', 'show']);
     Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');

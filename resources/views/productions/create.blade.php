@@ -19,21 +19,47 @@
                     </div>
                     <input type="hidden" name="from_production_id" value="{{ $preset->id }}">
                 @else
-                    <div class="mb-5">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Vorlage (optional)</label>
-                        <select onchange="if(this.value) window.location='{{ route('productions.create') }}?from='+this.value"
-                                class="form-control w-full text-sm">
-                            <option value="">— Keine Vorlage —</option>
+                    <div class="mb-5" x-data="{
+                        open: false,
+                        query: '',
+                        results: [
                             @foreach($productions as $p)
-                                <option value="{{ $p->id }}">
-                                    {{ $p->bezeichnung }}
-                                    @if($p->booking_start)
-                                        ({{ \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') }})
-                                    @endif
-                                </option>
+                            { id: {{ $p->id }}, bezeichnung: @js($p->bezeichnung), booking_start: @js($p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : null) },
                             @endforeach
-                        </select>
-                        <p class="text-xs text-gray-400 mt-1">Geräte der gewählten Produktion werden nach dem Speichern zur Übernahme angeboten.</p>
+                        ],
+                        search() {
+                            fetch('{{ route('productions.searchTemplates') }}?q=' + encodeURIComponent(this.query))
+                                .then(r => r.json())
+                                .then(data => this.results = data);
+                        },
+                        select(p) {
+                            window.location = '{{ route('productions.create') }}?from=' + p.id;
+                        }
+                    }">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Vorlage (optional)</label>
+                        <div class="relative">
+                            <input type="text" x-model="query"
+                                   @input.debounce.300ms="search()"
+                                   @focus="open = true"
+                                   @click.outside="open = false"
+                                   placeholder="Vorlage suchen (z. B. Produktionsname)..."
+                                   class="form-control w-full text-sm" autocomplete="off">
+
+                            <div x-show="open" x-cloak
+                                 class="absolute z-10 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                                <template x-for="p in results" :key="p.id">
+                                    <button type="button" @click="select(p)"
+                                            class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b last:border-b-0">
+                                        <span x-text="p.bezeichnung"></span>
+                                        <span x-show="p.booking_start" class="text-gray-400" x-text="' (' + p.booking_start + ')'"></span>
+                                    </button>
+                                </template>
+                                <div x-show="results.length === 0" class="px-3 py-2 text-sm text-gray-400">
+                                    Keine Treffer.
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Geräte der gewählten Produktion werden nach dem Speichern zur Übernahme angeboten. Es werden zunächst die letzten 25 Produktionen angezeigt — tippe, um ältere zu finden.</p>
                     </div>
                 @endif
 

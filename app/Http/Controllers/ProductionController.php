@@ -36,10 +36,27 @@ class ProductionController extends Controller
 
     public function create(Request $request)
     {
-        $productions = Production::orderBy('booking_start', 'desc')->get();
+        $productions = Production::orderBy('booking_start', 'desc')->limit(25)->get();
         $preset = $request->filled('from') ? Production::find($request->from) : null;
 
         return view('productions.create', compact('productions', 'preset'));
+    }
+
+    public function searchTemplates(Request $request)
+    {
+        $query = trim((string) $request->get('q', ''));
+
+        $productions = Production::query()
+            ->when($query !== '', fn ($q) => $q->where('bezeichnung', 'like', "%{$query}%"))
+            ->orderBy('booking_start', 'desc')
+            ->limit(20)
+            ->get(['id', 'bezeichnung', 'booking_start']);
+
+        return response()->json($productions->map(fn ($p) => [
+            'id' => $p->id,
+            'bezeichnung' => $p->bezeichnung,
+            'booking_start' => $p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : null,
+        ]));
     }
 
     public function store(Request $request)
