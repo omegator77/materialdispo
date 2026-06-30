@@ -182,8 +182,9 @@
         @endforeach
     </table>
 
-    {{-- Anforderungen / Soll-Ist-Abgleich --}}
+    {{-- Anforderungen --}}
     @if($vbProtokoll->anforderungen->count())
+    @if($showAbgleich)
     <h2>Anforderungen – Abgleich mit Packliste</h2>
     <table>
         <thead>
@@ -215,6 +216,27 @@
             @endforeach
         </tbody>
     </table>
+    @else
+    <h2>Anforderungen</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 55%;">Kategorie</th>
+                <th style="width: 15%;">Anzahl</th>
+                <th style="width: 30%;">Notiz</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($vbProtokoll->abgleich() as $row)
+            <tr>
+                <td>{{ $row['label'] }}</td>
+                <td>{{ $row['benoetigt'] ?? '—' }}</td>
+                <td>{{ $row['notiz'] ?: '—' }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    @endif
     @endif
 
     {{-- Besonderheiten / Kabelwege --}}

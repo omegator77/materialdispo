@@ -80,6 +80,16 @@ class VbProtokollController extends Controller
 
     public function generatePDF(Production $production)
     {
+        return $this->renderPdf($production, showAbgleich: false);
+    }
+
+    public function generateAbgleichReportPDF(Production $production)
+    {
+        return $this->renderPdf($production, showAbgleich: true);
+    }
+
+    private function renderPdf(Production $production, bool $showAbgleich)
+    {
         $vbProtokoll = $production->vbProtokoll()
             ->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])
             ->firstOrFail();
@@ -88,9 +98,11 @@ class VbProtokollController extends Controller
             fn (VbProtokollFoto $foto) => Storage::disk('public')->path($foto->path)
         );
 
-        $pdf = Pdf::loadView('pdf.vb_protokoll', compact('production', 'vbProtokoll', 'fotoPaths'));
+        $pdf = Pdf::loadView('pdf.vb_protokoll', compact('production', 'vbProtokoll', 'fotoPaths', 'showAbgleich'));
 
-        return $pdf->download("VB-Protokoll {$production->bezeichnung}.pdf");
+        $suffix = $showAbgleich ? ' Abgleich' : '';
+
+        return $pdf->download("VB-Protokoll {$production->bezeichnung}{$suffix}.pdf");
     }
 
     public function destroy(Production $production)
