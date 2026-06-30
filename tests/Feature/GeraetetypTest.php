@@ -71,7 +71,7 @@ test('vb-protokoll anforderung can target a specific geraetetyp and abgleich cou
     $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
         'kunde' => 'Testkunde',
         'anforderungen' => [
-            ['target' => "typ-{$typeA->id}", 'anzahl' => 2],
+            ['mode' => 'typ', 'unit_id' => $unit->id, 'geraetetyp_id' => $typeA->id, 'anzahl' => 2],
         ],
     ])->assertRedirect(route('vb-protokoll.show', $production->id));
 

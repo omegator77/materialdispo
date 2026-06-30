@@ -141,8 +141,11 @@ class VbProtokollController extends Controller
             'kameras.*.bezeichnung' => 'nullable|string|max:255',
 
             'anforderungen' => 'nullable|array',
-            'anforderungen.*.target' => 'required_with:anforderungen.*.anzahl|string',
-            'anforderungen.*.anzahl' => 'required_with:anforderungen.*.target|integer|min:1',
+            'anforderungen.*.mode' => 'nullable|string|in:typ,frei',
+            'anforderungen.*.unit_id' => 'nullable|exists:units,id',
+            'anforderungen.*.geraetetyp_id' => 'nullable|exists:geraetetypen,id',
+            'anforderungen.*.freitext' => 'nullable|string|max:255',
+            'anforderungen.*.anzahl' => 'nullable|integer|min:1',
             'anforderungen.*.notiz' => 'nullable|string|max:255',
 
             'fotos' => 'nullable|array',
@@ -179,41 +182,49 @@ class VbProtokollController extends Controller
         $vbProtokoll->anforderungen()->delete();
 
         foreach ($anforderungen as $anforderung) {
-            if (empty($anforderung['target']) || empty($anforderung['anzahl'])) {
+            $mode = $anforderung['mode'] ?? 'typ';
+
+            if ($mode === 'frei') {
+                if (empty($anforderung['freitext'])) {
+                    continue;
+                }
+
+                $vbProtokoll->anforderungen()->create([
+                    'unit_id' => null,
+                    'geraetetyp_id' => null,
+                    'freitext' => $anforderung['freitext'],
+                    'anzahl' => $anforderung['anzahl'] ?? null,
+                    'notiz' => $anforderung['notiz'] ?? null,
+                ]);
+
                 continue;
             }
 
-            $target = $this->splitAnforderungTarget($anforderung['target']);
-
-            if (! $target) {
+            if (empty($anforderung['unit_id']) && empty($anforderung['geraetetyp_id'])) {
                 continue;
             }
 
-            $vbProtokoll->anforderungen()->create(array_merge($target, [
+            if (empty($anforderung['anzahl'])) {
+                continue;
+            }
+
+            if (! empty($anforderung['geraetetyp_id'])) {
+                $geraetetyp = Geraetetyp::find($anforderung['geraetetyp_id']);
+                $unitId = $geraetetyp?->units_id;
+                $geraetetypId = $anforderung['geraetetyp_id'];
+            } else {
+                $unitId = $anforderung['unit_id'];
+                $geraetetypId = null;
+            }
+
+            $vbProtokoll->anforderungen()->create([
+                'unit_id' => $unitId,
+                'geraetetyp_id' => $geraetetypId,
+                'freitext' => null,
                 'anzahl' => $anforderung['anzahl'],
                 'notiz' => $anforderung['notiz'] ?? null,
-            ]));
+            ]);
         }
-    }
-
-    /**
-     * Parst ein Anforderungs-Zielfeld der Form "unit-5" oder "typ-12" in die
-     * passende Foreign-Key-Spalte. Gibt null zurück, wenn das Ziel ungültig
-     * ist oder nicht (mehr) existiert.
-     */
-    private function splitAnforderungTarget(string $target): ?array
-    {
-        [$kind, $id] = array_pad(explode('-', $target, 2), 2, null);
-
-        if ($kind === 'unit' && Unit::where('id', $id)->exists()) {
-            return ['unit_id' => $id, 'geraetetyp_id' => null];
-        }
-
-        if ($kind === 'typ' && Geraetetyp::where('id', $id)->exists()) {
-            return ['unit_id' => null, 'geraetetyp_id' => $id];
-        }
-
-        return null;
     }
 
     private function storeFotos(VbProtokoll $vbProtokoll, Request $request): void

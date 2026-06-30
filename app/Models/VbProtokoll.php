@@ -94,6 +94,17 @@ class VbProtokoll extends Model
     public function abgleich(): \Illuminate\Support\Collection
     {
         return $this->anforderungen->map(function (VbProtokollAnforderung $anforderung) {
+            if ($anforderung->freitext) {
+                return [
+                    'label' => $anforderung->freitext,
+                    'kind' => 'frei',
+                    'benoetigt' => $anforderung->anzahl,
+                    'gepackt' => null,
+                    'erfuellt' => null,
+                    'notiz' => $anforderung->notiz,
+                ];
+            }
+
             if ($anforderung->geraetetyp_id) {
                 $gepackt = $this->production->items()
                     ->where('items.geraetetyp_id', $anforderung->geraetetyp_id)

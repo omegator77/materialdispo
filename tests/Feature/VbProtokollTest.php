@@ -27,7 +27,7 @@ test('admin can create a vb-protokoll with kameras and anforderungen', function 
             ['position' => 1, 'bezeichnung' => '22x ENG'],
         ],
         'anforderungen' => [
-            ['target' => "unit-{$unit->id}", 'anzahl' => 3],
+            ['mode' => 'typ', 'unit_id' => $unit->id, 'anzahl' => 3],
         ],
     ]);
 
@@ -37,6 +37,49 @@ test('admin can create a vb-protokoll with kameras and anforderungen', function 
     expect($vbProtokoll->kunde)->toBe('Testkunde')
         ->and($vbProtokoll->kameras)->toHaveCount(1)
         ->and($vbProtokoll->anforderungen)->toHaveCount(1);
+});
+
+test('admin can create a vb-protokoll requirement targeting a specific geraetetyp or freitext', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $production = makeVbProduction();
+    $unit = Unit::create(['bezeichnung' => 'Stative']);
+    $eng = \App\Models\Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'ENG']);
+    $quattro = \App\Models\Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'Quattro']);
+
+    $response = $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
+        'kunde' => 'Testkunde',
+        'anforderungen' => [
+            ['mode' => 'typ', 'unit_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'anzahl' => 2],
+            ['mode' => 'typ', 'unit_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'anzahl' => 1],
+            ['mode' => 'frei', 'freitext' => 'Sandsäcke', 'anzahl' => 5],
+        ],
+    ]);
+
+    $response->assertRedirect(route('vb-protokoll.show', $production->id));
+
+    $vbProtokoll = VbProtokoll::where('production_id', $production->id)->firstOrFail();
+    expect($vbProtokoll->anforderungen)->toHaveCount(3);
+
+    $engAnforderung = $vbProtokoll->anforderungen->firstWhere('geraetetyp_id', $eng->id);
+    expect($engAnforderung->unit_id)->toBe($unit->id)
+        ->and($engAnforderung->anzahl)->toBe(2);
+
+    $freitextAnforderung = $vbProtokoll->anforderungen->firstWhere('freitext', 'Sandsäcke');
+    expect($freitextAnforderung)->not->toBeNull()
+        ->and($freitextAnforderung->unit_id)->toBeNull()
+        ->and($freitextAnforderung->anzahl)->toBe(5);
+
+    $item1 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'bezeichnung' => 'ENG 1', 'is_rented' => false]);
+    $item2 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'bezeichnung' => 'Quattro 1', 'is_rented' => false]);
+    $production->items()->attach([$item1->id, $item2->id]);
+
+    $abgleich = $vbProtokoll->fresh()->abgleich();
+    $engRow = $abgleich->firstWhere('label', 'ENG');
+    expect($engRow['gepackt'])->toBe(1)
+        ->and($engRow['erfuellt'])->toBeFalse();
+
+    $freitextRow = $abgleich->firstWhere('kind', 'frei');
+    expect($freitextRow['gepackt'])->toBeNull();
 });
 
 test('vb-protokoll show page renders the soll/ist abgleich against the packlist', function () {

@@ -74,14 +74,16 @@
                         <tr class="border-b last:border-b-0">
                             <td class="py-2 font-medium text-gray-900">
                                 {{ $row['label'] }}
-                                <span class="ml-1 text-xs font-normal px-1.5 py-0.5 rounded {{ $row['kind'] === 'typ' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
-                                    {{ $row['kind'] === 'typ' ? 'Typ' : 'Gruppe' }}
+                                <span class="ml-1 text-xs font-normal px-1.5 py-0.5 rounded {{ $row['kind'] === 'typ' ? 'bg-blue-100 text-blue-700' : ($row['kind'] === 'frei' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600') }}">
+                                    {{ ['typ' => 'Typ', 'gruppe' => 'Gruppe', 'frei' => 'Freitext'][$row['kind']] }}
                                 </span>
                             </td>
-                            <td class="py-2">{{ $row['benoetigt'] }}</td>
-                            <td class="py-2">{{ $row['gepackt'] }}</td>
+                            <td class="py-2">{{ $row['benoetigt'] ?? '—' }}</td>
+                            <td class="py-2">{{ $row['kind'] === 'frei' ? '—' : $row['gepackt'] }}</td>
                             <td class="py-2">
-                                @if($row['erfuellt'])
+                                @if($row['kind'] === 'frei')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">—</span>
+                                @elseif($row['erfuellt'])
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">✓ erfüllt</span>
                                 @else
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">⚠ fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>

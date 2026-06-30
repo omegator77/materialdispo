@@ -8,11 +8,20 @@ $initialKameras = $isEdit
 
 $initialAnforderungen = $isEdit
     ? $vbProtokoll->anforderungen->map(fn ($a) => [
-        'target' => $a->geraetetyp_id ? "typ-{$a->geraetetyp_id}" : "unit-{$a->unit_id}",
+        'mode' => $a->freitext ? 'frei' : 'typ',
+        'unit_id' => $a->unit_id,
+        'geraetetyp_id' => $a->geraetetyp_id,
+        'freitext' => $a->freitext,
         'anzahl' => $a->anzahl,
         'notiz' => $a->notiz,
     ])->values()
     : collect();
+
+$geraetetypenForJs = $geraetetypen->map(fn ($g) => [
+    'id' => $g->id,
+    'units_id' => $g->units_id,
+    'bezeichnung' => $g->bezeichnung,
+])->values();
 @endphp
 
 <form method="POST"
@@ -21,7 +30,8 @@ $initialAnforderungen = $isEdit
       class="space-y-6"
       x-data="vbProtokollForm({
           kameras: {{ $initialKameras->toJson() }},
-          anforderungen: {{ $initialAnforderungen->toJson() }}
+          anforderungen: {{ $initialAnforderungen->toJson() }},
+          geraetetypen: {{ $geraetetypenForJs->toJson() }}
       })">
     @csrf
     @if($isEdit)
@@ -173,27 +183,49 @@ $initialAnforderungen = $isEdit
             Wird beim Packen mit der tatsächlich gepackten Menge je Gerätekategorie abgeglichen.
         </p>
 
-        <div class="space-y-2">
+        <div class="space-y-3">
             <template x-for="(anforderung, index) in anforderungen" :key="index">
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <select :name="`anforderungen[${index}][target]`" x-model="anforderung.target" class="form-control sm:w-64 text-sm">
-                        <option value="">Gerätekategorie wählen</option>
-                        <optgroup label="Gruppen (allgemein)">
+                <div class="border border-gray-200 rounded-lg p-3 space-y-2">
+                    <div class="flex items-center gap-4 text-xs text-gray-600">
+                        <label class="flex items-center gap-1">
+                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="typ" x-model="anforderung.mode">
+                            Gerätetyp
+                        </label>
+                        <label class="flex items-center gap-1">
+                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="frei" x-model="anforderung.mode">
+                            Freitext
+                        </label>
+                        <button type="button" @click="removeAnforderung(index)" class="ml-auto text-red-500 hover:text-red-700 px-2" title="Entfernen">×</button>
+                    </div>
+
+                    <div x-show="anforderung.mode === 'typ'" class="flex flex-col sm:flex-row gap-2">
+                        <select :name="`anforderungen[${index}][unit_id]`" x-model="anforderung.unit_id"
+                                @change="anforderung.geraetetyp_id = ''" class="form-control sm:w-44 text-sm">
+                            <option value="">Gruppe wählen</option>
                             @foreach($units as $unit)
-                            <option value="unit-{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
+                            <option value="{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
                             @endforeach
-                        </optgroup>
-                        <optgroup label="Gerätetypen (genau)">
-                            @foreach($geraetetypen as $geraetetyp)
-                            <option value="typ-{{ $geraetetyp->id }}">{{ $geraetetyp->bezeichnung }}</option>
-                            @endforeach
-                        </optgroup>
-                    </select>
-                    <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
-                           placeholder="Anzahl" class="form-control w-full sm:w-24 text-sm">
+                        </select>
+                        <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id"
+                                :disabled="!anforderung.unit_id" class="form-control sm:w-56 text-sm">
+                            <option value="">Alle Typen dieser Gruppe</option>
+                            <template x-for="typ in typesForUnit(anforderung.unit_id)" :key="typ.id">
+                                <option :value="typ.id" x-text="typ.bezeichnung"></option>
+                            </template>
+                        </select>
+                        <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
+                               placeholder="Anzahl" class="form-control w-full sm:w-24 text-sm">
+                    </div>
+
+                    <div x-show="anforderung.mode === 'frei'" class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" :name="`anforderungen[${index}][freitext]`" x-model="anforderung.freitext"
+                               placeholder="z. B. Sandsäcke" class="form-control flex-1 text-sm">
+                        <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
+                               placeholder="Anzahl (optional)" class="form-control w-full sm:w-24 text-sm">
+                    </div>
+
                     <input type="text" :name="`anforderungen[${index}][notiz]`" x-model="anforderung.notiz"
-                           placeholder="Notiz (optional)" class="form-control flex-1 text-sm">
-                    <button type="button" @click="removeAnforderung(index)" class="text-red-500 hover:text-red-700 px-2 self-center" title="Entfernen">×</button>
+                           placeholder="Notiz (optional)" class="form-control w-full text-sm">
                 </div>
             </template>
         </div>
@@ -242,10 +274,11 @@ $initialAnforderungen = $isEdit
 </form>
 
 <script>
-function vbProtokollForm({ kameras, anforderungen }) {
+function vbProtokollForm({ kameras, anforderungen, geraetetypen }) {
     return {
         kameras: kameras.length ? kameras : [{ position: 1, bezeichnung: '' }],
         anforderungen: anforderungen,
+        geraetetypen: geraetetypen,
         addKamera() {
             const nextPosition = this.kameras.length
                 ? Math.max(...this.kameras.map(k => parseInt(k.position) || 0)) + 1
@@ -255,8 +288,14 @@ function vbProtokollForm({ kameras, anforderungen }) {
         removeKamera(index) {
             this.kameras.splice(index, 1);
         },
+        typesForUnit(unitId) {
+            if (!unitId) {
+                return [];
+            }
+            return this.geraetetypen.filter(t => String(t.units_id) === String(unitId));
+        },
         addAnforderung() {
-            this.anforderungen.push({ target: '', anzahl: '', notiz: '' });
+            this.anforderungen.push({ mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: '', notiz: '' });
         },
         removeAnforderung(index) {
             this.anforderungen.splice(index, 1);
