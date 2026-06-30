@@ -9,7 +9,7 @@
                 @php
                 $vbProtokoll = $production->vbProtokoll;
                 $vbAbgleich = $vbProtokoll && $vbProtokoll->anforderungen->isNotEmpty() ? $vbProtokoll->abgleich() : null;
-                $vbAbgleichMatched = $vbAbgleich?->filter(fn ($r) => ! in_array($r['kind'], ['frei', 'kamera']));
+                $vbAbgleichMatched = $vbAbgleich?->filter(fn ($r) => ! is_null($r['erfuellt']));
                 @endphp
 
                 @if($vbProtokoll || Auth::user()->isUser())

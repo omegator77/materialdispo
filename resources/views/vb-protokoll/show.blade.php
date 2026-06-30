@@ -101,9 +101,9 @@
                                 </span>
                             </td>
                             <td class="py-2">{{ $row['benoetigt'] ?? '—' }}</td>
-                            <td class="py-2">{{ in_array($row['kind'], ['frei', 'kamera']) ? '—' : $row['gepackt'] }}</td>
+                            <td class="py-2">{{ $row['gepackt'] ?? '—' }}</td>
                             <td class="py-2">
-                                @if(in_array($row['kind'], ['frei', 'kamera']))
+                                @if(is_null($row['erfuellt']))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">—</span>
                                 @elseif($row['erfuellt'])
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">✓ erfüllt</span>

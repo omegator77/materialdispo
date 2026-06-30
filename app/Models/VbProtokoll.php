@@ -85,38 +85,25 @@ class VbProtokoll extends Model
 
     /**
      * Soll/Ist-Abgleich: pro Anforderung die tatsächlich gepackte Anzahl ermitteln.
+     * Kamerakonfigurationen werden in ihre Einzeltypen aufgedröselt, damit jede
+     * Rolle (Kamera/Objektiv/Stativ/Kopf/Adapter) einzeln mit der Packliste verglichen wird.
      */
     public function abgleich(): \Illuminate\Support\Collection
     {
-        return $this->anforderungen->map(function (VbProtokollAnforderung $anforderung) {
+        return $this->anforderungen->flatMap(function (VbProtokollAnforderung $anforderung) {
             if ($anforderung->cam_number !== null) {
-                $komponenten = collect([
-                    $anforderung->geraetetyp?->bezeichnung,
-                    $anforderung->lensGeraetetyp ? 'Objektiv: '.$anforderung->lensGeraetetyp->bezeichnung : null,
-                    $anforderung->tripodGeraetetyp ? 'Stativ: '.$anforderung->tripodGeraetetyp->bezeichnung : null,
-                    $anforderung->tripodHeadGeraetetyp ? 'Kopf: '.$anforderung->tripodHeadGeraetetyp->bezeichnung : null,
-                    $anforderung->adapterGeraetetyp ? 'Adapter: '.$anforderung->adapterGeraetetyp->bezeichnung : null,
-                ])->filter()->implode(', ');
-
-                return [
-                    'label' => 'Kamera '.$anforderung->cam_number,
-                    'kind' => 'kamera',
-                    'benoetigt' => null,
-                    'gepackt' => null,
-                    'erfuellt' => null,
-                    'notiz' => trim(collect([$komponenten, $anforderung->notiz])->filter()->implode(' — ')),
-                ];
+                return $this->kameraAbgleich($anforderung);
             }
 
             if ($anforderung->freitext) {
-                return [
+                return [[
                     'label' => $anforderung->freitext,
                     'kind' => 'frei',
                     'benoetigt' => $anforderung->anzahl,
                     'gepackt' => null,
                     'erfuellt' => null,
                     'notiz' => $anforderung->notiz,
-                ];
+                ]];
             }
 
             if ($anforderung->geraetetyp_id) {
@@ -135,14 +122,59 @@ class VbProtokoll extends Model
                 $kind = 'gruppe';
             }
 
-            return [
+            return [[
                 'label' => $label,
                 'kind' => $kind,
                 'benoetigt' => $anforderung->anzahl,
                 'gepackt' => $gepackt,
                 'erfuellt' => $gepackt >= $anforderung->anzahl,
                 'notiz' => $anforderung->notiz,
-            ];
+            ]];
         });
+    }
+
+    private function kameraAbgleich(VbProtokollAnforderung $anforderung): array
+    {
+        $komponenten = [
+            'Kamera' => $anforderung->geraetetyp,
+            'Objektiv' => $anforderung->lensGeraetetyp,
+            'Stativ' => $anforderung->tripodGeraetetyp,
+            'Kopf' => $anforderung->tripodHeadGeraetetyp,
+            'Adapter' => $anforderung->adapterGeraetetyp,
+        ];
+
+        $rows = [];
+
+        foreach ($komponenten as $rolle => $geraetetyp) {
+            if (! $geraetetyp) {
+                continue;
+            }
+
+            $gepackt = $this->production->items()
+                ->where('items.geraetetyp_id', $geraetetyp->id)
+                ->count();
+
+            $rows[] = [
+                'label' => 'Kamera '.$anforderung->cam_number.' – '.$rolle.': '.$geraetetyp->bezeichnung,
+                'kind' => 'kamera',
+                'benoetigt' => 1,
+                'gepackt' => $gepackt,
+                'erfuellt' => $gepackt >= 1,
+                'notiz' => $anforderung->notiz,
+            ];
+        }
+
+        if (empty($rows)) {
+            $rows[] = [
+                'label' => 'Kamera '.$anforderung->cam_number,
+                'kind' => 'kamera',
+                'benoetigt' => null,
+                'gepackt' => null,
+                'erfuellt' => null,
+                'notiz' => $anforderung->notiz,
+            ];
+        }
+
+        return $rows;
     }
 }

@@ -116,14 +116,22 @@ test('admin can define a typ-based kamerakonfiguration as an anforderung', funct
         ->and($anforderung->tripod_geraetetyp_id)->toBe($stativTyp->id)
         ->and($anforderung->tripod_head_geraetetyp_id)->toBeNull();
 
-    $row = $vbProtokoll->fresh()->abgleich()->first();
-    expect($row['kind'])->toBe('kamera')
-        ->and($row['label'])->toBe('Kamera Kamera 1')
-        ->and($row['gepackt'])->toBeNull()
-        ->and($row['notiz'])->toContain('LDX 86N WorldCam')
-        ->and($row['notiz'])->toContain('Objektiv: Fujinon HA23')
-        ->and($row['notiz'])->toContain('Stativ: Sachtler Quattro')
-        ->and($row['notiz'])->toContain('Position Mitte');
+    $item = \App\Models\Item::create(['units_id' => $kameraUnit->id, 'geraetetyp_id' => $kameraTyp->id, 'bezeichnung' => 'LDX 86N WorldCam', 'is_rented' => false]);
+    $production->items()->attach($item->id);
+
+    $abgleich = $vbProtokoll->fresh()->abgleich();
+    expect($abgleich)->toHaveCount(3)
+        ->and($abgleich->every(fn ($row) => $row['kind'] === 'kamera'))->toBeTrue();
+
+    $kameraRow = $abgleich->firstWhere('label', 'Kamera Kamera 1 – Kamera: LDX 86N WorldCam');
+    expect($kameraRow['benoetigt'])->toBe(1)
+        ->and($kameraRow['gepackt'])->toBe(1)
+        ->and($kameraRow['erfuellt'])->toBeTrue()
+        ->and($kameraRow['notiz'])->toBe('Position Mitte');
+
+    $optikRow = $abgleich->firstWhere('label', 'Kamera Kamera 1 – Objektiv: Fujinon HA23');
+    expect($optikRow['gepackt'])->toBe(0)
+        ->and($optikRow['erfuellt'])->toBeFalse();
 
     $response = $this->actingAs($admin)->get(route('vb-protokoll.show', $production->id));
     $response->assertOk()->assertSee('Kamerakonfig')->assertSee('LDX 86N WorldCam');
