@@ -14,7 +14,7 @@ function makeVbProduction(): Production
     ]);
 }
 
-test('admin can create a vb-protokoll with kameras and anforderungen', function () {
+test('admin can create a vb-protokoll with anforderungen', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $production = makeVbProduction();
     $unit = Unit::create(['bezeichnung' => 'Kameras']);
@@ -23,9 +23,6 @@ test('admin can create a vb-protokoll with kameras and anforderungen', function 
         'kunde' => 'Testkunde',
         'produktionsort' => 'Teststadt',
         'crew_ul' => '1',
-        'kameras' => [
-            ['position' => 1, 'bezeichnung' => '22x ENG'],
-        ],
         'anforderungen' => [
             ['mode' => 'typ', 'unit_id' => $unit->id, 'anzahl' => 3],
         ],
@@ -35,7 +32,6 @@ test('admin can create a vb-protokoll with kameras and anforderungen', function 
 
     $vbProtokoll = VbProtokoll::where('production_id', $production->id)->firstOrFail();
     expect($vbProtokoll->kunde)->toBe('Testkunde')
-        ->and($vbProtokoll->kameras)->toHaveCount(1)
         ->and($vbProtokoll->anforderungen)->toHaveCount(1);
 });
 
@@ -112,19 +108,17 @@ test('viewer cannot create or edit a vb-protokoll but can view it', function () 
     $this->actingAs($viewer)->get(route('vb-protokoll.edit', $production->id))->assertForbidden();
 });
 
-test('deleting a vb-protokoll removes its kameras and anforderungen', function () {
+test('deleting a vb-protokoll removes its anforderungen', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $production = makeVbProduction();
     $unit = Unit::create(['bezeichnung' => 'Kameras']);
 
     $vbProtokoll = $production->vbProtokoll()->create(['kunde' => 'X']);
-    $vbProtokoll->kameras()->create(['position' => 1, 'bezeichnung' => 'Test']);
     $vbProtokoll->anforderungen()->create(['unit_id' => $unit->id, 'anzahl' => 1]);
 
     $this->actingAs($admin)->delete(route('vb-protokoll.destroy', $production->id))
         ->assertRedirect(route('productions.show', $production->id));
 
     expect(VbProtokoll::find($vbProtokoll->id))->toBeNull();
-    expect(\App\Models\VbProtokollKamera::count())->toBe(0);
     expect(\App\Models\VbProtokollAnforderung::count())->toBe(0);
 });

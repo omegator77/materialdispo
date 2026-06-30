@@ -2,10 +2,6 @@
 $isEdit = isset($vbProtokoll);
 $v = fn ($field, $default = '') => old($field, $isEdit ? ($vbProtokoll->{$field} ?? $default) : $default);
 
-$initialKameras = $isEdit
-    ? $vbProtokoll->kameras->map(fn ($k) => ['position' => $k->position, 'bezeichnung' => $k->bezeichnung])->values()
-    : collect();
-
 $initialAnforderungen = $isEdit
     ? $vbProtokoll->anforderungen->map(fn ($a) => [
         'mode' => $a->freitext ? 'frei' : 'typ',
@@ -29,7 +25,6 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
       enctype="multipart/form-data"
       class="space-y-6"
       x-data="vbProtokollForm({
-          kameras: {{ $initialKameras->toJson() }},
           anforderungen: {{ $initialAnforderungen->toJson() }},
           geraetetypen: {{ $geraetetypenForJs->toJson() }}
       })">
@@ -111,27 +106,6 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
             <label for="kabelwege" class="block text-sm font-medium text-gray-700 mb-1">Kabelwege, Länge, Überbauten, Besonderheiten</label>
             <textarea name="kabelwege" id="kabelwege" rows="3" class="form-control w-full">{{ $v('kabelwege') }}</textarea>
         </div>
-    </div>
-
-    {{-- Kameras mit Optik und Stativart --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Kameras mit Optik und Stativart</h2>
-
-        <div class="space-y-2">
-            <template x-for="(kamera, index) in kameras" :key="index">
-                <div class="flex items-center gap-2">
-                    <input type="number" :name="`kameras[${index}][position]`" x-model="kamera.position"
-                           placeholder="#" class="form-control w-16 text-sm">
-                    <input type="text" :name="`kameras[${index}][bezeichnung]`" x-model="kamera.bezeichnung"
-                           placeholder="z. B. 22x (ENG)" class="form-control flex-1 text-sm">
-                    <button type="button" @click="removeKamera(index)" class="text-red-500 hover:text-red-700 px-2" title="Entfernen">×</button>
-                </div>
-            </template>
-        </div>
-
-        <button type="button" @click="addKamera()" class="mt-3 text-sm text-blue-600 hover:underline">
-            + Kameraposition hinzufügen
-        </button>
     </div>
 
     {{-- Audio --}}
@@ -274,20 +248,10 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
 </form>
 
 <script>
-function vbProtokollForm({ kameras, anforderungen, geraetetypen }) {
+function vbProtokollForm({ anforderungen, geraetetypen }) {
     return {
-        kameras: kameras.length ? kameras : [{ position: 1, bezeichnung: '' }],
         anforderungen: anforderungen,
         geraetetypen: geraetetypen,
-        addKamera() {
-            const nextPosition = this.kameras.length
-                ? Math.max(...this.kameras.map(k => parseInt(k.position) || 0)) + 1
-                : 1;
-            this.kameras.push({ position: nextPosition, bezeichnung: '' });
-        },
-        removeKamera(index) {
-            this.kameras.splice(index, 1);
-        },
         typesForUnit(unitId) {
             if (!unitId) {
                 return [];

@@ -73,11 +73,6 @@ class VbProtokoll extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function kameras()
-    {
-        return $this->hasMany(VbProtokollKamera::class)->orderBy('position');
-    }
-
     public function anforderungen()
     {
         return $this->hasMany(VbProtokollAnforderung::class);

@@ -37,7 +37,6 @@ class VbProtokollController extends Controller
             ['created_by' => auth()->id()]
         ));
 
-        $this->syncKameras($vbProtokoll, $validated['kameras']);
         $this->syncAnforderungen($vbProtokoll, $validated['anforderungen']);
         $this->storeFotos($vbProtokoll, $request);
 
@@ -48,14 +47,14 @@ class VbProtokollController extends Controller
 
     public function show(Production $production)
     {
-        $vbProtokoll = $production->vbProtokoll()->with(['kameras', 'anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])->firstOrFail();
+        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])->firstOrFail();
 
         return view('vb-protokoll.show', compact('production', 'vbProtokoll'));
     }
 
     public function edit(Production $production)
     {
-        $vbProtokoll = $production->vbProtokoll()->with(['kameras', 'anforderungen', 'fotos'])->firstOrFail();
+        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen', 'fotos'])->firstOrFail();
         $units = Unit::orderBy('bezeichnung')->get();
         $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
@@ -70,7 +69,6 @@ class VbProtokollController extends Controller
 
         $vbProtokoll->update($validated['fields']);
 
-        $this->syncKameras($vbProtokoll, $validated['kameras']);
         $this->syncAnforderungen($vbProtokoll, $validated['anforderungen']);
         $this->storeFotos($vbProtokoll, $request);
 
@@ -136,10 +134,6 @@ class VbProtokollController extends Controller
             'sonstiges' => 'nullable|string',
             'zeitplan' => 'nullable|string',
 
-            'kameras' => 'nullable|array',
-            'kameras.*.position' => 'nullable|integer',
-            'kameras.*.bezeichnung' => 'nullable|string|max:255',
-
             'anforderungen' => 'nullable|array',
             'anforderungen.*.mode' => 'nullable|string|in:typ,frei',
             'anforderungen.*.unit_id' => 'nullable|exists:units,id',
@@ -152,29 +146,12 @@ class VbProtokollController extends Controller
             'fotos.*' => 'nullable|image|max:8192',
         ]);
 
-        $fields = collect($validated)->except(['kameras', 'anforderungen', 'fotos'])->all();
+        $fields = collect($validated)->except(['anforderungen', 'fotos'])->all();
 
         return [
             'fields' => $fields,
-            'kameras' => $validated['kameras'] ?? [],
             'anforderungen' => $validated['anforderungen'] ?? [],
         ];
-    }
-
-    private function syncKameras(VbProtokoll $vbProtokoll, array $kameras): void
-    {
-        $vbProtokoll->kameras()->delete();
-
-        foreach ($kameras as $kamera) {
-            if (empty($kamera['bezeichnung'])) {
-                continue;
-            }
-
-            $vbProtokoll->kameras()->create([
-                'position' => $kamera['position'] ?? null,
-                'bezeichnung' => $kamera['bezeichnung'],
-            ]);
-        }
     }
 
     private function syncAnforderungen(VbProtokoll $vbProtokoll, array $anforderungen): void

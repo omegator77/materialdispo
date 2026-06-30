@@ -138,24 +138,6 @@
         </div>
         @endif
 
-        {{-- Kameras --}}
-        @if($vbProtokoll->kameras->count())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Kameras mit Optik und Stativart</h2>
-
-            <table class="w-full text-sm">
-                <tbody>
-                    @foreach($vbProtokoll->kameras as $kamera)
-                    <tr class="border-b last:border-b-0">
-                        <td class="py-2 w-12 text-gray-500">{{ $kamera->position ?? '—' }}</td>
-                        <td class="py-2 font-medium text-gray-900">{{ $kamera->bezeichnung }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endif
-
         {{-- Audio / Technik --}}
         @php
         $textBlocks = [
