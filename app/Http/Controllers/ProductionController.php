@@ -240,37 +240,37 @@ class ProductionController extends Controller
             $added = [];
             $skipped = [];
 
-            foreach ($itemIds as $itemId) {
-                $item = $items->get($itemId);
+            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped) {
+                foreach ($itemIds as $itemId) {
+                    $item = $items->get($itemId);
 
-                if ($production->items()->where('items.id', $item->id)->exists()) {
-                    $skipped[] = "{$item->bezeichnung} (bereits enthalten)";
-                    continue;
-                }
+                    if ($production->items()->where('items.id', $item->id)->exists()) {
+                        $skipped[] = "{$item->bezeichnung} (bereits enthalten)";
+                        continue;
+                    }
 
-                $availability = $this->availability->check($item, $production);
+                    $availability = $this->availability->check($item, $production);
 
-                if (! $availability['available']) {
-                    $skipped[] = "{$item->bezeichnung} ({$availability['reason']})";
-                    continue;
-                }
+                    if (! $availability['available']) {
+                        $skipped[] = "{$item->bezeichnung} ({$availability['reason']})";
+                        continue;
+                    }
 
-                DB::transaction(function () use ($production, $item, $request) {
                     $production->items()->syncWithoutDetaching([
                         $item->id => [
                             'notes' => $request->notes,
                         ],
                     ]);
-                });
 
-                activity('item')
-                    ->performedOn($item)
-                    ->event('attached')
-                    ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
-                    ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
+                    activity('item')
+                        ->performedOn($item)
+                        ->event('attached')
+                        ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
+                        ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
 
-                $added[] = $item->bezeichnung;
-            }
+                    $added[] = $item->bezeichnung;
+                }
+            });
 
             $messageParts = [];
             if (count($added)) {

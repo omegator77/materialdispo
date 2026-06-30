@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasReadableActivityDescription;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Production extends Model
 {
-    use LogsActivity;
+    use LogsActivity, HasReadableActivityDescription {
+        HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -19,14 +22,9 @@ class Production extends Model
             ->useLogName('production');
     }
 
-    public function getDescriptionForEvent(string $eventName): string
+    protected function activityNoun(): string
     {
-        return match ($eventName) {
-            'created' => "Produktion \"{$this->bezeichnung}\" angelegt",
-            'updated' => "Produktion \"{$this->bezeichnung}\" geändert",
-            'deleted' => "Produktion \"{$this->bezeichnung}\" gelöscht",
-            default   => "Produktion \"{$this->bezeichnung}\": {$eventName}",
-        };
+        return 'Produktion';
     }
 
     protected $fillable = [

@@ -84,17 +84,20 @@
         ->unique()
         ->values();
 
+    // Status pro Produktion nur einmal berechnen statt bei jedem Sortier-/Filterdurchlauf neu zu parsen
+    $statusById = $allIds->mapWithKeys(fn ($id) => [$id => $statusFor($id)]);
+
     $productionIds = $allIds
-        ->reject(fn ($id) => $statusFor($id) === 'archiv')
-        ->sortBy(function ($id) use ($productionsById, $statusFor, $statusOrder) {
+        ->reject(fn ($id) => $statusById->get($id) === 'archiv')
+        ->sortBy(function ($id) use ($productionsById, $statusById, $statusOrder) {
             $p = $productionsById->get($id);
             $start = $p && $p->booking_start ? $p->booking_start : '9999-12-31';
-            return $statusOrder[$statusFor($id)] . '_' . $start;
+            return $statusOrder[$statusById->get($id)] . '_' . $start;
         })
         ->values();
 
     $archivedProductionIds = $allIds
-        ->filter(fn ($id) => $statusFor($id) === 'archiv')
+        ->filter(fn ($id) => $statusById->get($id) === 'archiv')
         ->sortByDesc(function ($id) use ($productionsById) {
             $p = $productionsById->get($id);
             return $p && $p->booking_end ? $p->booking_end : '0000-01-01';
@@ -119,7 +122,7 @@
         $production = $productionsById->get($productionId);
         $productionItems = $itemproductionsByProduction->get($productionId, collect());
         $productionConfigs = $cameraConfigsByProduction->get($productionId, collect());
-        $status = $statusFor($productionId);
+        $status = $statusById->get($productionId);
         @endphp
 
         @include('itemproductions._production-card', [
@@ -130,9 +133,11 @@
             'itemLabel' => $itemLabel,
         ])
         @empty
+        @if($archivedProductionIds->isEmpty())
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-500">
             Keine Einträge gefunden.
         </div>
+        @endif
         @endforelse
 
         @if($archivedProductionIds->isNotEmpty())

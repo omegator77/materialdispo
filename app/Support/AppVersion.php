@@ -6,9 +6,32 @@ class AppVersion
 {
     public static function label(): string
     {
-        return cache()->remember('app_version_label', 3600, function () {
+        // Cache-Key an die mtime der HEAD-Referenz koppeln, damit ein Deploy
+        // (git pull aktualisiert die Ref-Datei) den Cache sofort invalidiert,
+        // statt bis zu 1h auf die alte Version warten zu müssen.
+        $cacheKey = 'app_version_label_' . self::fingerprint();
+
+        return cache()->remember($cacheKey, 3600, function () {
             return self::fromGitCli() ?? self::fromGitFiles() ?? 'unbekannt';
         });
+    }
+
+    private static function fingerprint(): string
+    {
+        $headFile = base_path('.git/HEAD');
+
+        if (! is_file($headFile)) {
+            return 'no-git';
+        }
+
+        $head = trim((string) file_get_contents($headFile));
+        $refFile = str_starts_with($head, 'ref:')
+            ? base_path('.git/' . trim(substr($head, 4)))
+            : null;
+
+        $statFile = ($refFile && is_file($refFile)) ? $refFile : $headFile;
+
+        return (string) filemtime($statFile);
     }
 
     /**
@@ -60,7 +83,8 @@ class AppVersion
                 $packedRefs = $gitDir . '/packed-refs';
                 if (is_file($packedRefs)) {
                     foreach (file($packedRefs) as $line) {
-                        if (str_contains($line, $ref)) {
+                        $line = trim($line);
+                        if (str_ends_with($line, " {$ref}")) {
                             $hash = trim(explode(' ', $line)[0]);
                             break;
                         }
