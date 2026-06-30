@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Production;
 use App\Models\Supplier;
 use Carbon\Carbon;
+use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -16,6 +17,10 @@ class DashboardController extends Controller
         return view('dashboard', [
             'itemsCount' => Item::count(),
             'suppliersCount' => Supplier::count(),
+
+            'lastActivities' => auth()->user()->isAdmin()
+                ? Activity::with('causer')->latest()->limit(5)->get()
+                : collect(),
 
             'activeProductionsCount' => Production::whereDate('booking_start', '<=', $today)
                 ->whereDate('booking_end', '>=', $today)
