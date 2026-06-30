@@ -25,10 +25,17 @@
                     <div class="text-3xl font-bold text-gray-900">{{ $todayBookedItemsCount }}</div>
                 </div>
 
+                @if(Auth::user()->isAdmin())
+                <a href="{{ route('activity-log.index') }}" class="bg-white rounded-lg shadow-sm p-5 hover:bg-gray-50 transition-colors">
+                    <div class="text-sm text-gray-500 mb-2">Letzte Aktionen</div>
+                    @include('dashboard._last-activities')
+                </a>
+                @else
                 <div class="bg-white rounded-lg shadow-sm p-5">
-                    <div class="text-sm text-gray-500">Vermieter</div>
-                    <div class="text-3xl font-bold text-gray-900">{{ $suppliersCount }}</div>
+                    <div class="text-sm text-gray-500 mb-2">Letzte Aktionen</div>
+                    @include('dashboard._last-activities')
                 </div>
+                @endif
 
                 <div class="bg-gray-800 rounded-lg shadow-sm p-5 font-mono text-right">
                     <div class="text-xs text-gray-400 tracking-widest">LOCAL</div>
