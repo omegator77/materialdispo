@@ -146,7 +146,7 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                         </select>
                         <select :name="`anforderungen[${index}][geraetetyp_id]`"
                                 :disabled="anforderung.mode !== 'typ' || !anforderung.unit_id"
-                                x-effect="$nextTick(() => { $el.value = anforderung.geraetetyp_id ?? '' })"
+                                x-effect="let v = anforderung.geraetetyp_id ?? ''; $nextTick(() => { $el.value = v })"
                                 @change="anforderung.geraetetyp_id = $el.value"
                                 class="form-control sm:w-56 text-sm">
                             <option value="">Alle Typen dieser Gruppe</option>
@@ -288,7 +288,7 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                     <img src="{{ $foto->url() }}" alt="{{ $foto->original_name }}" class="w-full h-24 object-cover rounded border border-gray-200">
                 </a>
                 <button type="button"
-                        onclick="if(confirm('Foto wirklich löschen?')) { fetch('{{ route('vb-protokoll.foto.destroy', $foto->id) }}', { method: 'POST', headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json'}, body: JSON.stringify({_method: 'DELETE'}) }).then(r => { if(r.ok || r.redirected) location.reload() }) }"
+                        onclick="if(confirm('Foto wirklich löschen?')) { fetch('{{ route('vb-protokoll.foto.destroy', $foto->id) }}', { method: 'POST', headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json'}, body: JSON.stringify({_method: 'DELETE'}) }).then(r => { if(r.ok || r.redirected) location.reload(); else alert('Fehler beim Löschen.') }).catch(() => alert('Netzwerkfehler beim Löschen.')) }"
                         class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
             </div>
             @endforeach
