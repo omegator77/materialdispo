@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasReadableActivityDescription;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Item extends Model
 {
-    use LogsActivity;
+    use LogsActivity, HasReadableActivityDescription {
+        HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -19,14 +22,9 @@ class Item extends Model
             ->useLogName('item');
     }
 
-    public function getDescriptionForEvent(string $eventName): string
+    protected function activityNoun(): string
     {
-        return match ($eventName) {
-            'created' => "Gerät \"{$this->bezeichnung}\" angelegt",
-            'updated' => "Gerät \"{$this->bezeichnung}\" geändert",
-            'deleted' => "Gerät \"{$this->bezeichnung}\" gelöscht",
-            default   => "Gerät \"{$this->bezeichnung}\": {$eventName}",
-        };
+        return 'Gerät';
     }
 
     protected $fillable = [

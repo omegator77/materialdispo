@@ -31,46 +31,60 @@
     <div id="production-dropdown"
          class="hidden fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden w-64">
 
-        {{-- Zur Packliste --}}
-        <div class="flex items-center gap-2 px-3 py-2 bg-blue-600">
-            <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12v4m0 0l-2-2m2 2l2-2"/>
-            </svg>
-            <span class="text-xs font-semibold text-white uppercase tracking-wide">Zur Packliste</span>
+        {{-- Schnellsuche --}}
+        <div class="px-2 py-2 border-b border-gray-100 bg-gray-50">
+            <input type="text" id="production-dropdown-search"
+                   placeholder="Produktion suchen…"
+                   autocomplete="off"
+                   class="form-control w-full text-sm py-1.5">
         </div>
-        @foreach($productions as $production)
-        <form method="POST" action="{{ route('productions.attachItem', $production->id) }}" class="production-attach-form">
-            @csrf
-            <input type="hidden" name="item_id" class="dropdown-item-id" value="">
-            <button type="submit" class="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-50 last:border-0 transition-colors">
-                <span class="font-medium">{{ $production->bezeichnung }}</span>
-                <span class="block text-xs text-gray-400 mt-0.5">
-                    {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                    – {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
-                </span>
-            </button>
-        </form>
-        @endforeach
 
-        {{-- Als Kamerazug (nur für Kameras) --}}
-        <div id="camera-config-section" class="hidden border-t-2 border-gray-200">
-            <div class="flex items-center gap-2 px-3 py-2 bg-orange-500">
-                <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
-                </svg>
-                <span class="text-xs font-semibold text-white uppercase tracking-wide">Als Kamerazug</span>
-            </div>
+        <div id="production-dropdown-list" class="max-h-80 overflow-y-auto">
+
             @foreach($productions as $production)
-            <a class="camera-config-link block px-3 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 border-b border-gray-50 last:border-0 transition-colors"
-               data-base-url="{{ route('camera-config.create', $production->id) }}"
-               href="#">
-                <span class="font-medium">{{ $production->bezeichnung }}</span>
-                <span class="block text-xs text-gray-400 mt-0.5">
-                    {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                    – {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
-                </span>
-            </a>
+            <div class="production-option flex items-stretch border-b border-gray-50 last:border-0"
+                 data-search="{{ \Illuminate\Support\Str::lower($production->bezeichnung) }}"
+                 data-rank="{{ $loop->index }}">
+
+                <form method="POST" action="{{ route('productions.attachItem', $production->id) }}"
+                      class="production-attach-form flex-1 min-w-0">
+                    @csrf
+                    <input type="hidden" name="item_id" class="dropdown-item-id" value="">
+                    <button type="submit" class="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        <span class="font-medium">{{ $production->bezeichnung }}</span>
+                        <span class="block text-xs text-gray-400 mt-0.5">
+                            {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
+                            – {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
+                        </span>
+                    </button>
+                </form>
+
+                <div class="camera-toggle-wrap hidden relative shrink-0 border-l border-gray-100"
+                     data-base-url="{{ route('camera-config.create', $production->id) }}">
+                    <button type="button" class="camera-toggle-btn h-full px-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50" title="Weitere Optionen">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="camera-toggle-menu hidden absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <a class="camera-config-link block px-3 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg" href="#">
+                            Als Kamerazug konfigurieren
+                        </a>
+                    </div>
+                </div>
+            </div>
             @endforeach
+
+            @if($productions->count() > 3)
+            <button type="button" class="production-show-more w-full text-center px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border-b border-gray-50">
+                Alle {{ $productions->count() }} anzeigen
+            </button>
+            @endif
+
+            <div id="production-dropdown-empty" class="hidden px-3 py-3 text-sm text-gray-400 text-center">
+                Keine Produktion gefunden.
+            </div>
+
         </div>
 
     </div>
@@ -80,7 +94,53 @@
         const dropdown = document.getElementById('production-dropdown');
         let activeButton = null;
 
-        const cameraSection = document.getElementById('camera-config-section');
+        const searchInput = document.getElementById('production-dropdown-search');
+        const emptyState = document.getElementById('production-dropdown-empty');
+
+        let expanded = false;
+
+        function closeCameraMenus() {
+            dropdown.querySelectorAll('.camera-toggle-menu').forEach(menu => menu.classList.add('hidden'));
+        }
+
+        function filterDropdown() {
+            const needle = searchInput.value.trim().toLowerCase();
+            const isSearching = needle !== '';
+            let visibleCount = 0;
+
+            dropdown.querySelectorAll('.production-option').forEach(el => {
+                const visible = isSearching
+                    ? el.dataset.search.includes(needle)
+                    : (parseInt(el.dataset.rank, 10) < 3 || expanded);
+
+                el.classList.toggle('hidden', !visible);
+                if (visible) visibleCount++;
+            });
+
+            const showMoreBtn = dropdown.querySelector('.production-show-more');
+            if (showMoreBtn) {
+                showMoreBtn.classList.toggle('hidden', isSearching || expanded);
+            }
+
+            emptyState.classList.toggle('hidden', visibleCount > 0);
+        }
+
+        searchInput.addEventListener('input', filterDropdown);
+
+        const showMoreBtn = dropdown.querySelector('.production-show-more');
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener('click', () => { expanded = true; filterDropdown(); });
+        }
+
+        dropdown.querySelectorAll('.camera-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const menu = btn.nextElementSibling;
+                const wasOpen = !menu.classList.contains('hidden');
+                closeCameraMenus();
+                menu.classList.toggle('hidden', wasOpen);
+            });
+        });
 
         window.openProductionDropdown = function (itemId, unitId, btn) {
             if (activeButton === btn && !dropdown.classList.contains('hidden')) {
@@ -93,14 +153,22 @@
                 input.value = itemId;
             });
 
-            // Kamerazug-Sektion: nur für Kameras (unit_id = 1)
+            // Kamerazug-Option: nur für Kameras (unit_id = 1)
             const isCamera = unitId === 1;
-            cameraSection.classList.toggle('hidden', !isCamera);
+            dropdown.querySelectorAll('.camera-toggle-wrap').forEach(wrap => {
+                wrap.classList.toggle('hidden', !isCamera);
+            });
             if (isCamera) {
                 dropdown.querySelectorAll('.camera-config-link').forEach(link => {
-                    link.href = link.dataset.baseUrl + '?camera_item_id=' + itemId;
+                    link.href = link.closest('.camera-toggle-wrap').dataset.baseUrl + '?camera_item_id=' + itemId;
                 });
             }
+
+            // Suche & Aufklapp-Status zurücksetzen
+            searchInput.value = '';
+            expanded = false;
+            closeCameraMenus();
+            filterDropdown();
 
             // Kurz sichtbar machen (off-screen) um Höhe zu messen
             dropdown.style.top  = '-9999px';
@@ -136,6 +204,10 @@
         document.addEventListener('click', function (e) {
             if (!dropdown.contains(e.target) && !e.target.closest('[onclick^="openProductionDropdown"]')) {
                 closeDropdown();
+                return;
+            }
+            if (!e.target.closest('.camera-toggle-wrap')) {
+                closeCameraMenus();
             }
         });
 

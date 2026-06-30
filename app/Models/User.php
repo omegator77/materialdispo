@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasReadableActivityDescription;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +12,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, LogsActivity;
+    use HasFactory, Notifiable, LogsActivity, HasReadableActivityDescription {
+        HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -22,14 +25,9 @@ class User extends Authenticatable
             ->useLogName('user');
     }
 
-    public function getDescriptionForEvent(string $eventName): string
+    protected function activityNoun(): string
     {
-        return match ($eventName) {
-            'created' => "Benutzer \"{$this->name}\" angelegt",
-            'updated' => "Benutzer \"{$this->name}\" geändert",
-            'deleted' => "Benutzer \"{$this->name}\" gelöscht",
-            default   => "Benutzer \"{$this->name}\": {$eventName}",
-        };
+        return 'Benutzer';
     }
 
     /**
