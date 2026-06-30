@@ -67,7 +67,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/itemprods', [ItemproductionController::class, 'index'])->name('itemprods');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
-    Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
     Route::get('productions/{production}/vb-protokoll', [VbProtokollController::class, 'show'])->name('vb-protokoll.show');
 
     Route::get('/timeline/items', [TimelineController::class, 'items'])->name('timeline.items');

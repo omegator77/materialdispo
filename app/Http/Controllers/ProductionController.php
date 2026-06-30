@@ -22,9 +22,9 @@ class ProductionController extends Controller
         $selectedProduction = $request->get('production_id');
 
         if ($selectedProduction) {
-            $productions = Production::where('id', $selectedProduction)->get();
+            $productions = Production::with('vbProtokoll')->where('id', $selectedProduction)->get();
         } else {
-            $productions = Production::orderBy('bezeichnung')->get();
+            $productions = Production::with('vbProtokoll')->orderBy('bezeichnung')->get();
         }
 
         return view('productions.index', [
@@ -313,13 +313,6 @@ class ProductionController extends Controller
 
         return Redirect::route('productions.show', ['production' => $id])
             ->with('success', 'Item erfolgreich entfernt.');
-    }
-
-    public function requirements($id)
-    {
-        $production = Production::findOrFail($id);
-
-        return view('productions.requirements', compact('production'));
     }
 
     public function generatePDF($id)
