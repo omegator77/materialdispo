@@ -53,6 +53,28 @@
             </div>
         </div>
 
+        {{-- Crew --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Crew</h2>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                @php
+                $crewFields = [
+                    'crew_ul' => 'ÜL', 'crew_bt_sng' => 'BT/SNG', 'crew_ti' => 'TI',
+                    'crew_sng' => 'SNG', 'crew_bt_dl' => 'BT DL', 'crew_tt' => 'TT',
+                    'crew_tl' => 'TL', 'crew_ba' => 'BA', 'crew_ta' => 'TA',
+                    'crew_kabelhilfen' => 'Kabelhilfen', 'crew_kamera' => 'Kamera', 'crew_evs' => 'EVS',
+                ];
+                @endphp
+                @foreach($crewFields as $field => $label)
+                <div>
+                    <span class="block text-xs text-gray-500">{{ $label }}</span>
+                    <span class="font-medium text-gray-900">{{ $vbProtokoll->{$field} ?: '—' }}</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- Anforderungen / Soll-Ist-Abgleich --}}
         @if($vbProtokoll->anforderungen->count())
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -97,28 +119,6 @@
             </div>
         </div>
         @endif
-
-        {{-- Crew --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Crew</h2>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                @php
-                $crewFields = [
-                    'crew_ul' => 'ÜL', 'crew_bt_sng' => 'BT/SNG', 'crew_ti' => 'TI',
-                    'crew_sng' => 'SNG', 'crew_bt_dl' => 'BT DL', 'crew_tt' => 'TT',
-                    'crew_tl' => 'TL', 'crew_ba' => 'BA', 'crew_ta' => 'TA',
-                    'crew_kabelhilfen' => 'Kabelhilfen', 'crew_kamera' => 'Kamera', 'crew_evs' => 'EVS',
-                ];
-                @endphp
-                @foreach($crewFields as $field => $label)
-                <div>
-                    <span class="block text-xs text-gray-500">{{ $label }}</span>
-                    <span class="font-medium text-gray-900">{{ $vbProtokoll->{$field} ?: '—' }}</span>
-                </div>
-                @endforeach
-            </div>
-        </div>
 
         {{-- Besonderheiten / Kabelwege --}}
         @if($vbProtokoll->besonderheiten || $vbProtokoll->kabelwege)

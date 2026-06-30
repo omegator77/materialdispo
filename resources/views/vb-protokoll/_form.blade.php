@@ -96,60 +96,6 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
         </div>
     </div>
 
-    {{-- Besonderheiten / Kabelwege --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <div>
-            <label for="besonderheiten" class="block text-sm font-medium text-gray-700 mb-1">Besonderheiten</label>
-            <textarea name="besonderheiten" id="besonderheiten" rows="3" class="form-control w-full">{{ $v('besonderheiten') }}</textarea>
-        </div>
-        <div>
-            <label for="kabelwege" class="block text-sm font-medium text-gray-700 mb-1">Kabelwege, Länge, Überbauten, Besonderheiten</label>
-            <textarea name="kabelwege" id="kabelwege" rows="3" class="form-control w-full">{{ $v('kabelwege') }}</textarea>
-        </div>
-    </div>
-
-    {{-- Audio --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <h2 class="text-lg font-semibold text-gray-800">Audio</h2>
-
-        <div>
-            <label for="audio_mic" class="block text-sm font-medium text-gray-700 mb-1">Mic Anzahl und Art</label>
-            <textarea name="audio_mic" id="audio_mic" rows="2" class="form-control w-full">{{ $v('audio_mic') }}</textarea>
-        </div>
-        <div>
-            <label for="audio_inear" class="block text-sm font-medium text-gray-700 mb-1">In Ear Sender/Empfänger</label>
-            <textarea name="audio_inear" id="audio_inear" rows="2" class="form-control w-full">{{ $v('audio_inear') }}</textarea>
-        </div>
-        <div>
-            <label for="audio_kommplatz" class="block text-sm font-medium text-gray-700 mb-1">Kommplatz/Sprechstellen/4-Draht</label>
-            <textarea name="audio_kommplatz" id="audio_kommplatz" rows="2" class="form-control w-full">{{ $v('audio_kommplatz') }}</textarea>
-        </div>
-    </div>
-
-    {{-- Technik --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <div>
-            <label for="isdn_funk" class="block text-sm font-medium text-gray-700 mb-1">ISDN/SIP/Funk</label>
-            <textarea name="isdn_funk" id="isdn_funk" rows="2" class="form-control w-full">{{ $v('isdn_funk') }}</textarea>
-        </div>
-        <div>
-            <label for="maz_evs_usb" class="block text-sm font-medium text-gray-700 mb-1">MAZ/EVS/USB</label>
-            <textarea name="maz_evs_usb" id="maz_evs_usb" rows="2" class="form-control w-full">{{ $v('maz_evs_usb') }}</textarea>
-        </div>
-        <div>
-            <label for="monitore" class="block text-sm font-medium text-gray-700 mb-1">Monitore (Anzahl, Größe, VKS?, Grafik?)</label>
-            <textarea name="monitore" id="monitore" rows="2" class="form-control w-full">{{ $v('monitore') }}</textarea>
-        </div>
-        <div>
-            <label for="sonstiges" class="block text-sm font-medium text-gray-700 mb-1">Sonstiges (Hotel, Zusätze etc.)</label>
-            <textarea name="sonstiges" id="sonstiges" rows="2" class="form-control w-full">{{ $v('sonstiges') }}</textarea>
-        </div>
-        <div>
-            <label for="zeitplan" class="block text-sm font-medium text-gray-700 mb-1">Zeitplan</label>
-            <textarea name="zeitplan" id="zeitplan" rows="3" class="form-control w-full">{{ $v('zeitplan') }}</textarea>
-        </div>
-    </div>
-
     {{-- Anforderungen (Soll-Mengen für den Packliste-Abgleich) --}}
     <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-1">Anforderungen</h2>
@@ -207,6 +153,60 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
         <button type="button" @click="addAnforderung()" class="mt-3 text-sm text-blue-600 hover:underline">
             + Anforderung hinzufügen
         </button>
+    </div>
+
+    {{-- Besonderheiten / Kabelwege --}}
+    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
+        <div>
+            <label for="besonderheiten" class="block text-sm font-medium text-gray-700 mb-1">Besonderheiten</label>
+            <textarea name="besonderheiten" id="besonderheiten" rows="3" class="form-control w-full">{{ $v('besonderheiten') }}</textarea>
+        </div>
+        <div>
+            <label for="kabelwege" class="block text-sm font-medium text-gray-700 mb-1">Kabelwege, Länge, Überbauten, Besonderheiten</label>
+            <textarea name="kabelwege" id="kabelwege" rows="3" class="form-control w-full">{{ $v('kabelwege') }}</textarea>
+        </div>
+    </div>
+
+    {{-- Audio --}}
+    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
+        <h2 class="text-lg font-semibold text-gray-800">Audio</h2>
+
+        <div>
+            <label for="audio_mic" class="block text-sm font-medium text-gray-700 mb-1">Mic Anzahl und Art</label>
+            <textarea name="audio_mic" id="audio_mic" rows="2" class="form-control w-full">{{ $v('audio_mic') }}</textarea>
+        </div>
+        <div>
+            <label for="audio_inear" class="block text-sm font-medium text-gray-700 mb-1">In Ear Sender/Empfänger</label>
+            <textarea name="audio_inear" id="audio_inear" rows="2" class="form-control w-full">{{ $v('audio_inear') }}</textarea>
+        </div>
+        <div>
+            <label for="audio_kommplatz" class="block text-sm font-medium text-gray-700 mb-1">Kommplatz/Sprechstellen/4-Draht</label>
+            <textarea name="audio_kommplatz" id="audio_kommplatz" rows="2" class="form-control w-full">{{ $v('audio_kommplatz') }}</textarea>
+        </div>
+    </div>
+
+    {{-- Technik --}}
+    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
+        <div>
+            <label for="isdn_funk" class="block text-sm font-medium text-gray-700 mb-1">ISDN/SIP/Funk</label>
+            <textarea name="isdn_funk" id="isdn_funk" rows="2" class="form-control w-full">{{ $v('isdn_funk') }}</textarea>
+        </div>
+        <div>
+            <label for="maz_evs_usb" class="block text-sm font-medium text-gray-700 mb-1">MAZ/EVS/USB</label>
+            <textarea name="maz_evs_usb" id="maz_evs_usb" rows="2" class="form-control w-full">{{ $v('maz_evs_usb') }}</textarea>
+        </div>
+        <div>
+            <label for="monitore" class="block text-sm font-medium text-gray-700 mb-1">Monitore (Anzahl, Größe, VKS?, Grafik?)</label>
+            <textarea name="monitore" id="monitore" rows="2" class="form-control w-full">{{ $v('monitore') }}</textarea>
+        </div>
+        <div>
+            <label for="sonstiges" class="block text-sm font-medium text-gray-700 mb-1">Sonstiges (Hotel, Zusätze etc.)</label>
+            <textarea name="sonstiges" id="sonstiges" rows="2" class="form-control w-full">{{ $v('sonstiges') }}</textarea>
+        </div>
+        <div>
+            <label for="zeitplan" class="block text-sm font-medium text-gray-700 mb-1">Zeitplan</label>
+            <textarea name="zeitplan" id="zeitplan" rows="3" class="form-control w-full">{{ $v('zeitplan') }}</textarea>
+        </div>
     </div>
 
     {{-- Fotos --}}
