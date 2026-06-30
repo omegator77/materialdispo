@@ -114,6 +114,7 @@
                         <li>✅ Aktivitätsprotokoll</li>
                         <li>✅ Archiv für alte Produktionen (Packliste)</li>
                         <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
+                        <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
                         <li>⬜ Globale Suche über alle Bereiche</li>
                         <li>⬜ Packlisten per Mail</li>
                     </ul>

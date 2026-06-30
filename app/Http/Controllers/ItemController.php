@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
@@ -30,10 +31,12 @@ class ItemController extends Controller
             $request->filled('sort_by') &&
             in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])
         ) {
-            $query->orderBy('units_id')
-                ->orderBy($request->sort_by, $request->get('sort_direction', 'asc'));
+            $secondary = $request->sort_by === 'bezeichnung' ? 'nummer' : 'bezeichnung';
+
+            $query->orderBy($request->sort_by, $request->get('sort_direction', 'asc'))
+                ->orderBy($secondary, 'asc');
         } else {
-            $query->orderBy('units_id', 'asc')
+            $query->orderBy('bezeichnung', 'asc')
                 ->orderBy('nummer', 'asc');
         }
 
@@ -50,6 +53,7 @@ class ItemController extends Controller
     {
         $units = Unit::all();
         $suppliers = Supplier::all();
+        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
         $item = new Item();
 
@@ -62,7 +66,7 @@ class ItemController extends Controller
 
 
 
-        return view('items.create', compact('units', 'suppliers', 'item', 'items'));
+        return view('items.create', compact('units', 'suppliers', 'item', 'items', 'geraetetypen'));
     }
 
     public function store(Request $request)
@@ -96,6 +100,7 @@ class ItemController extends Controller
     {
         $units = Unit::all();
         $suppliers = Supplier::all();
+        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
         $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail'])->findOrFail($id);
 
@@ -107,7 +112,7 @@ class ItemController extends Controller
             ? Carbon::parse($item->rent_end)->format('d.m.Y')
             : null;
 
-        return view('items.edit', compact('units', 'suppliers', 'item'));
+        return view('items.edit', compact('units', 'suppliers', 'item', 'geraetetypen'));
     }
 
     public function update(Request $request, string $id)
@@ -142,6 +147,7 @@ class ItemController extends Controller
             |--------------------------------------------------------------------------
             */
             'units_id' => ['required', 'exists:units,id'],
+            'geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
             'suppliers_id' => ['nullable', 'exists:suppliers,id'],
             'bezeichnung' => ['required', 'string', 'max:255'],
             'nummer' => ['nullable', 'string', 'max:255'],

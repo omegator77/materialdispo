@@ -7,8 +7,12 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-100 border-b">
                 <tr>
-                    <th class="text-left px-4 py-3">Nr.</th>
-                    <th class="text-left px-4 py-3">Bezeichnung</th>
+                    <th class="text-left px-4 py-3">
+                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
+                    </th>
+                    <th class="text-left px-4 py-3">
+                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Bezeichnung</a>
+                    </th>
                     <th class="text-left px-4 py-3">Hersteller</th>
                     <th class="text-left px-4 py-3">Modell</th>
                     <th class="text-left px-4 py-3">Zoom</th>

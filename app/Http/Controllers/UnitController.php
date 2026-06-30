@@ -13,9 +13,9 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = Unit::all();
-       // dd($units);
-       return view('units.index', ['units'=> $units]);
+        $units = Unit::orderBy('bezeichnung')->get();
+
+        return view('units.index', ['units'=> $units]);
     }
 
     /**

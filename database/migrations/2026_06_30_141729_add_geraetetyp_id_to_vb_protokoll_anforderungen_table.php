@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('vb_protokoll_anforderungen', function (Blueprint $table) {
+            $table->unsignedInteger('unit_id')->nullable()->change();
+            $table->unsignedInteger('geraetetyp_id')->nullable()->after('unit_id');
+            $table->foreign('geraetetyp_id')->references('id')->on('geraetetypen');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('vb_protokoll_anforderungen', function (Blueprint $table) {
+            $table->dropForeign(['geraetetyp_id']);
+            $table->dropColumn('geraetetyp_id');
+            $table->unsignedInteger('unit_id')->nullable(false)->change();
+        });
+    }
+};
