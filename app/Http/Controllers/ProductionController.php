@@ -233,6 +233,12 @@ class ProductionController extends Controller
                 ]);
             });
 
+            activity('item')
+                ->performedOn($item)
+                ->event('attached')
+                ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
+                ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
+
             return redirect()
                 ->route('productions.show', $redirectParams)
                 ->with('success', 'Item erfolgreich zugewiesen.');
@@ -250,7 +256,16 @@ class ProductionController extends Controller
     public function detachItem($id, $itemId)
     {
         $production = Production::findOrFail($id);
+        $item = Item::find($itemId);
         $production->items()->detach($itemId);
+
+        if ($item) {
+            activity('item')
+                ->performedOn($item)
+                ->event('detached')
+                ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
+                ->log("Gerät \"{$item->bezeichnung}\" aus Produktion \"{$production->bezeichnung}\" entfernt");
+        }
 
         return Redirect::route('productions.show', ['production' => $id])
             ->with('success', 'Item erfolgreich entfernt.');
