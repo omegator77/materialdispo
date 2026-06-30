@@ -24,12 +24,12 @@ class ProductionController extends Controller
         if ($selectedProduction) {
             $productions = Production::where('id', $selectedProduction)->get();
         } else {
-            $productions = Production::all();
+            $productions = Production::orderBy('bezeichnung')->get();
         }
 
         return view('productions.index', [
             'productions' => $productions,
-            'allProductions' => Production::all(),
+            'allProductions' => Production::orderBy('bezeichnung')->get(),
             'selectedProduction' => $selectedProduction,
         ]);
     }

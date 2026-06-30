@@ -31,10 +31,12 @@ class ItemController extends Controller
             $request->filled('sort_by') &&
             in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])
         ) {
-            $query->orderBy('units_id')
-                ->orderBy($request->sort_by, $request->get('sort_direction', 'asc'));
+            $secondary = $request->sort_by === 'bezeichnung' ? 'nummer' : 'bezeichnung';
+
+            $query->orderBy($request->sort_by, $request->get('sort_direction', 'asc'))
+                ->orderBy($secondary, 'asc');
         } else {
-            $query->orderBy('units_id', 'asc')
+            $query->orderBy('bezeichnung', 'asc')
                 ->orderBy('nummer', 'asc');
         }
 
