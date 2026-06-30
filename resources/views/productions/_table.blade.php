@@ -25,9 +25,14 @@
 
             <tbody>
                 @forelse($productions as $production)
+                    @php
+                        $vbProtokollRoute = $production->vbProtokoll
+                            ? route('vb-protokoll.show', $production->id)
+                            : route('vb-protokoll.create', $production->id);
+                    @endphp
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium">
-                            <a href="{{ route('productions.requirements', $production->id) }}"
+                            <a href="{{ $vbProtokollRoute }}"
                                class="text-gray-900 hover:text-orange-500">
                                 {{ $production->bezeichnung }}
                             </a>
@@ -43,9 +48,9 @@
 
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-2">
-                                <a href="{{ route('productions.requirements', $production->id) }}"
+                                <a href="{{ $vbProtokollRoute }}"
                                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
-                                    Details
+                                    VB-Protokoll
                                 </a>
 
                                 @if(Auth::user()->isUser())
@@ -92,9 +97,14 @@
     {{-- Handy --}}
     <div class="md:hidden space-y-3">
         @forelse($productions as $production)
+            @php
+                $vbProtokollRoute = $production->vbProtokoll
+                    ? route('vb-protokoll.show', $production->id)
+                    : route('vb-protokoll.create', $production->id);
+            @endphp
             <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
                 <div>
-                    <a href="{{ route('productions.requirements', $production->id) }}"
+                    <a href="{{ $vbProtokollRoute }}"
                        class="text-lg font-semibold text-gray-900 hover:text-orange-500">
                         {{ $production->bezeichnung }}
                     </a>
@@ -107,9 +117,9 @@
                 </div>
 
                 <div class="mt-4 grid grid-cols-1 gap-2">
-                    <a href="{{ route('productions.requirements', $production->id) }}"
+                    <a href="{{ $vbProtokollRoute }}"
                        class="text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
-                        Details
+                        VB-Protokoll
                     </a>
 
                     @if(Auth::user()->isUser())
