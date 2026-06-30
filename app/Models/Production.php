@@ -19,6 +19,16 @@ class Production extends Model
             ->useLogName('production');
     }
 
+    public function getDescriptionForEvent(string $eventName): string
+    {
+        return match ($eventName) {
+            'created' => "Produktion \"{$this->bezeichnung}\" angelegt",
+            'updated' => "Produktion \"{$this->bezeichnung}\" geändert",
+            'deleted' => "Produktion \"{$this->bezeichnung}\" gelöscht",
+            default   => "Produktion \"{$this->bezeichnung}\": {$eventName}",
+        };
+    }
+
     protected $fillable = [
         'bezeichnung',
         'booking_start',

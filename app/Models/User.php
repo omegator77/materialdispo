@@ -22,6 +22,16 @@ class User extends Authenticatable
             ->useLogName('user');
     }
 
+    public function getDescriptionForEvent(string $eventName): string
+    {
+        return match ($eventName) {
+            'created' => "Benutzer \"{$this->name}\" angelegt",
+            'updated' => "Benutzer \"{$this->name}\" geändert",
+            'deleted' => "Benutzer \"{$this->name}\" gelöscht",
+            default   => "Benutzer \"{$this->name}\": {$eventName}",
+        };
+    }
+
     /**
      * The attributes that are mass assignable.
      *

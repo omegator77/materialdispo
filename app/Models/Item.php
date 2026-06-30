@@ -19,6 +19,16 @@ class Item extends Model
             ->useLogName('item');
     }
 
+    public function getDescriptionForEvent(string $eventName): string
+    {
+        return match ($eventName) {
+            'created' => "Gerät \"{$this->bezeichnung}\" angelegt",
+            'updated' => "Gerät \"{$this->bezeichnung}\" geändert",
+            'deleted' => "Gerät \"{$this->bezeichnung}\" gelöscht",
+            default   => "Gerät \"{$this->bezeichnung}\": {$eventName}",
+        };
+    }
+
     protected $fillable = [
         'bezeichnung',
         'nummer',

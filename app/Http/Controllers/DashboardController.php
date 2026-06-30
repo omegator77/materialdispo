@@ -18,9 +18,7 @@ class DashboardController extends Controller
             'itemsCount' => Item::count(),
             'suppliersCount' => Supplier::count(),
 
-            'lastActivities' => auth()->user()->isAdmin()
-                ? Activity::with('causer')->latest()->limit(5)->get()
-                : collect(),
+            'lastActivities' => Activity::with('causer')->latest()->limit(5)->get(),
 
             'activeProductionsCount' => Production::whereDate('booking_start', '<=', $today)
                 ->whereDate('booking_end', '>=', $today)
