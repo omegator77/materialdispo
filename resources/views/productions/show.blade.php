@@ -5,10 +5,29 @@
                 Produktion packen
             </h2>
 
-            <a href="{{ route('productions.index') }}"
-                class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
-                Zurück
-            </a>
+            <div class="flex items-center gap-2">
+                @php
+                $vbProtokoll = $production->vbProtokoll;
+                $vbAbgleich = $vbProtokoll && $vbProtokoll->anforderungen->isNotEmpty() ? $vbProtokoll->abgleich() : null;
+                @endphp
+
+                @if($vbProtokoll || Auth::user()->isUser())
+                <a href="{{ $vbProtokoll ? route('vb-protokoll.show', $production->id) : route('vb-protokoll.create', $production->id) }}"
+                    class="inline-flex items-center gap-2 justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                    VB-Protokoll
+                    @if($vbAbgleich)
+                    <span class="text-xs px-1.5 py-0.5 rounded-full {{ $vbAbgleich->every(fn ($r) => $r['erfuellt']) ? 'bg-green-500' : 'bg-yellow-500' }}">
+                        {{ $vbAbgleich->filter(fn ($r) => $r['erfuellt'])->count() }}/{{ $vbAbgleich->count() }}
+                    </span>
+                    @endif
+                </a>
+                @endif
+
+                <a href="{{ route('productions.index') }}"
+                    class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    Zurück
+                </a>
+            </div>
         </div>
     </x-slot>
 

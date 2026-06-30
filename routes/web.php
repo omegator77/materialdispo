@@ -14,6 +14,7 @@ use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\VbProtokollController;
 
 Route::redirect('/', '/login');
 
@@ -39,6 +40,13 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
     Route::get('/productions/{production}/camera-config/create', [ProductionController::class, 'createCameraConfig'])->name('camera-config.create');
     Route::post('/productions/{production}/camera-config', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
+
+    Route::get('productions/{production}/vb-protokoll/create', [VbProtokollController::class, 'create'])->name('vb-protokoll.create');
+    Route::post('productions/{production}/vb-protokoll', [VbProtokollController::class, 'store'])->name('vb-protokoll.store');
+    Route::get('productions/{production}/vb-protokoll/edit', [VbProtokollController::class, 'edit'])->name('vb-protokoll.edit');
+    Route::put('productions/{production}/vb-protokoll', [VbProtokollController::class, 'update'])->name('vb-protokoll.update');
+    Route::delete('productions/{production}/vb-protokoll', [VbProtokollController::class, 'destroy'])->name('vb-protokoll.destroy');
+    Route::delete('vb-protokoll-fotos/{foto}', [VbProtokollController::class, 'destroyFoto'])->name('vb-protokoll.foto.destroy');
 });
 
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
@@ -53,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/itemprods', [ItemproductionController::class, 'index'])->name('itemprods');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
     Route::get('productions/{id}/requirements', [ProductionController::class, 'requirements'])->name('productions.requirements');
+    Route::get('productions/{production}/vb-protokoll', [VbProtokollController::class, 'show'])->name('vb-protokoll.show');
 
     Route::get('/timeline/items', [TimelineController::class, 'items'])->name('timeline.items');
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');

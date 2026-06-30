@@ -48,4 +48,9 @@ class Production extends Model
     {
         return $this->hasMany(CameraConfig::class, 'production_id');
     }
+
+    public function vbProtokoll()
+    {
+        return $this->hasOne(VbProtokoll::class);
+    }
 }
