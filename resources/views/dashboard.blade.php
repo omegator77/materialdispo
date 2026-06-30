@@ -116,6 +116,7 @@
                         <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
                         <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
                         <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
+                        <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
                         <li>⬜ Globale Suche über alle Bereiche</li>
                         <li>⬜ Packlisten per Mail</li>
                     </ul>
