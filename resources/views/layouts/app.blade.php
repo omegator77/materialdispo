@@ -35,6 +35,10 @@
             <main>
                 {{ $slot }}
             </main>
+
+            <footer class="text-center text-xs text-gray-400 py-4">
+                Version {{ \App\Support\AppVersion::label() }}
+            </footer>
         </div>
     </body>
 </html>

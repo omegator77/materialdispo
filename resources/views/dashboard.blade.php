@@ -9,35 +9,39 @@
         <div class="max-w-7xl mx-auto px-4 space-y-6">
 
             {{-- Kennzahlen --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-                <div class="bg-white rounded-lg shadow-sm p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
+                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
                     <div class="text-sm text-gray-500">Aktive Produktionen</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $activeProductionsCount }}</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm p-5">
+                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
                     <div class="text-sm text-gray-500">Geräte gesamt</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $itemsCount }}</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm p-5">
+                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
                     <div class="text-sm text-gray-500">Heute gebucht</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $todayBookedItemsCount }}</div>
                 </div>
 
                 @if(Auth::user()->isAdmin())
-                <a href="{{ route('activity-log.index') }}" class="bg-white rounded-lg shadow-sm p-5 hover:bg-gray-50 transition-colors">
-                    <div class="text-sm text-gray-500 mb-2">Letzte Aktionen</div>
-                    @include('dashboard._last-activities')
+                <a href="{{ route('activity-log.index') }}" class="bg-white rounded-lg shadow-sm p-5 hover:bg-gray-50 transition-colors h-36 flex flex-col">
+                    <div class="text-sm text-gray-500 mb-2 shrink-0">Letzte Aktionen</div>
+                    <div class="flex-1 overflow-y-auto">
+                        @include('dashboard._last-activities')
+                    </div>
                 </a>
                 @else
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <div class="text-sm text-gray-500 mb-2">Letzte Aktionen</div>
-                    @include('dashboard._last-activities')
+                <div class="bg-white rounded-lg shadow-sm p-5 h-36 flex flex-col">
+                    <div class="text-sm text-gray-500 mb-2 shrink-0">Letzte Aktionen</div>
+                    <div class="flex-1 overflow-y-auto">
+                        @include('dashboard._last-activities')
+                    </div>
                 </div>
                 @endif
 
-                <div class="bg-gray-800 rounded-lg shadow-sm p-5 font-mono text-right">
+                <div class="bg-gray-800 rounded-lg shadow-sm p-5 font-mono text-right h-36 flex flex-col justify-center">
                     <div class="text-xs text-gray-400 tracking-widest">LOCAL</div>
                     <div id="local-date" class="text-sm text-green-400"></div>
                     <div id="local-time" class="text-2xl font-bold text-green-400"></div>
@@ -106,8 +110,11 @@
                         <li>✅ Registrierung deaktiviert</li>
                         <li>✅ Mailversand eingerichtet</li>
                         <li>✅ Timeline Grundversion</li>
-                        <li>⬜ Archiv für alte Produktionen</li>
-                        <li>⬜ Globale Suche</li>
+                        <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
+                        <li>✅ Aktivitätsprotokoll</li>
+                        <li>✅ Archiv für alte Produktionen (Packliste)</li>
+                        <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
+                        <li>⬜ Globale Suche über alle Bereiche</li>
                         <li>⬜ Packlisten per Mail</li>
                     </ul>
                 </div>

@@ -19,7 +19,7 @@
             </thead>
             <tbody>
                 @forelse($items as $item)
-                <tr class="border-b hover:bg-gray-50">
+                <tr class="border-b hover:bg-gray-50" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}">
                     <td class="px-4 py-3">{{ $item->nummer ?: '—' }}</td>
                     <td class="px-4 py-3 font-medium">
                         <a href="{{ route('items.show', $item->id) }}" class="text-gray-900 hover:text-orange-500">
@@ -61,7 +61,7 @@
     {{-- Mobile --}}
     <div class="md:hidden space-y-4">
         @forelse($items as $item)
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}">
             <a href="{{ route('items.show', $item->id) }}" class="block text-lg font-semibold text-gray-900 hover:text-orange-500">
                 {{ $item->bezeichnung }}
             </a>
@@ -94,6 +94,10 @@
         @empty
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 text-center text-gray-500">Keine Kameras gefunden.</div>
         @endforelse
+    </div>
+
+    <div data-search-empty class="hidden mt-4 bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+        Keine Kameras gefunden.
     </div>
 
 </div>
