@@ -7,6 +7,7 @@ use App\Models\Production;
 use App\Models\Unit;
 use App\Models\VbProtokoll;
 use App\Models\VbProtokollFoto;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,6 +76,33 @@ class VbProtokollController extends Controller
         return redirect()
             ->route('vb-protokoll.show', $production->id)
             ->with('success', 'VB-Protokoll erfolgreich aktualisiert.');
+    }
+
+    public function generatePDF(Production $production)
+    {
+        return $this->renderPdf($production, showAbgleich: false);
+    }
+
+    public function generateAbgleichReportPDF(Production $production)
+    {
+        return $this->renderPdf($production, showAbgleich: true);
+    }
+
+    private function renderPdf(Production $production, bool $showAbgleich)
+    {
+        $vbProtokoll = $production->vbProtokoll()
+            ->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])
+            ->firstOrFail();
+
+        $fotoPaths = $vbProtokoll->fotos->map(
+            fn (VbProtokollFoto $foto) => Storage::disk('public')->path($foto->path)
+        );
+
+        $pdf = Pdf::loadView('pdf.vb_protokoll', compact('production', 'vbProtokoll', 'fotoPaths', 'showAbgleich'));
+
+        $suffix = $showAbgleich ? ' Abgleich' : '';
+
+        return $pdf->download("VB-Protokoll {$production->bezeichnung}{$suffix}.pdf");
     }
 
     public function destroy(Production $production)

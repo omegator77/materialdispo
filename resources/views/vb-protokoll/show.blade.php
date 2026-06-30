@@ -6,6 +6,10 @@
             </h2>
 
             <div class="flex gap-2">
+                <a href="{{ route('vb-protokoll.pdf', $production->id) }}"
+                    class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                    PDF exportieren
+                </a>
                 @if(Auth::user()->isUser())
                 <a href="{{ route('vb-protokoll.edit', $production->id) }}"
                     class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
