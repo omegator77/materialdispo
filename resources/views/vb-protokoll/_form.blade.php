@@ -25,6 +25,12 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
 ])->values();
 
 $geraetetypenByUnit = $geraetetypen->groupBy('units_id');
+
+$camKameraTypen = $geraetetypenByUnit->get(1, collect());
+$camObjektivTypen = $geraetetypenByUnit->get(2, collect());
+$camStativTypen = $geraetetypenByUnit->get(3, collect());
+$camKopfTypen = $geraetetypenByUnit->get(4, collect());
+$camAdapterTypen = $geraetetypenByUnit->get(5, collect());
 @endphp
 
 <form method="POST"
@@ -161,52 +167,32 @@ $geraetetypenByUnit = $geraetetypen->groupBy('units_id');
                         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
                             <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id" class="form-control text-sm">
                                 <option value="">Kamera-Typ</option>
-                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
-                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
-                                    @foreach($typenDieserGruppe as $typ)
-                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($camKameraTypen as $typ)
+                                <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
                             <select :name="`anforderungen[${index}][lens_geraetetyp_id]`" x-model="anforderung.lens_geraetetyp_id" class="form-control text-sm">
                                 <option value="">Objektiv-Typ</option>
-                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
-                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
-                                    @foreach($typenDieserGruppe as $typ)
-                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($camObjektivTypen as $typ)
+                                <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
                             <select :name="`anforderungen[${index}][tripod_geraetetyp_id]`" x-model="anforderung.tripod_geraetetyp_id" class="form-control text-sm">
                                 <option value="">Stativ-Typ</option>
-                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
-                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
-                                    @foreach($typenDieserGruppe as $typ)
-                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($camStativTypen as $typ)
+                                <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
                             <select :name="`anforderungen[${index}][tripod_head_geraetetyp_id]`" x-model="anforderung.tripod_head_geraetetyp_id" class="form-control text-sm">
                                 <option value="">Kopf-Typ</option>
-                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
-                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
-                                    @foreach($typenDieserGruppe as $typ)
-                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($camKopfTypen as $typ)
+                                <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
                             <select :name="`anforderungen[${index}][adapter_geraetetyp_id]`" x-model="anforderung.adapter_geraetetyp_id" class="form-control text-sm">
                                 <option value="">Adapter-Typ</option>
-                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
-                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
-                                    @foreach($typenDieserGruppe as $typ)
-                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
-                                    @endforeach
-                                </optgroup>
+                                @foreach($camAdapterTypen as $typ)
+                                <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
                         </div>
