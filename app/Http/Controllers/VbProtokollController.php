@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Geraetetyp;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Models\VbProtokoll;
@@ -18,8 +19,9 @@ class VbProtokollController extends Controller
         }
 
         $units = Unit::orderBy('bezeichnung')->get();
+        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
-        return view('vb-protokoll.create', compact('production', 'units'));
+        return view('vb-protokoll.create', compact('production', 'units', 'geraetetypen'));
     }
 
     public function store(Request $request, Production $production)
@@ -46,7 +48,7 @@ class VbProtokollController extends Controller
 
     public function show(Production $production)
     {
-        $vbProtokoll = $production->vbProtokoll()->with(['kameras', 'anforderungen.unit', 'fotos', 'creator'])->firstOrFail();
+        $vbProtokoll = $production->vbProtokoll()->with(['kameras', 'anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])->firstOrFail();
 
         return view('vb-protokoll.show', compact('production', 'vbProtokoll'));
     }
@@ -55,8 +57,9 @@ class VbProtokollController extends Controller
     {
         $vbProtokoll = $production->vbProtokoll()->with(['kameras', 'anforderungen', 'fotos'])->firstOrFail();
         $units = Unit::orderBy('bezeichnung')->get();
+        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
-        return view('vb-protokoll.edit', compact('production', 'vbProtokoll', 'units'));
+        return view('vb-protokoll.edit', compact('production', 'vbProtokoll', 'units', 'geraetetypen'));
     }
 
     public function update(Request $request, Production $production)
@@ -138,8 +141,8 @@ class VbProtokollController extends Controller
             'kameras.*.bezeichnung' => 'nullable|string|max:255',
 
             'anforderungen' => 'nullable|array',
-            'anforderungen.*.unit_id' => 'required_with:anforderungen.*.anzahl|exists:units,id',
-            'anforderungen.*.anzahl' => 'required_with:anforderungen.*.unit_id|integer|min:1',
+            'anforderungen.*.target' => 'required_with:anforderungen.*.anzahl|string',
+            'anforderungen.*.anzahl' => 'required_with:anforderungen.*.target|integer|min:1',
             'anforderungen.*.notiz' => 'nullable|string|max:255',
 
             'fotos' => 'nullable|array',
@@ -176,16 +179,41 @@ class VbProtokollController extends Controller
         $vbProtokoll->anforderungen()->delete();
 
         foreach ($anforderungen as $anforderung) {
-            if (empty($anforderung['unit_id']) || empty($anforderung['anzahl'])) {
+            if (empty($anforderung['target']) || empty($anforderung['anzahl'])) {
                 continue;
             }
 
-            $vbProtokoll->anforderungen()->create([
-                'unit_id' => $anforderung['unit_id'],
+            $target = $this->splitAnforderungTarget($anforderung['target']);
+
+            if (! $target) {
+                continue;
+            }
+
+            $vbProtokoll->anforderungen()->create(array_merge($target, [
                 'anzahl' => $anforderung['anzahl'],
                 'notiz' => $anforderung['notiz'] ?? null,
-            ]);
+            ]));
         }
+    }
+
+    /**
+     * Parst ein Anforderungs-Zielfeld der Form "unit-5" oder "typ-12" in die
+     * passende Foreign-Key-Spalte. Gibt null zurück, wenn das Ziel ungültig
+     * ist oder nicht (mehr) existiert.
+     */
+    private function splitAnforderungTarget(string $target): ?array
+    {
+        [$kind, $id] = array_pad(explode('-', $target, 2), 2, null);
+
+        if ($kind === 'unit' && Unit::where('id', $id)->exists()) {
+            return ['unit_id' => $id, 'geraetetyp_id' => null];
+        }
+
+        if ($kind === 'typ' && Geraetetyp::where('id', $id)->exists()) {
+            return ['unit_id' => null, 'geraetetyp_id' => $id];
+        }
+
+        return null;
     }
 
     private function storeFotos(VbProtokoll $vbProtokoll, Request $request): void

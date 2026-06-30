@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\VbProtokollController;
+use App\Http\Controllers\GeraetetypController;
 
 Route::redirect('/', '/login');
 
@@ -25,6 +26,11 @@ Route::get('pdf', [PDFController::class, 'index']);
 // nicht von "units/{unit}" (show) abgefangen wird.
 Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/units', UnitController::class)->except(['index', 'show']);
+    Route::get('/geraetetypen/create', [GeraetetypController::class, 'create'])->name('geraetetypen.create');
+    Route::post('/geraetetypen', [GeraetetypController::class, 'store'])->name('geraetetypen.store');
+    Route::get('/geraetetypen/{geraetetyp}/edit', [GeraetetypController::class, 'edit'])->name('geraetetypen.edit');
+    Route::put('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'update'])->name('geraetetypen.update');
+    Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
 
@@ -54,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);
+    Route::get('/geraetetypen', [GeraetetypController::class, 'index'])->name('geraetetypen.index');
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);

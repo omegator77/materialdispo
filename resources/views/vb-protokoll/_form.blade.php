@@ -7,7 +7,11 @@ $initialKameras = $isEdit
     : collect();
 
 $initialAnforderungen = $isEdit
-    ? $vbProtokoll->anforderungen->map(fn ($a) => ['unit_id' => $a->unit_id, 'anzahl' => $a->anzahl, 'notiz' => $a->notiz])->values()
+    ? $vbProtokoll->anforderungen->map(fn ($a) => [
+        'target' => $a->geraetetyp_id ? "typ-{$a->geraetetyp_id}" : "unit-{$a->unit_id}",
+        'anzahl' => $a->anzahl,
+        'notiz' => $a->notiz,
+    ])->values()
     : collect();
 @endphp
 
@@ -172,11 +176,18 @@ $initialAnforderungen = $isEdit
         <div class="space-y-2">
             <template x-for="(anforderung, index) in anforderungen" :key="index">
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <select :name="`anforderungen[${index}][unit_id]`" x-model="anforderung.unit_id" class="form-control sm:w-56 text-sm">
+                    <select :name="`anforderungen[${index}][target]`" x-model="anforderung.target" class="form-control sm:w-64 text-sm">
                         <option value="">Gerätekategorie wählen</option>
-                        @foreach($units as $unit)
-                        <option value="{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
-                        @endforeach
+                        <optgroup label="Gruppen (allgemein)">
+                            @foreach($units as $unit)
+                            <option value="unit-{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
+                            @endforeach
+                        </optgroup>
+                        <optgroup label="Gerätetypen (genau)">
+                            @foreach($geraetetypen as $geraetetyp)
+                            <option value="typ-{{ $geraetetyp->id }}">{{ $geraetetyp->bezeichnung }}</option>
+                            @endforeach
+                        </optgroup>
                     </select>
                     <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
                            placeholder="Anzahl" class="form-control w-full sm:w-24 text-sm">
@@ -245,7 +256,7 @@ function vbProtokollForm({ kameras, anforderungen }) {
             this.kameras.splice(index, 1);
         },
         addAnforderung() {
-            this.anforderungen.push({ unit_id: '', anzahl: '', notiz: '' });
+            this.anforderungen.push({ target: '', anzahl: '', notiz: '' });
         },
         removeAnforderung(index) {
             this.anforderungen.splice(index, 1);

@@ -32,6 +32,7 @@ class Item extends Model
         'nummer',
         'description',
         'units_id',
+        'geraetetyp_id',
         'suppliers_id',
         'rent_start',
         'rent_end',
@@ -45,6 +46,11 @@ class Item extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class, 'units_id');
+    }
+
+    public function geraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class);
     }
 
     public function supplier()

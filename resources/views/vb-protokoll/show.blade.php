@@ -72,7 +72,12 @@
                     <tbody>
                         @foreach($vbProtokoll->abgleich() as $row)
                         <tr class="border-b last:border-b-0">
-                            <td class="py-2 font-medium text-gray-900">{{ $row['unit']->bezeichnung ?? '—' }}</td>
+                            <td class="py-2 font-medium text-gray-900">
+                                {{ $row['label'] }}
+                                <span class="ml-1 text-xs font-normal px-1.5 py-0.5 rounded {{ $row['kind'] === 'typ' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600' }}">
+                                    {{ $row['kind'] === 'typ' ? 'Typ' : 'Gruppe' }}
+                                </span>
+                            </td>
                             <td class="py-2">{{ $row['benoetigt'] }}</td>
                             <td class="py-2">{{ $row['gepackt'] }}</td>
                             <td class="py-2">

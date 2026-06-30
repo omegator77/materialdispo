@@ -11,6 +11,7 @@ class VbProtokollAnforderung extends Model
     protected $fillable = [
         'vb_protokoll_id',
         'unit_id',
+        'geraetetyp_id',
         'anzahl',
         'notiz',
     ];
@@ -23,5 +24,10 @@ class VbProtokollAnforderung extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function geraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class);
     }
 }

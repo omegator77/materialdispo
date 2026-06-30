@@ -17,6 +17,10 @@
                         {{ __('Gruppen') }}
                     </x-nav-link>
 
+                    <x-nav-link :href="route('geraetetypen.index')" :active="request()->routeIs('geraetetypen.*')">
+                        {{ __('Gerätetypen') }}
+                    </x-nav-link>
+
                     <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
                         {{ __('Geräte') }}
                     </x-nav-link>
@@ -112,6 +116,10 @@
 
             <x-responsive-nav-link :href="route('units.index')" :active="request()->routeIs('units.*')">
                 {{ __('Gruppen') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('geraetetypen.index')" :active="request()->routeIs('geraetetypen.*')">
+                {{ __('Gerätetypen') }}
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">

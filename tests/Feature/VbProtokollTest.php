@@ -27,7 +27,7 @@ test('admin can create a vb-protokoll with kameras and anforderungen', function 
             ['position' => 1, 'bezeichnung' => '22x ENG'],
         ],
         'anforderungen' => [
-            ['unit_id' => $unit->id, 'anzahl' => 3],
+            ['target' => "unit-{$unit->id}", 'anzahl' => 3],
         ],
     ]);
 

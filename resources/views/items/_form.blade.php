@@ -30,15 +30,50 @@
                 </select>
             </div>
 
-            <div>
-                <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
-                <input
-                    type="text"
-                    name="bezeichnung"
-                    id="bezeichnung"
-                    value="{{ old('bezeichnung', $item->bezeichnung ?? '') }}"
-                    class="form-control w-full"
-                    required>
+            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{
+                    bezeichnung: @js(old('bezeichnung', $item->bezeichnung ?? '')),
+                    types: {
+                        @foreach($geraetetypen as $geraetetyp)
+                        '{{ $geraetetyp->id }}': @js($geraetetyp->bezeichnung),
+                        @endforeach
+                    },
+                    applyType(id) {
+                        if (id && this.types[id]) {
+                            this.bezeichnung = this.types[id];
+                        }
+                    }
+                }">
+                <div>
+                    <label for="geraetetyp_id" class="block text-sm font-medium text-gray-700">Gerätetyp</label>
+                    <select name="geraetetyp_id" id="geraetetyp_id" class="form-control w-full" @change="applyType($event.target.value)">
+                        <option value="">— Kein Typ —</option>
+                        @foreach($geraetetypen->groupBy('units_id') as $groupUnitsId => $typesInUnit)
+                        <optgroup label="{{ $typesInUnit->first()->unit->bezeichnung ?? 'Ohne Gruppe' }}">
+                            @foreach($typesInUnit as $geraetetyp)
+                            <option value="{{ $geraetetyp->id }}"
+                                {{ old('geraetetyp_id', $item->geraetetyp_id ?? '') == $geraetetyp->id ? 'selected' : '' }}>
+                                {{ $geraetetyp->bezeichnung }}
+                            </option>
+                            @endforeach
+                        </optgroup>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">
+                        Füllt die Bezeichnung automatisch aus.
+                        <a href="{{ route('geraetetypen.create') }}" target="_blank" class="text-blue-600 hover:underline">Neuen Typ anlegen</a>
+                    </p>
+                </div>
+
+                <div>
+                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <input
+                        type="text"
+                        name="bezeichnung"
+                        id="bezeichnung"
+                        x-model="bezeichnung"
+                        class="form-control w-full"
+                        required>
+                </div>
             </div>
 
             <div>
