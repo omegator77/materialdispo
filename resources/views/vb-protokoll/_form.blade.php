@@ -295,8 +295,27 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
         </div>
         @endif
 
-        <input type="file" name="fotos[]" multiple accept="image/*" class="form-control w-full text-sm">
-        <p class="text-xs text-gray-400 mt-1">JPG/PNG/WEBP, max. 8 MB pro Bild.</p>
+        <div x-data="fotoUpload()">
+            <div x-show="previews.length"
+                 class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <template x-for="(preview, i) in previews" :key="i">
+                    <div class="relative">
+                        <img :src="preview" class="w-full h-24 object-cover rounded border border-gray-200">
+                        <button type="button" @click="remove(i)"
+                                class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
+                    </div>
+                </template>
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer w-fit px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-sm text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Fotos hinzufügen
+                <input type="file" multiple accept="image/*" class="hidden" @change="add($event)">
+            </label>
+            <p class="text-xs text-gray-400 mt-1">JPG/PNG/WEBP, max. 8 MB pro Bild. Mehrere Dateien gleichzeitig möglich.</p>
+
+            <input type="file" name="fotos[]" multiple class="hidden" x-ref="fileInput">
+        </div>
     </div>
 
     <div class="flex justify-end gap-2">
@@ -311,6 +330,33 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
 </form>
 
 <script>
+function fotoUpload() {
+    return {
+        previews: [],
+        dt: new DataTransfer(),
+        add(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                this.dt.items.add(file);
+                const reader = new FileReader();
+                reader.onload = e => this.previews.push(e.target.result);
+                reader.readAsDataURL(file);
+            });
+            this.$refs.fileInput.files = this.dt.files;
+            event.target.value = '';
+        },
+        remove(index) {
+            const newDt = new DataTransfer();
+            Array.from(this.dt.files).forEach((file, i) => {
+                if (i !== index) newDt.items.add(file);
+            });
+            this.dt = newDt;
+            this.previews.splice(index, 1);
+            this.$refs.fileInput.files = this.dt.files;
+        },
+    };
+}
+
 function vbProtokollForm({ anforderungen, geraetetypen }) {
     return {
         anforderungen: anforderungen,
