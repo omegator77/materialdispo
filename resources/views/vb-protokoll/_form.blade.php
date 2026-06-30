@@ -137,59 +137,72 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
 
                     <div x-show="anforderung.mode === 'typ'" class="flex flex-col sm:flex-row gap-2">
                         <select :name="`anforderungen[${index}][unit_id]`" x-model="anforderung.unit_id"
+                                :disabled="anforderung.mode !== 'typ'"
                                 @change="anforderung.geraetetyp_id = ''" class="form-control sm:w-44 text-sm">
                             <option value="">Gruppe wählen</option>
                             @foreach($units as $unit)
                             <option value="{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
                             @endforeach
                         </select>
-                        <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id"
-                                :disabled="!anforderung.unit_id" class="form-control sm:w-56 text-sm">
+                        <select :name="`anforderungen[${index}][geraetetyp_id]`"
+                                :disabled="anforderung.mode !== 'typ' || !anforderung.unit_id"
+                                x-effect="$nextTick(() => { $el.value = anforderung.geraetetyp_id ?? '' })"
+                                @change="anforderung.geraetetyp_id = $el.value"
+                                class="form-control sm:w-56 text-sm">
                             <option value="">Alle Typen dieser Gruppe</option>
                             <template x-for="typ in typesForUnit(anforderung.unit_id)" :key="typ.id">
                                 <option :value="typ.id" x-text="typ.bezeichnung"></option>
                             </template>
                         </select>
                         <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
+                               :disabled="anforderung.mode !== 'typ'"
                                placeholder="Anzahl" class="form-control w-full sm:w-24 text-sm">
                     </div>
 
                     <div x-show="anforderung.mode === 'frei'" class="flex flex-col sm:flex-row gap-2">
                         <input type="text" :name="`anforderungen[${index}][freitext]`" x-model="anforderung.freitext"
+                               :disabled="anforderung.mode !== 'frei'"
                                placeholder="z. B. Sandsäcke" class="form-control flex-1 text-sm">
                         <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
+                               :disabled="anforderung.mode !== 'frei'"
                                placeholder="Anzahl (optional)" class="form-control w-full sm:w-24 text-sm">
                     </div>
 
                     <div x-show="anforderung.mode === 'kamera'" class="space-y-2">
                         <input type="text" :name="`anforderungen[${index}][cam_number]`" x-model="anforderung.cam_number"
+                               :disabled="anforderung.mode !== 'kamera'"
                                placeholder="Kamera-Nr (z. B. Kamera 1)" class="form-control w-full sm:w-56 text-sm">
                         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id" class="form-control text-sm">
+                            <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id"
+                                    :disabled="anforderung.mode !== 'kamera'" class="form-control text-sm">
                                 <option value="">Kamera-Typ</option>
                                 @foreach($camKameraTypen as $typ)
                                 <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
-                            <select :name="`anforderungen[${index}][lens_geraetetyp_id]`" x-model="anforderung.lens_geraetetyp_id" class="form-control text-sm">
+                            <select :name="`anforderungen[${index}][lens_geraetetyp_id]`" x-model="anforderung.lens_geraetetyp_id"
+                                    :disabled="anforderung.mode !== 'kamera'" class="form-control text-sm">
                                 <option value="">Objektiv-Typ</option>
                                 @foreach($camObjektivTypen as $typ)
                                 <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
-                            <select :name="`anforderungen[${index}][tripod_geraetetyp_id]`" x-model="anforderung.tripod_geraetetyp_id" class="form-control text-sm">
+                            <select :name="`anforderungen[${index}][tripod_geraetetyp_id]`" x-model="anforderung.tripod_geraetetyp_id"
+                                    :disabled="anforderung.mode !== 'kamera'" class="form-control text-sm">
                                 <option value="">Stativ-Typ</option>
                                 @foreach($camStativTypen as $typ)
                                 <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
-                            <select :name="`anforderungen[${index}][tripod_head_geraetetyp_id]`" x-model="anforderung.tripod_head_geraetetyp_id" class="form-control text-sm">
+                            <select :name="`anforderungen[${index}][tripod_head_geraetetyp_id]`" x-model="anforderung.tripod_head_geraetetyp_id"
+                                    :disabled="anforderung.mode !== 'kamera'" class="form-control text-sm">
                                 <option value="">Kopf-Typ</option>
                                 @foreach($camKopfTypen as $typ)
                                 <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
                                 @endforeach
                             </select>
-                            <select :name="`anforderungen[${index}][adapter_geraetetyp_id]`" x-model="anforderung.adapter_geraetetyp_id" class="form-control text-sm">
+                            <select :name="`anforderungen[${index}][adapter_geraetetyp_id]`" x-model="anforderung.adapter_geraetetyp_id"
+                                    :disabled="anforderung.mode !== 'kamera'" class="form-control text-sm">
                                 <option value="">Adapter-Typ</option>
                                 @foreach($camAdapterTypen as $typ)
                                 <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
@@ -314,7 +327,7 @@ function vbProtokollForm({ anforderungen, geraetetypen }) {
         },
         addAnforderung() {
             this.anforderungen.push({
-                mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: '', notiz: '',
+                mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: 1, notiz: '',
                 cam_number: '', lens_geraetetyp_id: '', tripod_geraetetyp_id: '', tripod_head_geraetetyp_id: '', adapter_geraetetyp_id: '',
             });
         },

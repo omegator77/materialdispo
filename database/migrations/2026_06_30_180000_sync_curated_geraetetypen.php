@@ -2512,7 +2512,26 @@ return new class extends Migration
 
         $unitIds = DB::table('units')->pluck('id', 'bezeichnung');
 
-        DB::transaction(function () use ($geraetetypen, $itemTypeMap, $unitIds) {
+        // Alte geraetetyp-IDs sichern, bevor sie gelöscht werden
+        $oldGeraetetypenMap = DB::table('geraetetypen')
+            ->join('units', 'geraetetypen.units_id', '=', 'units.id')
+            ->select('geraetetypen.id', 'units.bezeichnung as units_bezeichnung', 'geraetetypen.bezeichnung')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->id => $row->units_bezeichnung.'|'.$row->bezeichnung]);
+
+        // Anforderungen mit geraetetyp-Referenzen sichern
+        $anforderungenOldValues = DB::table('vb_protokoll_anforderungen')
+            ->where(fn ($q) => $q
+                ->whereNotNull('geraetetyp_id')
+                ->orWhereNotNull('lens_geraetetyp_id')
+                ->orWhereNotNull('tripod_geraetetyp_id')
+                ->orWhereNotNull('tripod_head_geraetetyp_id')
+                ->orWhereNotNull('adapter_geraetetyp_id')
+            )
+            ->select('id', 'geraetetyp_id', 'lens_geraetetyp_id', 'tripod_geraetetyp_id', 'tripod_head_geraetetyp_id', 'adapter_geraetetyp_id')
+            ->get();
+
+        DB::transaction(function () use ($geraetetypen, $itemTypeMap, $unitIds, $oldGeraetetypenMap, $anforderungenOldValues) {
             DB::table('items')->update(['geraetetyp_id' => null]);
             DB::table('vb_protokoll_anforderungen')->update([
                 'geraetetyp_id' => null,
@@ -2542,6 +2561,14 @@ return new class extends Migration
                 $typIds[$typ['units_bezeichnung'].'|'.$typ['bezeichnung']] = $id;
             }
 
+            // old_id → new_id Mapping aufbauen
+            $oldToNewId = [];
+            foreach ($oldGeraetetypenMap as $oldId => $key) {
+                if (isset($typIds[$key])) {
+                    $oldToNewId[$oldId] = $typIds[$key];
+                }
+            }
+
             $unmatchedItems = 0;
             foreach ($itemTypeMap as $row) {
                 $typId = $typIds[$row['typ_units_bezeichnung'].'|'.$row['typ_bezeichnung']] ?? null;
@@ -2567,8 +2594,29 @@ return new class extends Migration
                 }
             }
 
-            if ($skippedTypen > 0 || $unmatchedItems > 0) {
-                Log::warning("geraetetypen sync: {$skippedTypen} Typen ohne passende Gruppe (units.bezeichnung) uebersprungen, {$unmatchedItems} Items konnten nicht ueber (Gruppe, bezeichnung, nummer) zugeordnet werden.");
+            // Anforderungen re-mappen
+            $anforderungsFields = ['geraetetyp_id', 'lens_geraetetyp_id', 'tripod_geraetetyp_id', 'tripod_head_geraetetyp_id', 'adapter_geraetetyp_id'];
+            $unmatchedAnforderungen = 0;
+            foreach ($anforderungenOldValues as $row) {
+                $update = [];
+                foreach ($anforderungsFields as $field) {
+                    $oldId = $row->{$field};
+                    if ($oldId === null) {
+                        continue;
+                    }
+                    if (isset($oldToNewId[$oldId])) {
+                        $update[$field] = $oldToNewId[$oldId];
+                    } else {
+                        $unmatchedAnforderungen++;
+                    }
+                }
+                if (! empty($update)) {
+                    DB::table('vb_protokoll_anforderungen')->where('id', $row->id)->update($update);
+                }
+            }
+
+            if ($skippedTypen > 0 || $unmatchedItems > 0 || $unmatchedAnforderungen > 0) {
+                Log::warning("geraetetypen sync: {$skippedTypen} Typen ohne passende Gruppe (units.bezeichnung) uebersprungen, {$unmatchedItems} Items und {$unmatchedAnforderungen} Anforderungsfelder konnten nicht zugeordnet werden.");
             }
         });
     }
