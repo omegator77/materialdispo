@@ -287,13 +287,9 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                 <a href="{{ $foto->url() }}" target="_blank">
                     <img src="{{ $foto->url() }}" alt="{{ $foto->original_name }}" class="w-full h-24 object-cover rounded border border-gray-200">
                 </a>
-                <form method="POST" action="{{ route('vb-protokoll.foto.destroy', $foto->id) }}"
-                      onsubmit="return confirm('Foto wirklich löschen?');"
-                      class="absolute top-1 right-1">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
-                </form>
+                <button type="button"
+                        onclick="if(confirm('Foto wirklich löschen?')) { fetch('{{ route('vb-protokoll.foto.destroy', $foto->id) }}', { method: 'POST', headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json'}, body: JSON.stringify({_method: 'DELETE'}) }).then(r => { if(r.ok || r.redirected) location.reload() }) }"
+                        class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
             </div>
             @endforeach
         </div>
