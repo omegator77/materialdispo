@@ -135,12 +135,17 @@ class VbProtokollController extends Controller
             'zeitplan' => 'nullable|string',
 
             'anforderungen' => 'nullable|array',
-            'anforderungen.*.mode' => 'nullable|string|in:typ,frei',
+            'anforderungen.*.mode' => 'nullable|string|in:typ,frei,kamera',
             'anforderungen.*.unit_id' => 'nullable|exists:units,id',
             'anforderungen.*.geraetetyp_id' => 'nullable|exists:geraetetypen,id',
             'anforderungen.*.freitext' => 'nullable|string|max:255',
             'anforderungen.*.anzahl' => 'nullable|integer|min:1',
             'anforderungen.*.notiz' => 'nullable|string|max:255',
+            'anforderungen.*.cam_number' => 'nullable|string|max:255',
+            'anforderungen.*.lens_geraetetyp_id' => 'nullable|exists:geraetetypen,id',
+            'anforderungen.*.tripod_geraetetyp_id' => 'nullable|exists:geraetetypen,id',
+            'anforderungen.*.tripod_head_geraetetyp_id' => 'nullable|exists:geraetetypen,id',
+            'anforderungen.*.adapter_geraetetyp_id' => 'nullable|exists:geraetetypen,id',
 
             'fotos' => 'nullable|array',
             'fotos.*' => 'nullable|image|max:8192',
@@ -171,6 +176,30 @@ class VbProtokollController extends Controller
                     'geraetetyp_id' => null,
                     'freitext' => $anforderung['freitext'],
                     'anzahl' => $anforderung['anzahl'] ?? null,
+                    'notiz' => $anforderung['notiz'] ?? null,
+                ]);
+
+                continue;
+            }
+
+            if ($mode === 'kamera') {
+                if (empty($anforderung['cam_number'])) {
+                    continue;
+                }
+
+                $cameraGeraetetypId = $anforderung['geraetetyp_id'] ?? null;
+                $unitId = $cameraGeraetetypId ? Geraetetyp::find($cameraGeraetetypId)?->units_id : null;
+
+                $vbProtokoll->anforderungen()->create([
+                    'unit_id' => $unitId,
+                    'geraetetyp_id' => $cameraGeraetetypId,
+                    'freitext' => null,
+                    'anzahl' => null,
+                    'cam_number' => $anforderung['cam_number'],
+                    'lens_geraetetyp_id' => $anforderung['lens_geraetetyp_id'] ?? null,
+                    'tripod_geraetetyp_id' => $anforderung['tripod_geraetetyp_id'] ?? null,
+                    'tripod_head_geraetetyp_id' => $anforderung['tripod_head_geraetetyp_id'] ?? null,
+                    'adapter_geraetetyp_id' => $anforderung['adapter_geraetetyp_id'] ?? null,
                     'notiz' => $anforderung['notiz'] ?? null,
                 ]);
 

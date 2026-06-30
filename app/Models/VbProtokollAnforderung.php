@@ -15,6 +15,11 @@ class VbProtokollAnforderung extends Model
         'freitext',
         'anzahl',
         'notiz',
+        'cam_number',
+        'lens_geraetetyp_id',
+        'tripod_geraetetyp_id',
+        'tripod_head_geraetetyp_id',
+        'adapter_geraetetyp_id',
     ];
 
     public function vbProtokoll()
@@ -30,5 +35,25 @@ class VbProtokollAnforderung extends Model
     public function geraetetyp()
     {
         return $this->belongsTo(Geraetetyp::class);
+    }
+
+    public function lensGeraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class, 'lens_geraetetyp_id');
+    }
+
+    public function tripodGeraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class, 'tripod_geraetetyp_id');
+    }
+
+    public function tripodHeadGeraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class, 'tripod_head_geraetetyp_id');
+    }
+
+    public function adapterGeraetetyp()
+    {
+        return $this->belongsTo(Geraetetyp::class, 'adapter_geraetetyp_id');
     }
 }

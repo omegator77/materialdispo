@@ -78,6 +78,57 @@ test('admin can create a vb-protokoll requirement targeting a specific geraetety
     expect($freitextRow['gepackt'])->toBeNull();
 });
 
+test('admin can define a typ-based kamerakonfiguration as an anforderung', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $production = makeVbProduction();
+    $kameraUnit = Unit::create(['bezeichnung' => 'Kameras']);
+    $optikUnit = Unit::create(['bezeichnung' => 'Optiken']);
+    $stativUnit = Unit::create(['bezeichnung' => 'Stative']);
+
+    $kameraTyp = \App\Models\Geraetetyp::create(['units_id' => $kameraUnit->id, 'bezeichnung' => 'LDX 86N WorldCam']);
+    $optikTyp = \App\Models\Geraetetyp::create(['units_id' => $optikUnit->id, 'bezeichnung' => 'Fujinon HA23']);
+    $stativTyp = \App\Models\Geraetetyp::create(['units_id' => $stativUnit->id, 'bezeichnung' => 'Sachtler Quattro']);
+
+    $response = $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
+        'kunde' => 'Testkunde',
+        'anforderungen' => [
+            [
+                'mode' => 'kamera',
+                'cam_number' => 'Kamera 1',
+                'geraetetyp_id' => $kameraTyp->id,
+                'lens_geraetetyp_id' => $optikTyp->id,
+                'tripod_geraetetyp_id' => $stativTyp->id,
+                'notiz' => 'Position Mitte',
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(route('vb-protokoll.show', $production->id));
+
+    $vbProtokoll = VbProtokoll::where('production_id', $production->id)->firstOrFail();
+    expect($vbProtokoll->anforderungen)->toHaveCount(1);
+
+    $anforderung = $vbProtokoll->anforderungen->first();
+    expect($anforderung->cam_number)->toBe('Kamera 1')
+        ->and($anforderung->geraetetyp_id)->toBe($kameraTyp->id)
+        ->and($anforderung->unit_id)->toBe($kameraUnit->id)
+        ->and($anforderung->lens_geraetetyp_id)->toBe($optikTyp->id)
+        ->and($anforderung->tripod_geraetetyp_id)->toBe($stativTyp->id)
+        ->and($anforderung->tripod_head_geraetetyp_id)->toBeNull();
+
+    $row = $vbProtokoll->fresh()->abgleich()->first();
+    expect($row['kind'])->toBe('kamera')
+        ->and($row['label'])->toBe('Kamera Kamera 1')
+        ->and($row['gepackt'])->toBeNull()
+        ->and($row['notiz'])->toContain('LDX 86N WorldCam')
+        ->and($row['notiz'])->toContain('Objektiv: Fujinon HA23')
+        ->and($row['notiz'])->toContain('Stativ: Sachtler Quattro')
+        ->and($row['notiz'])->toContain('Position Mitte');
+
+    $response = $this->actingAs($admin)->get(route('vb-protokoll.show', $production->id));
+    $response->assertOk()->assertSee('Kamerakonfig')->assertSee('LDX 86N WorldCam');
+});
+
 test('vb-protokoll show page renders the soll/ist abgleich against the packlist', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $production = makeVbProduction();

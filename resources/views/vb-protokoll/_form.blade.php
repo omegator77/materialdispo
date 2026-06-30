@@ -4,12 +4,17 @@ $v = fn ($field, $default = '') => old($field, $isEdit ? ($vbProtokoll->{$field}
 
 $initialAnforderungen = $isEdit
     ? $vbProtokoll->anforderungen->map(fn ($a) => [
-        'mode' => $a->freitext ? 'frei' : 'typ',
+        'mode' => $a->cam_number !== null ? 'kamera' : ($a->freitext ? 'frei' : 'typ'),
         'unit_id' => $a->unit_id,
         'geraetetyp_id' => $a->geraetetyp_id,
         'freitext' => $a->freitext,
         'anzahl' => $a->anzahl,
         'notiz' => $a->notiz,
+        'cam_number' => $a->cam_number,
+        'lens_geraetetyp_id' => $a->lens_geraetetyp_id,
+        'tripod_geraetetyp_id' => $a->tripod_geraetetyp_id,
+        'tripod_head_geraetetyp_id' => $a->tripod_head_geraetetyp_id,
+        'adapter_geraetetyp_id' => $a->adapter_geraetetyp_id,
     ])->values()
     : collect();
 
@@ -18,6 +23,8 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
     'units_id' => $g->units_id,
     'bezeichnung' => $g->bezeichnung,
 ])->values();
+
+$geraetetypenByUnit = $geraetetypen->groupBy('units_id');
 @endphp
 
 <form method="POST"
@@ -115,6 +122,10 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
                             <input type="radio" :name="`anforderungen[${index}][mode]`" value="frei" x-model="anforderung.mode">
                             Freitext
                         </label>
+                        <label class="flex items-center gap-1">
+                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="kamera" x-model="anforderung.mode">
+                            Kamera-Setup
+                        </label>
                         <button type="button" @click="removeAnforderung(index)" class="ml-auto text-red-500 hover:text-red-700 px-2" title="Entfernen">×</button>
                     </div>
 
@@ -142,6 +153,63 @@ $geraetetypenForJs = $geraetetypen->map(fn ($g) => [
                                placeholder="z. B. Sandsäcke" class="form-control flex-1 text-sm">
                         <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
                                placeholder="Anzahl (optional)" class="form-control w-full sm:w-24 text-sm">
+                    </div>
+
+                    <div x-show="anforderung.mode === 'kamera'" class="space-y-2">
+                        <input type="text" :name="`anforderungen[${index}][cam_number]`" x-model="anforderung.cam_number"
+                               placeholder="Kamera-Nr (z. B. Kamera 1)" class="form-control w-full sm:w-56 text-sm">
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <select :name="`anforderungen[${index}][geraetetyp_id]`" x-model="anforderung.geraetetyp_id" class="form-control text-sm">
+                                <option value="">Kamera-Typ</option>
+                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
+                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
+                                    @foreach($typenDieserGruppe as $typ)
+                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <select :name="`anforderungen[${index}][lens_geraetetyp_id]`" x-model="anforderung.lens_geraetetyp_id" class="form-control text-sm">
+                                <option value="">Objektiv-Typ</option>
+                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
+                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
+                                    @foreach($typenDieserGruppe as $typ)
+                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <select :name="`anforderungen[${index}][tripod_geraetetyp_id]`" x-model="anforderung.tripod_geraetetyp_id" class="form-control text-sm">
+                                <option value="">Stativ-Typ</option>
+                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
+                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
+                                    @foreach($typenDieserGruppe as $typ)
+                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <select :name="`anforderungen[${index}][tripod_head_geraetetyp_id]`" x-model="anforderung.tripod_head_geraetetyp_id" class="form-control text-sm">
+                                <option value="">Kopf-Typ</option>
+                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
+                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
+                                    @foreach($typenDieserGruppe as $typ)
+                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <select :name="`anforderungen[${index}][adapter_geraetetyp_id]`" x-model="anforderung.adapter_geraetetyp_id" class="form-control text-sm">
+                                <option value="">Adapter-Typ</option>
+                                @foreach($geraetetypenByUnit as $unitId => $typenDieserGruppe)
+                                <optgroup label="{{ $units->firstWhere('id', $unitId)?->bezeichnung }}">
+                                    @foreach($typenDieserGruppe as $typ)
+                                    <option value="{{ $typ->id }}">{{ $typ->bezeichnung }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <input type="text" :name="`anforderungen[${index}][notiz]`" x-model="anforderung.notiz"
@@ -259,7 +327,10 @@ function vbProtokollForm({ anforderungen, geraetetypen }) {
             return this.geraetetypen.filter(t => String(t.units_id) === String(unitId));
         },
         addAnforderung() {
-            this.anforderungen.push({ mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: '', notiz: '' });
+            this.anforderungen.push({
+                mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: '', notiz: '',
+                cam_number: '', lens_geraetetyp_id: '', tripod_geraetetyp_id: '', tripod_head_geraetetyp_id: '', adapter_geraetetyp_id: '',
+            });
         },
         removeAnforderung(index) {
             this.anforderungen.splice(index, 1);

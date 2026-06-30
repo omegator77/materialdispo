@@ -89,6 +89,25 @@ class VbProtokoll extends Model
     public function abgleich(): \Illuminate\Support\Collection
     {
         return $this->anforderungen->map(function (VbProtokollAnforderung $anforderung) {
+            if ($anforderung->cam_number !== null) {
+                $komponenten = collect([
+                    $anforderung->geraetetyp?->bezeichnung,
+                    $anforderung->lensGeraetetyp ? 'Objektiv: '.$anforderung->lensGeraetetyp->bezeichnung : null,
+                    $anforderung->tripodGeraetetyp ? 'Stativ: '.$anforderung->tripodGeraetetyp->bezeichnung : null,
+                    $anforderung->tripodHeadGeraetetyp ? 'Kopf: '.$anforderung->tripodHeadGeraetetyp->bezeichnung : null,
+                    $anforderung->adapterGeraetetyp ? 'Adapter: '.$anforderung->adapterGeraetetyp->bezeichnung : null,
+                ])->filter()->implode(', ');
+
+                return [
+                    'label' => 'Kamera '.$anforderung->cam_number,
+                    'kind' => 'kamera',
+                    'benoetigt' => null,
+                    'gepackt' => null,
+                    'erfuellt' => null,
+                    'notiz' => trim(collect([$komponenten, $anforderung->notiz])->filter()->implode(' — ')),
+                ];
+            }
+
             if ($anforderung->freitext) {
                 return [
                     'label' => $anforderung->freitext,
