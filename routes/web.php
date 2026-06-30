@@ -13,6 +13,7 @@ use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ActivityLogController;
 
 Route::redirect('/', '/login');
 
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
 // Admin only — Benutzerverwaltung
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('/users', UserController::class);
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });
 
 require __DIR__.'/auth.php';

@@ -41,6 +41,10 @@
                         <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                             {{ __('Benutzer') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('activity-log.index')" :active="request()->routeIs('activity-log.*')">
+                            {{ __('Protokoll') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -133,6 +137,10 @@
             @if(Auth::user()->isAdmin())
                 <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                     {{ __('Benutzer') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('activity-log.index')" :active="request()->routeIs('activity-log.*')">
+                    {{ __('Protokoll') }}
                 </x-responsive-nav-link>
             @endif
         </div>
