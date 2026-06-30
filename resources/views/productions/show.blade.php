@@ -90,34 +90,68 @@
                     <form id="item-selection-form"
                         method="POST"
                         action="{{ route('productions.attachItem', $production->id) }}"
-                        class="space-y-4">
+                        class="space-y-4"
+                        x-data="itemPicker({
+                            items: [
+                                @foreach ($availableItems as $item)
+                                { id: {{ $item->id }}, unitId: '{{ $item->units_id }}', available: {{ $item->is_available ? 'true' : 'false' }}, label: @js($item->bezeichnung . ($item->nummer ? ' (' . $item->nummer . ')' : '')) },
+                                @endforeach
+                            ]
+                        })">
                         @csrf
 
                         <input type="hidden" name="unit" value="{{ request('unit') }}">
                         <input type="hidden" name="show_unavailable" value="{{ request('show_unavailable') }}">
 
                         <div>
-                            <label for="item_id" class="block text-sm font-medium text-gray-700 mb-1">
-                                Item auswählen
+                            <label for="item_search" class="block text-sm font-medium text-gray-700 mb-1">
+                                Items auswählen
                             </label>
 
-                            <select name="item_id"
-                                id="item_id"
-                                class="form-control w-full"
-                                required>
+                            <template x-for="item in selected" :key="item.id">
+                                <input type="hidden" name="item_id[]" :value="item.id">
+                            </template>
 
-                                <option value="">Bitte Item auswählen</option>
+                            <div class="flex flex-wrap gap-2 mb-2" x-show="selected.length">
+                                <template x-for="item in selected" :key="item.id">
+                                    <span class="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs font-medium pl-2 pr-1 py-1 rounded-full border border-orange-200">
+                                        <span x-text="item.label"></span>
+                                        <button type="button" @click="remove(item)" class="hover:text-orange-900 leading-none px-1">×</button>
+                                    </span>
+                                </template>
+                            </div>
 
-                                @foreach ($availableItems as $item)
-                                <option value="{{ $item->id }}"
-                                    data-unit-id="{{ $item->units_id }}"
-                                    data-available="{{ $item->is_available ? '1' : '0' }}"
-                                    @disabled(! $item->is_available)>
-                                    {{ $item->bezeichnung }}{{ $item->nummer ? ' (' . $item->nummer . ')' : '' }}
-                                </option>
-                                @endforeach
+                            <div class="relative">
+                                <input type="text" id="item_search"
+                                       x-model="query"
+                                       @input="open = true"
+                                       @focus="open = true"
+                                       @click.outside="open = false"
+                                       placeholder="Item suchen…"
+                                       autocomplete="off"
+                                       class="form-control w-full">
 
-                            </select>
+                                <div x-show="open" x-cloak
+                                     class="absolute z-10 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                                    <template x-for="item in filteredItems" :key="item.id">
+                                        <button type="button"
+                                                @click="toggle(item)"
+                                                :disabled="!item.available"
+                                                :class="!item.available ? 'text-gray-300 cursor-not-allowed' : (isSelected(item) ? 'bg-orange-50 text-orange-700' : 'hover:bg-orange-50 hover:text-orange-700 text-gray-700')"
+                                                class="w-full text-left px-3 py-2 text-sm border-b last:border-0 border-gray-50 flex items-center justify-between gap-2">
+                                            <span>
+                                                <span x-text="item.label"></span>
+                                                <span x-show="!item.available" class="text-xs"> (nicht verfügbar)</span>
+                                            </span>
+                                            <span x-show="isSelected(item)" class="text-orange-600">✓</span>
+                                        </button>
+                                    </template>
+                                    <div x-show="filteredItems.length === 0" class="px-3 py-2 text-sm text-gray-400">
+                                        Keine Treffer.
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="mt-4">
                                 <label for="notes" class="block text-sm font-medium text-gray-700">
                                     Notiz zum Gerät optional
@@ -135,13 +169,19 @@
                         <div class="flex flex-col sm:flex-row gap-2">
                             <button type="submit"
                                 id="add-button"
-                                class="flex-1 bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
-                                Standard hinzufügen
+                                :disabled="selected.length === 0"
+                                :class="selected.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-500'"
+                                class="flex-1 bg-orange-400 text-white font-semibold py-2 px-4 rounded"
+                                x-text="selected.length > 1 ? selected.length + ' Geräte hinzufügen' : 'Standard hinzufügen'">
                             </button>
 
                             <a href="#"
                                 id="config-button"
-                                class="hidden flex-1 text-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                                @click="if (!configEnabled) $event.preventDefault()"
+                                :href="configEnabled ? configUrl : '#'"
+                                :class="configEnabled ? 'bg-gray-800 hover:bg-gray-900 cursor-pointer' : 'bg-gray-300 cursor-not-allowed pointer-events-none'"
+                                x-show="selected.length"
+                                class="flex-1 text-center text-white font-semibold py-2 px-4 rounded">
                                 Konfigurieren
                             </a>
                         </div>
@@ -319,33 +359,40 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const itemSelect = document.getElementById('item_id');
-            const configButton = document.getElementById('config-button');
-
-            function updateConfigButton() {
-                const selectedOption = itemSelect.options[itemSelect.selectedIndex];
-
-                if (!selectedOption || !selectedOption.value) {
-                    configButton.classList.add('hidden');
-                    configButton.href = '#';
-                    return;
+        function itemPicker({ items }) {
+            return {
+                items,
+                query: '',
+                open: false,
+                selected: [],
+                get filteredItems() {
+                    const needle = this.query.trim().toLowerCase();
+                    if (needle === '') return this.items;
+                    return this.items.filter(item => item.label.toLowerCase().includes(needle));
+                },
+                isSelected(item) {
+                    return this.selected.some(i => i.id === item.id);
+                },
+                toggle(item) {
+                    if (!item.available) return;
+                    if (this.isSelected(item)) {
+                        this.remove(item);
+                    } else {
+                        this.selected.push(item);
+                    }
+                    this.query = '';
+                },
+                remove(item) {
+                    this.selected = this.selected.filter(i => i.id !== item.id);
+                },
+                get configEnabled() {
+                    return this.selected.length === 1 && this.selected[0].unitId === '1';
+                },
+                get configUrl() {
+                    if (!this.configEnabled) return '#';
+                    return "{{ route('camera-config.create', $production->id) }}" + "?camera_item_id=" + this.selected[0].id;
                 }
-
-                const unitId = selectedOption.dataset.unitId;
-                const itemId = selectedOption.value;
-
-                if (unitId === '1') {
-                    configButton.classList.remove('hidden');
-                    configButton.href = "{{ route('camera-config.create', $production->id) }}" + "?camera_item_id=" + itemId;
-                } else {
-                    configButton.classList.add('hidden');
-                    configButton.href = '#';
-                }
-            }
-
-            itemSelect.addEventListener('change', updateConfigButton);
-            updateConfigButton();
-        });
+            };
+        }
     </script>
 </x-app-layout>

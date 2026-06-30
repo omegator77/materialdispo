@@ -208,13 +208,14 @@ class ProductionController extends Controller
     public function attachItem(Request $request, $id)
     {
         $request->validate([
-            'item_id' => ['required', 'exists:items,id'],
+            'item_id' => ['required'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values();
+
         try {
             $production = Production::findOrFail($id);
-            $item = Item::findOrFail($request->item_id);
 
             $redirectParams = [
                 'production' => $production->id,
@@ -228,37 +229,63 @@ class ProductionController extends Controller
                 $redirectParams['show_unavailable'] = 1;
             }
 
-            if ($production->items()->where('items.id', $item->id)->exists()) {
+            $items = Item::whereIn('id', $itemIds)->get()->keyBy('id');
+
+            if ($items->count() !== $itemIds->count()) {
                 return redirect()
                     ->route('productions.show', $redirectParams)
-                    ->with('error', 'Dieses Gerät ist bereits in dieser Produktion.');
+                    ->with('error', 'Ein oder mehrere Geräte wurden nicht gefunden.');
             }
 
-            $availability = $this->availability->check($item, $production);
+            $added = [];
+            $skipped = [];
 
-            if (! $availability['available']) {
-                return redirect()
-                    ->route('productions.show', $redirectParams)
-                    ->with('error', $availability['reason']);
+            foreach ($itemIds as $itemId) {
+                $item = $items->get($itemId);
+
+                if ($production->items()->where('items.id', $item->id)->exists()) {
+                    $skipped[] = "{$item->bezeichnung} (bereits enthalten)";
+                    continue;
+                }
+
+                $availability = $this->availability->check($item, $production);
+
+                if (! $availability['available']) {
+                    $skipped[] = "{$item->bezeichnung} ({$availability['reason']})";
+                    continue;
+                }
+
+                DB::transaction(function () use ($production, $item, $request) {
+                    $production->items()->syncWithoutDetaching([
+                        $item->id => [
+                            'notes' => $request->notes,
+                        ],
+                    ]);
+                });
+
+                activity('item')
+                    ->performedOn($item)
+                    ->event('attached')
+                    ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
+                    ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
+
+                $added[] = $item->bezeichnung;
             }
 
-            DB::transaction(function () use ($production, $item, $request) {
-                $production->items()->syncWithoutDetaching([
-                    $item->id => [
-                        'notes' => $request->notes,
-                    ],
-                ]);
-            });
+            $messageParts = [];
+            if (count($added)) {
+                $messageParts[] = count($added) . ' Gerät(e) hinzugefügt: ' . implode(', ', $added);
+            }
+            if (count($skipped)) {
+                $messageParts[] = 'Übersprungen: ' . implode(', ', $skipped);
+            }
 
-            activity('item')
-                ->performedOn($item)
-                ->event('attached')
-                ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
-                ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
+            $messageType = count($added) ? 'success' : 'error';
+            $message = $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.';
 
             return redirect()
                 ->route('productions.show', $redirectParams)
-                ->with('success', 'Item erfolgreich zugewiesen.');
+                ->with($messageType, $message);
         } catch (ModelNotFoundException $e) {
             return redirect()
                 ->route('productions.index')
