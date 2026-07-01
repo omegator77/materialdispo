@@ -185,22 +185,24 @@
     {{-- Anforderungen --}}
     @if($vbProtokoll->anforderungen->count())
     @if($showAbgleich)
-    <h2>Anforderungen – Abgleich mit Packliste</h2>
+    <h2>Anforderungen – Abgleich VB-Protokoll → Packliste → Gepackt</h2>
     <table>
         <thead>
             <tr>
-                <th style="width: 40%;">Kategorie</th>
+                <th style="width: 32%;">Kategorie</th>
                 <th style="width: 12%;">Benötigt</th>
+                <th style="width: 12%;">Packliste</th>
                 <th style="width: 12%;">Gepackt</th>
-                <th style="width: 16%;">Status</th>
-                <th style="width: 20%;">Notiz</th>
+                <th style="width: 14%;">Status</th>
+                <th style="width: 18%;">Notiz</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($vbProtokoll->abgleich() as $row)
+            @foreach($vbProtokoll->abgleichMitPackstatus() as $row)
             <tr>
                 <td>{{ $row['label'] }}</td>
                 <td>{{ $row['benoetigt'] ?? '—' }}</td>
+                <td>{{ $row['zugeordnet'] ?? '—' }}</td>
                 <td>{{ $row['gepackt'] ?? '—' }}</td>
                 <td>
                     @if(is_null($row['erfuellt']))
