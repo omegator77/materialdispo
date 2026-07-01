@@ -24,13 +24,6 @@
                 </a>
                 @endif
 
-                @if($vbProtokoll)
-                <a href="{{ route('vb-protokoll.pdf-abgleich', $production->id) }}"
-                    class="inline-flex justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
-                    Abgleich-Report
-                </a>
-                @endif
-
                 <a href="{{ route('productions.pdf', $production->id) }}"
                     class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
                     PDF exportieren
