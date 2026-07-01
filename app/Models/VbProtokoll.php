@@ -180,4 +180,106 @@ class VbProtokoll extends Model
 
         return $rows;
     }
+
+    /**
+     * Dreiwege-Abgleich für den Abgleich-Report: VB-Protokoll (Soll) ->
+     * Packliste (zugeordnete Geräte) -> physisch gepackt (Packvorgang).
+     * Anders als abgleich() gilt eine Anforderung erst als erfüllt, wenn
+     * genug passende Geräte tatsächlich im Packvorgang abgehakt sind.
+     */
+    public function abgleichMitPackstatus(): \Illuminate\Support\Collection
+    {
+        $packedIds = $this->production->packedItemIds();
+
+        return $this->anforderungen->flatMap(function (VbProtokollAnforderung $anforderung) use ($packedIds) {
+            if ($anforderung->cam_number !== null) {
+                return $this->kameraAbgleichMitPackstatus($anforderung, $packedIds);
+            }
+
+            if ($anforderung->freitext) {
+                return [[
+                    'label' => $anforderung->freitext,
+                    'kind' => 'frei',
+                    'benoetigt' => $anforderung->anzahl,
+                    'zugeordnet' => null,
+                    'gepackt' => null,
+                    'erfuellt' => null,
+                    'notiz' => $anforderung->notiz,
+                ]];
+            }
+
+            $packlist = $this->production->packlistEntries();
+
+            $matches = $anforderung->geraetetyp_id
+                ? fn ($entry) => $entry['item']->geraetetyp_id === $anforderung->geraetetyp_id
+                : fn ($entry) => $entry['item']->units_id === $anforderung->unit_id;
+
+            $matched = $packlist->filter($matches);
+            $zugeordnet = $matched->count();
+            $gepackt = $matched->filter(fn ($entry) => $packedIds->contains($entry['item']->id))->count();
+
+            $label = $anforderung->geraetetyp_id
+                ? ($anforderung->geraetetyp?->bezeichnung ?? '—')
+                : ($anforderung->unit?->bezeichnung ?? '—');
+            $kind = $anforderung->geraetetyp_id ? 'typ' : 'gruppe';
+
+            return [[
+                'label' => $label,
+                'kind' => $kind,
+                'benoetigt' => $anforderung->anzahl,
+                'zugeordnet' => $zugeordnet,
+                'gepackt' => $gepackt,
+                'erfuellt' => $gepackt >= $anforderung->anzahl,
+                'notiz' => $anforderung->notiz,
+            ]];
+        });
+    }
+
+    private function kameraAbgleichMitPackstatus(VbProtokollAnforderung $anforderung, \Illuminate\Support\Collection $packedIds): array
+    {
+        $komponenten = [
+            'Kamera' => $anforderung->geraetetyp,
+            'Objektiv' => $anforderung->lensGeraetetyp,
+            'Stativ' => $anforderung->tripodGeraetetyp,
+            'Kopf' => $anforderung->tripodHeadGeraetetyp,
+            'Adapter' => $anforderung->adapterGeraetetyp,
+        ];
+
+        $rows = [];
+        $packlist = $this->production->packlistEntries();
+
+        foreach ($komponenten as $rolle => $geraetetyp) {
+            if (! $geraetetyp) {
+                continue;
+            }
+
+            $matched = $packlist->filter(fn ($entry) => $entry['item']->geraetetyp_id === $geraetetyp->id);
+            $zugeordnet = $matched->count();
+            $gepackt = $matched->filter(fn ($entry) => $packedIds->contains($entry['item']->id))->count();
+
+            $rows[] = [
+                'label' => 'Kamera '.$anforderung->cam_number.' – '.$rolle.': '.$geraetetyp->bezeichnung,
+                'kind' => 'kamera',
+                'benoetigt' => 1,
+                'zugeordnet' => $zugeordnet,
+                'gepackt' => $gepackt,
+                'erfuellt' => $gepackt >= 1,
+                'notiz' => $anforderung->notiz,
+            ];
+        }
+
+        if (empty($rows)) {
+            $rows[] = [
+                'label' => 'Kamera '.$anforderung->cam_number,
+                'kind' => 'kamera',
+                'benoetigt' => null,
+                'zugeordnet' => null,
+                'gepackt' => null,
+                'erfuellt' => null,
+                'notiz' => $anforderung->notiz,
+            ];
+        }
+
+        return $rows;
+    }
 }

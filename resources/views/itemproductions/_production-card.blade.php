@@ -63,6 +63,18 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
                 class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
                 PDF exportieren
             </a>
+
+            @if($production->packvorgang_confirmed_at)
+            <a href="{{ $production->vbProtokoll ? route('vb-protokoll.pdf-abgleich', $production->id) : route('packvorgang.pdf', $production->id) }}"
+                class="inline-flex justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                Abgleich-Report
+            </a>
+            @else
+            <span title="Erst verfügbar, wenn der Packvorgang abgeschlossen ist"
+                class="inline-flex justify-center bg-gray-200 text-gray-400 font-semibold py-2 px-4 rounded cursor-not-allowed">
+                Abgleich-Report
+            </span>
+            @endif
         </div>
         @endif
 
