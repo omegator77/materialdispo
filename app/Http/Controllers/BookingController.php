@@ -1,15 +1,15 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Booking;
 
-use Illuminate\Http\Request;
+use App\Models\Booking;
 
 class BookingController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $bookings = Booking::all();
-       // dd($bookings);
-       return view('bookings.index', ['bookings'=> $bookings]);
+
+        return view('bookings.index', ['bookings' => $bookings]);
     }
 }

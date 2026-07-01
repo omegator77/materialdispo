@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\SupplierRequest;
 use App\Models\Supplier;
 
 class SupplierController extends Controller
@@ -19,64 +19,32 @@ class SupplierController extends Controller
         return view('suppliers.create');
     }
 
-    public function store(Request $request)
+    public function store(SupplierRequest $request)
     {
-        $request->validate([
-            'bezeichnung' => 'required',
-            'kontakt' => 'nullable',
-            'phone' => 'nullable',
-            'email' => 'nullable|email',
-        ]);
-
-        Supplier::create($request->only([
-            'bezeichnung',
-            'kontakt',
-            'phone',
-            'email',
-        ]));
+        Supplier::create($request->validated());
 
         return redirect()->route('suppliers.index');
     }
 
-    public function show(string $id)
+    public function show(Supplier $supplier)
     {
-        $supplier = Supplier::findOrFail($id);
-
         return view('suppliers.show', compact('supplier'));
     }
 
-    public function edit(string $id)
+    public function edit(Supplier $supplier)
     {
-        $supplier = Supplier::findOrFail($id);
-
         return view('suppliers.edit', compact('supplier'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(SupplierRequest $request, Supplier $supplier)
     {
-        $supplier = Supplier::findOrFail($id);
-
-        $request->validate([
-            'bezeichnung' => 'required',
-            'kontakt' => 'nullable',
-            'phone' => 'nullable',
-            'email' => 'nullable|email',
-        ]);
-
-        $supplier->update($request->only([
-            'bezeichnung',
-            'kontakt',
-            'phone',
-            'email',
-        ]));
+        $supplier->update($request->validated());
 
         return redirect()->route('suppliers.index');
     }
 
-    public function destroy(string $id)
+    public function destroy(Supplier $supplier)
     {
-        $supplier = Supplier::findOrFail($id);
-
         $supplier->delete();
 
         return redirect()->route('suppliers.index');
