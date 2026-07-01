@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -21,20 +21,13 @@ class UserController extends Controller
         return view('users.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'unique:users,email'],
-            'role'     => ['required', Rule::in(['admin', 'user', 'viewer'])],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
         User::create([
-            'name'              => $request->name,
-            'email'             => $request->email,
-            'role'              => $request->role,
-            'password'          => Hash::make($request->password),
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+            'password' => Hash::make($request->password),
             'email_verified_at' => now(),
         ]);
 
@@ -46,19 +39,12 @@ class UserController extends Controller
         return view('users.edit', compact('user'));
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $request->validate([
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'role'  => ['required', Rule::in(['admin', 'user', 'viewer'])],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-        ]);
-
         $data = [
-            'name'  => $request->name,
+            'name' => $request->name,
             'email' => $request->email,
-            'role'  => $request->role,
+            'role' => $request->role,
         ];
 
         if ($request->filled('password')) {

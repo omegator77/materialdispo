@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GeraetetypRequest;
 use App\Models\Geraetetyp;
 use App\Models\Unit;
 use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
 
 class GeraetetypController extends Controller
 {
@@ -23,15 +23,9 @@ class GeraetetypController extends Controller
         return view('geraetetypen.create', compact('units'));
     }
 
-    public function store(Request $request)
+    public function store(GeraetetypRequest $request)
     {
-        $validated = $request->validate([
-            'units_id' => ['required', 'exists:units,id'],
-            'bezeichnung' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        Geraetetyp::create($validated);
+        Geraetetyp::create($request->validated());
 
         return redirect()->route('geraetetypen.index')->with('success', 'Gerätetyp angelegt.');
     }
@@ -43,15 +37,9 @@ class GeraetetypController extends Controller
         return view('geraetetypen.edit', compact('geraetetyp', 'units'));
     }
 
-    public function update(Request $request, Geraetetyp $geraetetyp)
+    public function update(GeraetetypRequest $request, Geraetetyp $geraetetyp)
     {
-        $validated = $request->validate([
-            'units_id' => ['required', 'exists:units,id'],
-            'bezeichnung' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $geraetetyp->update($validated);
+        $geraetetyp->update($request->validated());
 
         return redirect()->route('geraetetypen.index')->with('success', 'Gerätetyp aktualisiert.');
     }
