@@ -58,9 +58,11 @@ docker exec -it laravel-app npm run build
 
 ```
 app/
-  Http/Controllers/   — Controller (Productions, Items, Timeline, ...)
+  Http/Controllers/   — dünne Controller (HTTP-Orchestrierung)
+  Http/Requests/       — Form Requests (Validierung pro Ressource)
   Models/             — Eloquent Models
-  Services/           — ItemAvailabilityService (Verfügbarkeitsprüfung)
+  Services/           — Business-Logik (Verfügbarkeitsprüfung, Kamerakonfiguration,
+                         Vorlagen-Import, Geräte-Detail-Sync, VB-Protokoll-Anforderungen)
 resources/
   views/              — Blade Templates
     productions/      — Produktionsverwaltung

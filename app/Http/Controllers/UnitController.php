@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
+use App\Http\Requests\UnitRequest;
 use App\Models\Item;
-use Illuminate\Http\Request;
+use App\Models\Unit;
 
 class UnitController extends Controller
 {
@@ -15,7 +15,7 @@ class UnitController extends Controller
     {
         $units = Unit::orderBy('bezeichnung')->get();
 
-        return view('units.index', ['units'=> $units]);
+        return view('units.index', ['units' => $units]);
     }
 
     /**
@@ -25,80 +25,55 @@ class UnitController extends Controller
     {
         $units = Unit::all();
         $items = Item::all();
-        return view('units.create', compact('units', 'items')) ;
-        //->withErrors([
-        // 'bezeichnung' => 'Testfehler',
-        // 'description' => 'Testfehler',
-        // ]);
+
+        return view('units.create', compact('units', 'items'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(UnitRequest $request)
     {
-        $request->validate([
-            'bezeichnung' => 'required',
-            
-            ]);
+        Unit::create($request->validated());
 
-        $unit = Unit::create([
-            'bezeichnung'=>$request->input('bezeichnung'),
-            'description'=>$request->input('description'),
-            
-        ]);
-
-        return redirect('/units');
+        return redirect()->route('units.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Unit $unit)
     {
-        // Holt die Unit anhand der ID oder gibt eine 404-Fehlermeldung zurück, falls nicht gefunden
-    $unit = Unit::findOrFail($id);
-
-    // Gibt die Unit an die View weiter
-    return view('units.show', compact('unit'));
+        return view('units.show', compact('unit'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
-{
-    $unit = Unit::findOrFail($id); // Für das Formular.
-    $units = Unit::all(); // Hole alle Einheiten, um die Tabelle darzustellen
+    public function edit(Unit $unit)
+    {
+        $units = Unit::all();
 
-    return view('units.edit', compact('unit', 'units'));
-}
-
+        return view('units.edit', compact('unit', 'units'));
+    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UnitRequest $request, Unit $unit)
     {
-        $request->validate([
-            'bezeichnung' => 'required',
-        ]);
-    
-        $unit = Unit::findOrFail($id);
-        $unit->update([
-            'bezeichnung' => $request->input('bezeichnung'),
-            'description' => $request->input('description'),
-        ]);
-    
-        return redirect('units');
+        $unit->update($request->validated());
+
+        return redirect()->route('units.index');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Unit $unit)
     {
-        Unit::where('id', $id)->delete();
-                return redirect('/units');
+        $unit->delete();
+
+        return redirect()->route('units.index');
     }
 }
