@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ItemRequest;
 use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Production;
-use App\Models\Unit;
 use App\Models\Supplier;
-use Illuminate\Http\Request;
+use App\Models\Unit;
+use App\Services\ItemDetailSyncService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class ItemController extends Controller
 {
+    public function __construct(private ItemDetailSyncService $detailSync) {}
+
     public function index(Request $request)
     {
-        $detailRelations = match((int) $request->get('unit_id', 0)) {
-            1     => ['cameraDetail'],
-            2     => ['lensDetail'],
+        $detailRelations = match ((int) $request->get('unit_id', 0)) {
+            1 => ['cameraDetail'],
+            2 => ['lensDetail'],
             9, 10 => ['monitorDetail'],
             default => ['monitorDetail'],
         };
@@ -55,7 +59,7 @@ class ItemController extends Controller
         $suppliers = Supplier::all();
         $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
-        $item = new Item();
+        $item = new Item;
 
         // Wird für die eingebundene items._table benötigt.
         // Sonst wirft /items/create: Undefined variable $items.
@@ -64,20 +68,17 @@ class ItemController extends Controller
             ->orderBy('nummer', 'asc')
             ->get();
 
-
-
         return view('items.create', compact('units', 'suppliers', 'item', 'items', 'geraetetypen'));
     }
 
-    public function store(Request $request)
+    public function store(ItemRequest $request)
     {
-        $validated = $this->validateItem($request);
         $rentData = $this->prepareRentData($request);
 
-        $item = Item::create(array_merge($validated, $rentData));
+        $item = Item::create(array_merge($request->validated(), $rentData));
 
-        $this->syncMonitorDetails($request, $item);
-        $this->syncLensDetails($request, $item);
+        $this->detailSync->syncMonitorDetails($request, $item);
+        $this->detailSync->syncLensDetails($request, $item);
 
         return redirect()->route('items.index');
     }
@@ -115,18 +116,17 @@ class ItemController extends Controller
         return view('items.edit', compact('units', 'suppliers', 'item', 'geraetetypen'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(ItemRequest $request, string $id)
     {
         $item = Item::findOrFail($id);
 
-        $validated = $this->validateItem($request);
         $rentData = $this->prepareRentData($request);
 
-        $item->update(array_merge($validated, $rentData));
+        $item->update(array_merge($request->validated(), $rentData));
 
-        $this->syncCameraDetails($request, $item);
-        $this->syncMonitorDetails($request, $item);
-        $this->syncLensDetails($request, $item);
+        $this->detailSync->syncCameraDetails($request, $item);
+        $this->detailSync->syncMonitorDetails($request, $item);
+        $this->detailSync->syncLensDetails($request, $item);
 
         return redirect()->route('items.index');
     }
@@ -136,91 +136,6 @@ class ItemController extends Controller
         Item::where('id', $id)->delete();
 
         return redirect()->route('items.index');
-    }
-
-    private function validateItem(Request $request): array
-    {
-        return $request->validate([
-            /*
-            |--------------------------------------------------------------------------
-            | Grunddaten
-            |--------------------------------------------------------------------------
-            */
-            'units_id' => ['required', 'exists:units,id'],
-            'geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
-            'suppliers_id' => ['nullable', 'exists:suppliers,id'],
-            'bezeichnung' => ['required', 'string', 'max:255'],
-            'nummer' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Mietdaten
-            |--------------------------------------------------------------------------
-            | Ein Item ist Mietmaterial, sobald ein Vermieter gesetzt ist.
-            | Ohne Vermieter werden rent_start und rent_end später auf null gesetzt.
-            */
-            'rent_start' => $request->filled('suppliers_id')
-                ? ['required', 'date_format:d.m.Y']
-                : ['nullable'],
-
-            'rent_end' => $request->filled('suppliers_id')
-                ? ['required', 'date_format:d.m.Y', 'after_or_equal:rent_start']
-                : ['nullable'],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Kamera-Metadaten
-            |--------------------------------------------------------------------------
-            | Werden nur bei Unit "Kameras" in camera_details gespeichert.
-            */
-            'body_serial' => ['nullable', 'string', 'max:255'],
-            'fiber_adapter_serial' => ['nullable', 'string', 'max:255'],
-
-            'large_viewfinder_model' => ['nullable', 'string', 'max:255'],
-            'large_viewfinder_type' => ['nullable', 'in:OLED,LCD'],
-            'large_viewfinder_serial' => ['nullable', 'string', 'max:255'],
-
-            'small_viewfinder_model' => ['nullable', 'string', 'max:255'],
-            'small_viewfinder_type' => ['nullable', 'in:OLED,LCD'],
-            'small_viewfinder_serial' => ['nullable', 'string', 'max:255'],
-
-            'ssl_license' => ['nullable', 'boolean'],
-
-            /*
-            |--------------------------------------------------------------------------
-            | Monitor-Metadaten
-            |--------------------------------------------------------------------------
-            | Werden nur bei den beiden Monitor-Units in monitor_details gespeichert.
-            */
-            'manufacturer' => ['nullable', 'string', 'max:255'],
-            'model' => ['nullable', 'string', 'max:255'],
-            'serial_number' => ['nullable', 'string', 'max:255'],
-            'screen_size' => ['nullable', 'string', 'max:50'],
-
-            'has_speakers' => ['nullable', 'boolean'],
-            'has_headphone' => ['nullable', 'boolean'],
-
-            'converter_number' => ['nullable', 'string', 'max:50'],
-            'converter_model' => ['nullable', 'string', 'max:255'],
-            'converter_audio' => ['nullable', 'boolean'],
-
-            'max_input_format' => ['nullable', 'string', 'max:255'],
-
-            'has_stand' => ['nullable', 'boolean'],
-            'stand_number' => ['nullable', 'string', 'max:50'],
-
-
-            /* Objektiv-Metadaten */
-            'lens_manufacturer' => ['nullable', 'string', 'max:255'],
-            'lens_model' => ['nullable', 'string', 'max:255'],
-            'lens_serial_number' => ['nullable', 'string', 'max:255'],
-            'lens_zoom_factor' => ['nullable', 'string', 'max:50'],
-            'lens_zoom_servo_model' => ['nullable', 'string', 'max:255'],
-            'lens_zoom_servo_serial_number' => ['nullable', 'string', 'max:255'],
-            'lens_focus_servo_model' => ['nullable', 'string', 'max:255'],
-            'lens_focus_servo_serial_number' => ['nullable', 'string', 'max:255'],
-        ]);
     }
 
     private function prepareRentData(Request $request): array
@@ -238,100 +153,5 @@ class ItemController extends Controller
                 ? Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d')
                 : null,
         ];
-    }
-
-    private function syncCameraDetails(Request $request, Item $item): void
-    {
-        if ((int) $request->units_id === 1) {
-            $item->cameraDetail()->updateOrCreate(
-                ['item_id' => $item->id],
-                [
-                    'body_serial' => $request->body_serial,
-                    'fiber_adapter_serial' => $request->fiber_adapter_serial,
-
-                    'large_viewfinder_model' => $request->large_viewfinder_model,
-                    'large_viewfinder_type' => $request->large_viewfinder_type,
-                    'large_viewfinder_serial' => $request->large_viewfinder_serial,
-
-                    'small_viewfinder_model' => $request->small_viewfinder_model,
-                    'small_viewfinder_type' => $request->small_viewfinder_type,
-                    'small_viewfinder_serial' => $request->small_viewfinder_serial,
-
-                    'ssl_license' => $request->boolean('ssl_license'),
-                ]
-            );
-
-            return;
-        }
-
-        $item->cameraDetail()->delete();
-    }
-
-    private function syncMonitorDetails(Request $request, Item $item): void
-    {
-        if ($this->isMonitorUnit($request->units_id)) {
-            $item->monitorDetail()->updateOrCreate(
-                ['item_id' => $item->id],
-                [
-                    'manufacturer' => $request->manufacturer,
-                    'model' => $request->model,
-                    'serial_number' => $request->serial_number,
-                    'screen_size' => $request->screen_size,
-
-                    'has_speakers' => $request->boolean('has_speakers'),
-                    'has_headphone' => $request->boolean('has_headphone'),
-
-                    'converter_number' => $request->converter_number,
-                    'converter_model' => $request->converter_model,
-                    'converter_audio' => $request->boolean('converter_audio'),
-
-                    'max_input_format' => $request->max_input_format,
-
-                    'has_stand' => $request->boolean('has_stand'),
-                    'stand_number' => $request->stand_number,
-                ]
-            );
-
-            return;
-        }
-
-        $item->monitorDetail()->delete();
-    }
-
-    private function syncLensDetails(Request $request, Item $item): void
-{
-    if ((int) $request->units_id === 2) {
-        $item->lensDetail()->updateOrCreate(
-            ['item_id' => $item->id],
-            [
-                'manufacturer' => $request->lens_manufacturer,
-                'model' => $request->lens_model,
-                'serial_number' => $request->lens_serial_number,
-                'zoom_factor' => $request->lens_zoom_factor,
-                'zoom_servo_model' => $request->lens_zoom_servo_model,
-                'zoom_servo_serial_number' => $request->lens_zoom_servo_serial_number,
-                'focus_servo_model' => $request->lens_focus_servo_model,
-                'focus_servo_serial_number' => $request->lens_focus_servo_serial_number,
-            ]
-        );
-
-        return;
-    }
-
-    $item->lensDetail()->delete();
-}
-
-    private function isMonitorUnit(int|string|null $unitId): bool
-    {
-        if (!$unitId) {
-            return false;
-        }
-
-        return Unit::where('id', $unitId)
-            ->whereIn('bezeichnung', [
-                'Monitore bis 24 Zoll',
-                'Monitore über 24 Zoll',
-            ])
-            ->exists();
     }
 }
