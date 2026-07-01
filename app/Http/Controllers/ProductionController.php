@@ -98,64 +98,12 @@ class ProductionController extends Controller
         ])->findOrFail($id);
 
         $unitFilter = $request->get('unit');
-        $showUnavailable = $request->boolean('show_unavailable');
 
-        $itemsQuery = Item::query()
-            ->whereDoesntHave('productions', function ($query) use ($id) {
-                $query->where('productions.id', $id);
-            })
-            ->where(function ($query) use ($id) {
-                $query
-                    ->whereDoesntHave('cameraConfigs', function ($q) use ($id) {
-                        $q->where('production_id', $id);
-                    })
-                    ->whereNotIn('id', function ($q) use ($id) {
-                        $q->select('lens')
-                            ->from('camera_configs')
-                            ->where('production_id', $id)
-                            ->whereNotNull('lens');
-                    })
-                    ->whereNotIn('id', function ($q) use ($id) {
-                        $q->select('tripod')
-                            ->from('camera_configs')
-                            ->where('production_id', $id)
-                            ->whereNotNull('tripod');
-                    })
-                    ->whereNotIn('id', function ($q) use ($id) {
-                        $q->select('tripod_head')
-                            ->from('camera_configs')
-                            ->where('production_id', $id)
-                            ->whereNotNull('tripod_head');
-                    })
-                    ->whereNotIn('id', function ($q) use ($id) {
-                        $q->select('large_lens_adapter')
-                            ->from('camera_configs')
-                            ->where('production_id', $id)
-                            ->whereNotNull('large_lens_adapter');
-                    });
-            });
-
-        if ($unitFilter) {
-            $itemsQuery->where('units_id', $unitFilter);
-        }
-
-        $availableItems = $itemsQuery
-            ->orderBy('bezeichnung')
-            ->get()
-            ->map(function ($item) use ($production) {
-                $check = $this->availability->check($item, $production);
-
-                $item->is_available = $check['available'];
-                $item->availability_reason = $check['reason'];
-
-                return $item;
-            });
-
-        if (! $showUnavailable) {
-            $availableItems = $availableItems
-                ->filter(fn ($item) => $item->is_available)
-                ->values();
-        }
+        $availableItems = $this->availability->assignableItemsFor(
+            $production,
+            $unitFilter,
+            $request->boolean('show_unavailable')
+        );
 
         $allUnits = Unit::orderBy('bezeichnung')->get();
 

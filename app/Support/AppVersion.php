@@ -9,7 +9,7 @@ class AppVersion
         // Cache-Key an die mtime der HEAD-Referenz koppeln, damit ein Deploy
         // (git pull aktualisiert die Ref-Datei) den Cache sofort invalidiert,
         // statt bis zu 1h auf die alte Version warten zu müssen.
-        $cacheKey = 'app_version_label_' . self::fingerprint();
+        $cacheKey = 'app_version_label_'.self::fingerprint();
 
         return cache()->remember($cacheKey, 3600, function () {
             return self::fromGitCli() ?? self::fromGitFiles() ?? 'unbekannt';
@@ -26,7 +26,7 @@ class AppVersion
 
         $head = trim((string) file_get_contents($headFile));
         $refFile = str_starts_with($head, 'ref:')
-            ? base_path('.git/' . trim(substr($head, 4)))
+            ? base_path('.git/'.trim(substr($head, 4)))
             : null;
 
         $statFile = ($refFile && is_file($refFile)) ? $refFile : $headFile;
@@ -44,13 +44,13 @@ class AppVersion
             return null;
         }
 
-        $hash = trim((string) @shell_exec('git -C ' . escapeshellarg(base_path()) . ' rev-parse --short HEAD 2>&1'));
+        $hash = trim((string) @shell_exec('git -C '.escapeshellarg(base_path()).' rev-parse --short HEAD 2>&1'));
 
         if (! $hash || strlen($hash) > 12 || ! ctype_xdigit($hash)) {
             return null;
         }
 
-        $date = trim((string) @shell_exec('git -C ' . escapeshellarg(base_path()) . ' log -1 --format=%cd --date=format:"%d.%m.%Y %H:%M" 2>&1'));
+        $date = trim((string) @shell_exec('git -C '.escapeshellarg(base_path()).' log -1 --format=%cd --date=format:"%d.%m.%Y %H:%M" 2>&1'));
 
         return $date ? "{$hash} · {$date}" : $hash;
     }
@@ -63,7 +63,7 @@ class AppVersion
     private static function fromGitFiles(): ?string
     {
         $gitDir = base_path('.git');
-        $headFile = $gitDir . '/HEAD';
+        $headFile = $gitDir.'/HEAD';
 
         if (! is_file($headFile)) {
             return null;
@@ -75,12 +75,12 @@ class AppVersion
 
         if (str_starts_with($head, 'ref:')) {
             $ref = trim(substr($head, 4));
-            $refFile = $gitDir . '/' . $ref;
+            $refFile = $gitDir.'/'.$ref;
 
             if (is_file($refFile)) {
                 $hash = trim((string) file_get_contents($refFile));
             } else {
-                $packedRefs = $gitDir . '/packed-refs';
+                $packedRefs = $gitDir.'/packed-refs';
                 if (is_file($packedRefs)) {
                     foreach (file($packedRefs) as $line) {
                         $line = trim($line);

@@ -196,8 +196,9 @@ class ImportLensDetails extends Command
         foreach ($lenses as $itemId => $data) {
             $item = Item::find($itemId);
 
-            if (!$item) {
+            if (! $item) {
                 $this->warn("Item {$itemId} nicht gefunden.");
+
                 continue;
             }
 
