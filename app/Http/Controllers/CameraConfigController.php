@@ -39,7 +39,7 @@ class CameraConfigController extends Controller
         $heads = Item::where('units_id', 4)->orderBy('bezeichnung')->get();
         $adapters = Item::where('units_id', 5)->orderBy('bezeichnung')->get();
 
-        return view('camera_configs.create', compact(
+        return view('camera-configs.create', compact(
             'production',
             'cameras',
             'lenses',
@@ -71,7 +71,7 @@ class CameraConfigController extends Controller
         $heads = Item::where('units_id', 4)->orderBy('bezeichnung')->get();
         $adapters = Item::where('units_id', 5)->orderBy('bezeichnung')->get();
 
-        return view('camera_configs.edit', compact(
+        return view('camera-configs.edit', compact(
             'config',
             'cameras',
             'lenses',

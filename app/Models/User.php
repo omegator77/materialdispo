@@ -12,7 +12,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, LogsActivity, HasReadableActivityDescription {
+    use HasFactory, HasReadableActivityDescription, LogsActivity, Notifiable {
         HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
     }
 
