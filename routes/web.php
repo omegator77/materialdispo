@@ -16,6 +16,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\VbProtokollController;
 use App\Http\Controllers\GeraetetypController;
+use App\Http\Controllers\PackvorgangController;
 
 Route::redirect('/', '/login');
 
@@ -53,6 +54,9 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::put('productions/{production}/vb-protokoll', [VbProtokollController::class, 'update'])->name('vb-protokoll.update');
     Route::delete('productions/{production}/vb-protokoll', [VbProtokollController::class, 'destroy'])->name('vb-protokoll.destroy');
     Route::delete('vb-protokoll-fotos/{foto}', [VbProtokollController::class, 'destroyFoto'])->name('vb-protokoll.foto.destroy');
+
+    Route::post('productions/{production}/packvorgang/complete', [PackvorgangController::class, 'complete'])->name('packvorgang.complete');
+    Route::post('productions/{production}/packvorgang/reopen', [PackvorgangController::class, 'reopen'])->name('packvorgang.reopen');
 });
 
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
@@ -70,6 +74,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('productions/{production}/vb-protokoll', [VbProtokollController::class, 'show'])->name('vb-protokoll.show');
     Route::get('productions/{production}/vb-protokoll/pdf', [VbProtokollController::class, 'generatePDF'])->name('vb-protokoll.pdf');
     Route::get('productions/{production}/vb-protokoll/pdf-abgleich', [VbProtokollController::class, 'generateAbgleichReportPDF'])->name('vb-protokoll.pdf-abgleich');
+
+    Route::get('productions/{production}/packvorgang', [PackvorgangController::class, 'show'])->name('packvorgang.show');
+    Route::post('productions/{production}/packvorgang/toggle/{item}', [PackvorgangController::class, 'toggle'])->name('packvorgang.toggle');
+    Route::get('productions/{production}/packvorgang/pdf', [PackvorgangController::class, 'pdf'])->name('packvorgang.pdf');
 
     Route::get('/timeline/items', [TimelineController::class, 'items'])->name('timeline.items');
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings');

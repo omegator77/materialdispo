@@ -51,6 +51,40 @@
                 </div>
             </div>
 
+            {{-- Kurzanleitung --}}
+            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
+                    📖 Kurzanleitung: Vom Anlegen bis zum Abfahren
+                </summary>
+
+                <div class="px-5 pb-5 pt-1 text-sm text-gray-700 space-y-3">
+                    <ol class="space-y-2 list-decimal list-inside">
+                        <li>
+                            <strong>Produktion anlegen</strong> —
+                            @if(Auth::user()->isUser())
+                            <a href="{{ route('productions.create') }}" class="text-orange-600 hover:underline">Produktionen → Neu</a>,
+                            @else
+                            unter "Produktionen → Neu" (Admin/Benutzer),
+                            @endif
+                            optional als Kopie einer bestehenden Produktion.
+                        </li>
+                        <li>
+                            <strong>VB-Protokoll erfassen</strong> — Kunde, Crew, benötigte Geräte/Kamerakonfigurationen. Hier geht es nur um die Anforderungen, noch nicht um die tatsächliche Zuordnung.
+                        </li>
+                        <li>
+                            <strong>Materialzuordnung</strong> — konkrete Geräte und Kamerazüge der Produktion zuweisen. Ein Live-Abgleich zeigt direkt, was vom VB-Protokoll noch fehlt.
+                        </li>
+                        <li>
+                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="text-orange-600 hover:underline">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
+                        </li>
+                    </ol>
+
+                    <p class="text-gray-500">
+                        PDF-Export ist an jeder Stelle verfügbar: Packliste, VB-Protokoll, Abgleich-Report und Packvorgang-Checkliste zum Ausdrucken.
+                    </p>
+                </div>
+            </details>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {{-- Laufende Produktionen --}}
@@ -61,7 +95,8 @@
 
                     @forelse($runningProductions as $production)
                         <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900">
+                            <div class="font-medium text-gray-900 flex items-center gap-2">
+                                @include('partials._pack-status-badge', ['production' => $production])
                                 {{ $production->bezeichnung }}
                             </div>
                             <div class="text-sm text-gray-500">
@@ -85,7 +120,8 @@
 
                     @forelse($upcomingProductions as $production)
                         <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900">
+                            <div class="font-medium text-gray-900 flex items-center gap-2">
+                                @include('partials._pack-status-badge', ['production' => $production])
                                 {{ $production->bezeichnung }}
                             </div>
                             <div class="text-sm text-gray-500">
@@ -117,8 +153,10 @@
                         <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
                         <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
                         <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
+                        <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
                         <li>⬜ Globale Suche über alle Bereiche</li>
                         <li>⬜ Packlisten per Mail</li>
+                        <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
                     </ul>
                 </div>
             </div>

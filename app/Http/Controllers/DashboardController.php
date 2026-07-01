@@ -27,13 +27,15 @@ class DashboardController extends Controller
                     ->whereDate('booking_end', '>=', $today);
             })->count(),
 
-            'runningProductions' => Production::whereDate('booking_start', '<=', $today)
+            'runningProductions' => Production::with($this->packStatusRelations())
+                ->whereDate('booking_start', '<=', $today)
                 ->whereDate('booking_end', '>=', $today)
                 ->orderBy('booking_end')
                 ->limit(5)
                 ->get(),
 
-            'upcomingProductions' => Production::whereDate('booking_start', '>', $today)
+            'upcomingProductions' => Production::with($this->packStatusRelations())
+                ->whereDate('booking_start', '>', $today)
                 ->orderBy('booking_start')
                 ->limit(5)
                 ->get(),
@@ -42,5 +44,22 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get(),
         ]);
+    }
+
+    /**
+     * Relationen, die Production::packlistEntries()/packedItemIds() braucht,
+     * damit der Pack-Status-Badge auf dem Dashboard ohne N+1-Queries auskommt.
+     */
+    private function packStatusRelations(): array
+    {
+        return [
+            'items.unit',
+            'cameraConfigs.item.unit',
+            'cameraConfigs.lensItem',
+            'cameraConfigs.tripodItem',
+            'cameraConfigs.headItem',
+            'cameraConfigs.adapterItem',
+            'itemPacks',
+        ];
     }
 }
