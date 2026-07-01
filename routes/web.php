@@ -8,7 +8,6 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ItemproductionController;
-use App\Http\Controllers\PDFController;
 use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\DashboardController;
@@ -19,8 +18,6 @@ use App\Http\Controllers\GeraetetypController;
 use App\Http\Controllers\PackvorgangController;
 
 Route::redirect('/', '/login');
-
-Route::get('pdf', [PDFController::class, 'index']);
 
 // Admin + Benutzer — Schreibzugriff
 // Muss vor den read-only Resource-Routes stehen, damit z. B. "units/create"
