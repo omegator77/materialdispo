@@ -55,6 +55,7 @@ class ItemproductionController extends Controller
             'cameraConfigs.headItem',
             'cameraConfigs.adapterItem',
             'itemPacks',
+            'vbProtokoll',
         ])->orderBy('booking_start')->get();
         $allUnits = Unit::orderBy('bezeichnung')->get();
         $allItems = Item::orderBy('bezeichnung')->get();
