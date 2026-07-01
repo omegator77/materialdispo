@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class ImportMonitorDetails extends Command
 {
     protected $signature = 'import:monitor-details';
+
     protected $description = 'Importiert Monitor-Metadaten für kleine und große Monitore';
 
     public function handle(): int
@@ -97,8 +98,9 @@ class ImportMonitorDetails extends Command
                 ->where('nummer', $nummer)
                 ->first();
 
-            if (!$item) {
+            if (! $item) {
                 $this->warn("Monitor nicht gefunden: Unit {$unitId}, Nr. {$nummer}");
+
                 continue;
             }
 

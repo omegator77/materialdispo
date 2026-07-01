@@ -79,6 +79,72 @@ class ItemAvailabilityService
     }
 
     /**
+     * Geräte, die einer Produktion noch zugeordnet werden können: weder als
+     * Einzelgerät noch in einem Kamerazug-Slot bereits enthalten. Markiert
+     * jedes Gerät mit is_available/availability_reason und blendet nicht
+     * verfügbare Geräte aus, sofern $showUnavailable nicht gesetzt ist.
+     */
+    public function assignableItemsFor(Production $production, ?string $unitFilter, bool $showUnavailable): \Illuminate\Support\Collection
+    {
+        $itemsQuery = Item::query()
+            ->whereDoesntHave('productions', function ($query) use ($production) {
+                $query->where('productions.id', $production->id);
+            })
+            ->where(function ($query) use ($production) {
+                $query
+                    ->whereDoesntHave('cameraConfigs', function ($q) use ($production) {
+                        $q->where('production_id', $production->id);
+                    })
+                    ->whereNotIn('id', function ($q) use ($production) {
+                        $q->select('lens')
+                            ->from('camera_configs')
+                            ->where('production_id', $production->id)
+                            ->whereNotNull('lens');
+                    })
+                    ->whereNotIn('id', function ($q) use ($production) {
+                        $q->select('tripod')
+                            ->from('camera_configs')
+                            ->where('production_id', $production->id)
+                            ->whereNotNull('tripod');
+                    })
+                    ->whereNotIn('id', function ($q) use ($production) {
+                        $q->select('tripod_head')
+                            ->from('camera_configs')
+                            ->where('production_id', $production->id)
+                            ->whereNotNull('tripod_head');
+                    })
+                    ->whereNotIn('id', function ($q) use ($production) {
+                        $q->select('large_lens_adapter')
+                            ->from('camera_configs')
+                            ->where('production_id', $production->id)
+                            ->whereNotNull('large_lens_adapter');
+                    });
+            });
+
+        if ($unitFilter) {
+            $itemsQuery->where('units_id', $unitFilter);
+        }
+
+        $items = $itemsQuery
+            ->orderBy('bezeichnung')
+            ->get()
+            ->map(function ($item) use ($production) {
+                $check = $this->check($item, $production);
+
+                $item->is_available = $check['available'];
+                $item->availability_reason = $check['reason'];
+
+                return $item;
+            });
+
+        if (! $showUnavailable) {
+            $items = $items->filter(fn ($item) => $item->is_available)->values();
+        }
+
+        return $items;
+    }
+
+    /**
      * Alle Spalten in camera_configs die ein Item referenzieren können.
      */
     public function configItemColumns(): array

@@ -26,7 +26,7 @@ trait HasReadableActivityDescription
             'created' => "{$noun} \"{$label}\" angelegt",
             'updated' => "{$noun} \"{$label}\" geändert",
             'deleted' => "{$noun} \"{$label}\" gelöscht",
-            default   => "{$noun} \"{$label}\": {$eventName}",
+            default => "{$noun} \"{$label}\": {$eventName}",
         };
     }
 }

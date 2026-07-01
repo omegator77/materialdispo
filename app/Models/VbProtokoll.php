@@ -9,7 +9,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class VbProtokoll extends Model
 {
-    use LogsActivity, HasReadableActivityDescription {
+    use HasReadableActivityDescription, LogsActivity {
         HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
     }
 

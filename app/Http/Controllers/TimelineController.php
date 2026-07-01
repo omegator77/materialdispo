@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\Unit;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TimelineController extends Controller
@@ -16,12 +15,12 @@ class TimelineController extends Controller
         $unitId = $request->input('unit_id');
 
         $items = Item::with([
-                'unit',
-                'productions' => function ($query) use ($start, $end) {
-                    $query->whereDate('booking_start', '<=', $end)
-                        ->whereDate('booking_end', '>=', $start);
-                }
-            ])
+            'unit',
+            'productions' => function ($query) use ($start, $end) {
+                $query->whereDate('booking_start', '<=', $end)
+                    ->whereDate('booking_end', '>=', $start);
+            },
+        ])
             ->when($unitId, fn ($query) => $query->where('units_id', $unitId))
             ->orderBy('units_id')
             ->orderBy('nummer')
