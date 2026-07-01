@@ -41,7 +41,24 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
 
     <div class="p-4 md:p-6 space-y-6">
         @if($production)
-        <div class="flex justify-end border-b pb-4">
+        @php
+        $packlistCount = $production->packlistEntries()->count();
+        $packedCount = $production->packedItemIds()->count();
+        @endphp
+        <div class="flex flex-wrap justify-end gap-2 border-b pb-4">
+            <a href="{{ route('packvorgang.show', $production->id) }}"
+                class="inline-flex items-center gap-2 justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                Packvorgang
+                @if($packlistCount > 0)
+                <span class="text-xs px-1.5 py-0.5 rounded-full {{ $production->packvorgang_confirmed_at ? 'bg-green-500' : ($packedCount > 0 ? 'bg-yellow-500' : 'bg-gray-500') }}">
+                    {{ $packedCount }}/{{ $packlistCount }}
+                </span>
+                @if($production->packvorgang_confirmed_at && $packedCount < $packlistCount)
+                <span class="text-yellow-400" title="Abgeschlossen trotz fehlender Geräte">⚠</span>
+                @endif
+                @endif
+            </a>
+
             <a href="{{ route('productions.pdf', $production->id) }}"
                 class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
                 PDF exportieren

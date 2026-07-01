@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Produktion packen
+                Materialzuordnung
             </h2>
 
             <div class="flex items-center gap-2">
@@ -77,6 +77,55 @@
             </div>
             @endif
         </div>
+
+        {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
+        @if($vbAbgleich && $vbAbgleich->isNotEmpty())
+        @php
+        $offenRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] !== true);
+        $erfuelltRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] === true);
+        @endphp
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6" x-data="{ showAll: false }">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-semibold text-gray-800">Abgleich mit VB-Protokoll</h2>
+                <a href="{{ route('vb-protokoll.show', $production->id) }}" class="text-sm text-orange-600 hover:text-orange-700">
+                    Vollständiges Protokoll →
+                </a>
+            </div>
+
+            @if($offenRows->isEmpty())
+            <p class="text-sm text-green-700">✓ Alle Anforderungen aus dem VB-Protokoll sind erfüllt.</p>
+            @else
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($offenRows as $row)
+                <li class="flex items-center justify-between py-1.5">
+                    <span class="text-gray-900">{{ $row['label'] }}</span>
+                    @if($row['erfuellt'] === false)
+                    <span class="text-red-700 font-medium text-xs whitespace-nowrap">fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>
+                    @else
+                    <span class="text-gray-400 text-xs whitespace-nowrap">manuell prüfen</span>
+                    @endif
+                </li>
+                @endforeach
+            </ul>
+            @endif
+
+            @if($erfuelltRows->isNotEmpty())
+            <button type="button" @click="showAll = !showAll" class="mt-3 text-xs text-gray-500 hover:text-gray-700">
+                <span x-show="!showAll">{{ $erfuelltRows->count() }} erfüllte Anforderung(en) anzeigen</span>
+                <span x-show="showAll" x-cloak>Erfüllte ausblenden</span>
+            </button>
+
+            <ul class="mt-2 divide-y divide-gray-100 text-sm" x-show="showAll" x-cloak>
+                @foreach($erfuelltRows as $row)
+                <li class="flex items-center justify-between py-1.5 text-gray-500">
+                    <span>{{ $row['label'] }}</span>
+                    <span class="text-xs whitespace-nowrap">✓ {{ $row['gepackt'] }}/{{ $row['benoetigt'] }}</span>
+                </li>
+                @endforeach
+            </ul>
+            @endif
+        </div>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 

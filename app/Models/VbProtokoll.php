@@ -106,16 +106,18 @@ class VbProtokoll extends Model
                 ]];
             }
 
+            $packlist = $this->production->packlistEntries();
+
             if ($anforderung->geraetetyp_id) {
-                $gepackt = $this->production->items()
-                    ->where('items.geraetetyp_id', $anforderung->geraetetyp_id)
+                $gepackt = $packlist
+                    ->filter(fn ($entry) => $entry['item']->geraetetyp_id === $anforderung->geraetetyp_id)
                     ->count();
 
                 $label = $anforderung->geraetetyp?->bezeichnung ?? '—';
                 $kind = 'typ';
             } else {
-                $gepackt = $this->production->items()
-                    ->where('items.units_id', $anforderung->unit_id)
+                $gepackt = $packlist
+                    ->filter(fn ($entry) => $entry['item']->units_id === $anforderung->unit_id)
                     ->count();
 
                 $label = $anforderung->unit?->bezeichnung ?? '—';
@@ -144,14 +146,15 @@ class VbProtokoll extends Model
         ];
 
         $rows = [];
+        $packlist = $this->production->packlistEntries();
 
         foreach ($komponenten as $rolle => $geraetetyp) {
             if (! $geraetetyp) {
                 continue;
             }
 
-            $gepackt = $this->production->items()
-                ->where('items.geraetetyp_id', $geraetetyp->id)
+            $gepackt = $packlist
+                ->filter(fn ($entry) => $entry['item']->geraetetyp_id === $geraetetyp->id)
                 ->count();
 
             $rows[] = [

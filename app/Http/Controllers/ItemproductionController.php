@@ -48,7 +48,15 @@ class ItemproductionController extends Controller
     $cameraConfigs = $configQuery->get();
 
     // Alle Produktionen, Geräte und Gruppen für die Filteroptionen abrufen
-    $allProductions = Production::orderBy('booking_start')->get();
+    $allProductions = Production::with([
+        'items.unit',
+        'cameraConfigs.item.unit',
+        'cameraConfigs.lensItem',
+        'cameraConfigs.tripodItem',
+        'cameraConfigs.headItem',
+        'cameraConfigs.adapterItem',
+        'itemPacks',
+    ])->orderBy('booking_start')->get();
     $allUnits = Unit::orderBy('bezeichnung')->get();
     $allItems = Item::orderBy('bezeichnung')->get();
 
