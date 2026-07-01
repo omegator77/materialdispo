@@ -45,8 +45,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::get('/camera-configs/{config}/edit', [CameraConfigController::class, 'edit'])->name('camera-config.edit');
     Route::put('/camera-configs/{config}', [CameraConfigController::class, 'update'])->name('camera-config.update');
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
-    Route::get('/productions/{production}/camera-config/create', [ProductionController::class, 'createCameraConfig'])->name('camera-config.create');
-    Route::post('/productions/{production}/camera-config', [ProductionController::class, 'storeCameraConfig'])->name('camera-config.store');
+    Route::get('/productions/{production}/camera-config/create', [CameraConfigController::class, 'create'])->name('camera-config.create');
+    Route::post('/productions/{production}/camera-config', [CameraConfigController::class, 'store'])->name('camera-config.store');
 
     Route::get('productions/{production}/vb-protokoll/create', [VbProtokollController::class, 'create'])->name('vb-protokoll.create');
     Route::post('productions/{production}/vb-protokoll', [VbProtokollController::class, 'store'])->name('vb-protokoll.store');

@@ -11,22 +11,26 @@ class ItemAvailabilityService
     /**
      * Prüft ob ein Gerät für eine Produktion verfügbar ist.
      * Gibt ['available' => bool, 'reason' => string|null] zurück.
+     *
+     * $ignoreConfig blendet eine Kamerakonfiguration beim Konfliktcheck aus —
+     * nötig beim Editieren einer bestehenden Config, damit sie nicht mit sich
+     * selbst kollidiert.
      */
-    public function check(Item $item, Production $production): array
+    public function check(Item $item, Production $production, ?CameraConfig $ignoreConfig = null): array
     {
         // 1. Mietfenster: Mietzeitraum muss Produktionszeitraum abdecken
         if ($item->suppliers_id) {
             if ($item->rent_start && $item->rent_start > $production->booking_start) {
                 return [
                     'available' => false,
-                    'reason'    => 'Mietbeginn zu spät',
+                    'reason' => 'Mietbeginn zu spät',
                 ];
             }
 
             if ($item->rent_end && $item->rent_end < $production->booking_end) {
                 return [
                     'available' => false,
-                    'reason'    => 'Mietende zu früh',
+                    'reason' => 'Mietende zu früh',
                 ];
             }
         }
@@ -41,7 +45,7 @@ class ItemAvailabilityService
         if ($conflict) {
             return [
                 'available' => false,
-                'reason'    => 'Gebucht in Produktion: ' . $conflict->bezeichnung,
+                'reason' => 'Gebucht in Produktion: '.$conflict->bezeichnung,
             ];
         }
 
@@ -53,6 +57,10 @@ class ItemAvailabilityService
                     ->where('booking_end', '>=', $production->booking_start);
             });
 
+        if ($ignoreConfig) {
+            $configConflict->where('id', '!=', $ignoreConfig->id);
+        }
+
         $this->applyItemInConfigFilter($configConflict, $item->id);
 
         $configConflict = $configConflict->with('production')->first();
@@ -60,13 +68,13 @@ class ItemAvailabilityService
         if ($configConflict) {
             return [
                 'available' => false,
-                'reason'    => 'In Kamerakonfiguration: ' . $configConflict->production->bezeichnung,
+                'reason' => 'In Kamerakonfiguration: '.$configConflict->production->bezeichnung,
             ];
         }
 
         return [
             'available' => true,
-            'reason'    => null,
+            'reason' => null,
         ];
     }
 
