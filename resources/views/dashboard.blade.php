@@ -155,7 +155,7 @@
                             if ($event['kind'] === 'mietvorgang') {
                                 $mv = $event['mietvorgang'];
                                 $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
-                                $title = "{$mv->supplier->bezeichnung ?? 'Vermieter gelöscht'}";
+                                $title = $mv->supplier->bezeichnung ?? 'Vermieter gelöscht';
                                 $subtitle = $mv->items->pluck('bezeichnung')->implode(', ');
                                 $confirmRoute = route('mietvorgaenge.confirmTransport', [$mv, $event['type']]);
                                 $linkRoute = route('mietvorgaenge.show', $mv);
