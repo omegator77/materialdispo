@@ -94,21 +94,11 @@
                         Laufende Produktionen
                     </h3>
 
-                    @forelse($runningProductions as $production)
-                        <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900 flex items-center gap-2">
-                                @include('partials._pack-status-badge', ['production' => $production])
-                                {{ $production->bezeichnung }}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                                –
-                                {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
-                            </div>
-                        </a>
+                    @forelse($runningEntries as $entry)
+                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'running'])
                     @empty
                         <div class="text-sm text-gray-500">
-                            Heute läuft keine Produktion.
+                            Heute läuft nichts.
                         </div>
                     @endforelse
                 </div>
@@ -119,20 +109,11 @@
                         Nächste Produktionen
                     </h3>
 
-                    @forelse($upcomingProductions as $production)
-                        <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900 flex items-center gap-2">
-                                @include('partials._pack-status-badge', ['production' => $production])
-                                {{ $production->bezeichnung }}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                Start:
-                                {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                            </div>
-                        </a>
+                    @forelse($upcomingEntries as $entry)
+                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'upcoming'])
                     @empty
                         <div class="text-sm text-gray-500">
-                            Keine kommenden Produktionen gefunden.
+                            Nichts Anstehendes gefunden.
                         </div>
                     @endforelse
                 </div>
