@@ -2,14 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Mail\DryHireReminderMail;
 use App\Mail\TransportReminderMail;
-use App\Models\DryHire;
-use App\Models\DryHireReminderLog;
+use App\Mail\VerleihReminderMail;
 use App\Models\MailingList;
 use App\Models\Mietvorgang;
 use App\Models\MietvorgangReminderLog;
-use App\Models\Production;
+use App\Models\Vermietvorgang;
+use App\Models\VermietvorgangReminderLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -28,7 +27,7 @@ class SendTransportReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Versendet Transport-Erinnerungsmails für Mietvorgänge und Dry-Hire-Produktionen (Beginn/Ende).';
+    protected $description = 'Versendet Transport-Erinnerungsmails für Mietvorgänge und Vermietvorgänge (Beginn/Ende).';
 
     public function handle(): int
     {
@@ -42,14 +41,12 @@ class SendTransportReminders extends Command
                 $this->maybeSend($mietvorgang, 'end', $mietvorgang->rent_end, $today, $mietvorgang->effectiveReminderDaysBeforeEnd());
             });
 
-        Production::where('is_dry_hire', true)
-            ->whereHas('dryHire')
-            ->with(['dryHire.mailingList.recipients'])
+        Vermietvorgang::with(['mieter', 'mailingList.recipients', 'items.productions'])
+            ->whereHas('items')
             ->get()
-            ->each(function (Production $production) use ($today) {
-                $dryHire = $production->dryHire;
-                $this->maybeSendDryHire($production, $dryHire, 'start', $production->booking_start, $today, $dryHire->effectiveReminderDaysBeforeStart());
-                $this->maybeSendDryHire($production, $dryHire, 'end', $production->booking_end, $today, $dryHire->effectiveReminderDaysBeforeEnd());
+            ->each(function (Vermietvorgang $vermietvorgang) use ($today) {
+                $this->maybeSendVermietung($vermietvorgang, 'start', $vermietvorgang->rent_start, $today, $vermietvorgang->effectiveReminderDaysBeforeStart());
+                $this->maybeSendVermietung($vermietvorgang, 'end', $vermietvorgang->rent_end, $today, $vermietvorgang->effectiveReminderDaysBeforeEnd());
             });
 
         return self::SUCCESS;
@@ -112,53 +109,55 @@ class SendTransportReminders extends Command
         ]);
     }
 
-    private function maybeSendDryHire(Production $production, DryHire $dryHire, string $type, $bookingDate, Carbon $today, int $daysBefore): void
+    private function maybeSendVermietung(Vermietvorgang $vermietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
     {
-        $dueDate = Carbon::parse($bookingDate)->subDays($daysBefore);
+        $dueDate = Carbon::parse($rentDate)->subDays($daysBefore);
 
         if ($today->lessThan($dueDate)) {
             return;
         }
 
-        if ($dryHire->reminderLogs()->where('reminder_type', $type)->exists()) {
+        if ($vermietvorgang->reminderLogs()->where('reminder_type', $type)->exists()) {
             return;
         }
 
-        $this->sendDryHire($production, $dryHire, $type);
+        $this->sendVermietung($vermietvorgang, $type);
     }
 
-    private function sendDryHire(Production $production, DryHire $dryHire, string $type): void
+    private function sendVermietung(Vermietvorgang $vermietvorgang, string $type): void
     {
-        $recipients = $dryHire->mailingList?->recipients->pluck('email') ?? collect();
+        $recipients = $vermietvorgang->mailingList?->recipients->pluck('email') ?? collect();
 
         if ($recipients->isEmpty()) {
             $recipients = MailingList::where('is_default', true)->first()?->recipients->pluck('email') ?? collect();
         }
 
-        if ($recipients->isEmpty() && ! $dryHire->notify_customer) {
-            $this->warn("Dry Hire (Produktion #{$production->id}): keine Empfänger, Erinnerung übersprungen.");
+        if ($recipients->isEmpty() && ! $vermietvorgang->notify_mieter) {
+            $this->warn("Vermietvorgang #{$vermietvorgang->id}: keine Empfänger, Erinnerung übersprungen.");
 
             return;
         }
 
-        $mailable = new DryHireReminderMail($production, $dryHire, $type);
+        $productions = $vermietvorgang->relatedProductions();
+
+        $mailable = new VerleihReminderMail($vermietvorgang, $type, $productions);
 
         $addresses = $recipients->values()->all();
 
-        if ($dryHire->notify_customer && $dryHire->customer_email) {
-            $addresses[] = $dryHire->customer_email;
+        if ($vermietvorgang->notify_mieter && $vermietvorgang->mieter?->email) {
+            $addresses[] = $vermietvorgang->mieter->email;
         }
 
         foreach ($addresses as $email) {
             try {
                 Mail::to($email)->send($mailable);
             } catch (\Throwable $e) {
-                $this->error("Dry Hire (Produktion #{$production->id}): Versand an {$email} fehlgeschlagen: {$e->getMessage()}");
+                $this->error("Vermietvorgang #{$vermietvorgang->id}: Versand an {$email} fehlgeschlagen: {$e->getMessage()}");
             }
         }
 
-        DryHireReminderLog::create([
-            'dry_hire_id' => $dryHire->id,
+        VermietvorgangReminderLog::create([
+            'vermietvorgang_id' => $vermietvorgang->id,
             'reminder_type' => $type,
             'sent_at' => now(),
         ]);

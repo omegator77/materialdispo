@@ -18,8 +18,9 @@ use App\Http\Controllers\GeraetetypController;
 use App\Http\Controllers\PackvorgangController;
 use App\Http\Controllers\MailingListController;
 use App\Http\Controllers\MietvorgangController;
+use App\Http\Controllers\MieterController;
+use App\Http\Controllers\VermietvorgangController;
 use App\Http\Controllers\TestMailController;
-use App\Http\Controllers\DryHireController;
 
 Route::redirect('/', '/login');
 
@@ -35,7 +36,9 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
     Route::post('items/{item}/reset-mietvorgang', [ItemController::class, 'resetMietvorgang'])->name('items.resetMietvorgang');
+    Route::post('items/{item}/reset-vermietvorgang', [ItemController::class, 'resetVermietvorgang'])->name('items.resetVermietvorgang');
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
+    Route::resource('/mieter', MieterController::class)->except(['index', 'show']);
 
     Route::get('productions/templates-search', [ProductionController::class, 'searchTemplates'])->name('productions.searchTemplates');
     Route::resource('/productions', ProductionController::class)->except(['index', 'show']);
@@ -75,13 +78,17 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->whereIn('type', ['start', 'end'])
         ->name('mietvorgaenge.reopenTransport');
 
-    Route::put('productions/{production}/dry-hire', [DryHireController::class, 'update'])->name('dry-hire.update');
-    Route::post('productions/{production}/dry-hire/confirm-transport/{type}', [DryHireController::class, 'confirmTransport'])
+    Route::resource('/vermietvorgaenge', VermietvorgangController::class)
+        ->except(['index', 'show', 'edit'])
+        ->parameters(['vermietvorgaenge' => 'vermietvorgang']);
+    Route::post('vermietvorgaenge/{vermietvorgang}/attach-items', [VermietvorgangController::class, 'attachItems'])->name('vermietvorgaenge.attachItems');
+    Route::delete('vermietvorgaenge/{vermietvorgang}/detach-item/{item}', [VermietvorgangController::class, 'detachItem'])->name('vermietvorgaenge.detachItem');
+    Route::post('vermietvorgaenge/{vermietvorgang}/confirm-transport/{type}', [VermietvorgangController::class, 'confirmTransport'])
         ->whereIn('type', ['start', 'end'])
-        ->name('dry-hire.confirmTransport');
-    Route::delete('productions/{production}/dry-hire/confirm-transport/{type}', [DryHireController::class, 'reopenTransport'])
+        ->name('vermietvorgaenge.confirmTransport');
+    Route::delete('vermietvorgaenge/{vermietvorgang}/confirm-transport/{type}', [VermietvorgangController::class, 'reopenTransport'])
         ->whereIn('type', ['start', 'end'])
-        ->name('dry-hire.reopenTransport');
+        ->name('vermietvorgaenge.reopenTransport');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });
@@ -95,10 +102,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);
+    Route::resource('/mieter', MieterController::class)->only(['index', 'show']);
     Route::resource('/mailing-lists', MailingListController::class)->only(['index']);
     Route::resource('/mietvorgaenge', MietvorgangController::class)
         ->only(['index', 'show'])
         ->parameters(['mietvorgaenge' => 'mietvorgang']);
+    Route::resource('/vermietvorgaenge', VermietvorgangController::class)
+        ->only(['index', 'show'])
+        ->parameters(['vermietvorgaenge' => 'vermietvorgang']);
 
     Route::get('/itemprods', [ItemproductionController::class, 'index'])->name('itemprods');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');

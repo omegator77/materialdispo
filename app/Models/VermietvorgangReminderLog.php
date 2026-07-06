@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DryHireReminderLog extends Model
+class VermietvorgangReminderLog extends Model
 {
+    protected $table = 'vermietvorgang_reminder_logs';
+
     protected $fillable = [
-        'dry_hire_id',
+        'vermietvorgang_id',
         'reminder_type',
         'sent_at',
     ];
@@ -16,8 +18,8 @@ class DryHireReminderLog extends Model
         'sent_at' => 'datetime',
     ];
 
-    public function dryHire()
+    public function vermietvorgang()
     {
-        return $this->belongsTo(DryHire::class);
+        return $this->belongsTo(Vermietvorgang::class);
     }
 }

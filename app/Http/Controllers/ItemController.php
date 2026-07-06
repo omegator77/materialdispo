@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ItemRequest;
 use App\Models\Geraetetyp;
 use App\Models\Item;
+use App\Models\Mieter;
 use App\Models\Production;
 use App\Models\Supplier;
 use App\Models\Unit;
@@ -57,6 +58,7 @@ class ItemController extends Controller
     {
         $units = Unit::all();
         $suppliers = Supplier::all();
+        $mieter = Mieter::all();
         $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
         $item = new Item;
@@ -68,16 +70,18 @@ class ItemController extends Controller
             ->orderBy('nummer', 'asc')
             ->get();
 
-        return view('items.create', compact('units', 'suppliers', 'item', 'items', 'geraetetypen'));
+        return view('items.create', compact('units', 'suppliers', 'mieter', 'item', 'items', 'geraetetypen'));
     }
 
     public function store(ItemRequest $request)
     {
         $rentData = $this->prepareRentData($request);
+        $verleihData = $this->prepareVerleihData($request);
 
-        $item = Item::create(array_merge($request->validated(), $rentData));
+        $item = Item::create(array_merge($request->validated(), $rentData, $verleihData));
 
         $item->syncMietvorgang();
+        $item->syncVermietvorgang();
 
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
@@ -103,6 +107,7 @@ class ItemController extends Controller
     {
         $units = Unit::all();
         $suppliers = Supplier::all();
+        $mieter = Mieter::all();
         $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
         $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail'])->findOrFail($id);
@@ -115,7 +120,15 @@ class ItemController extends Controller
             ? Carbon::parse($item->rent_end)->format('d.m.Y')
             : null;
 
-        return view('items.edit', compact('units', 'suppliers', 'item', 'geraetetypen'));
+        $item->verleih_start = $item->verleih_start
+            ? Carbon::parse($item->verleih_start)->format('d.m.Y')
+            : null;
+
+        $item->verleih_end = $item->verleih_end
+            ? Carbon::parse($item->verleih_end)->format('d.m.Y')
+            : null;
+
+        return view('items.edit', compact('units', 'suppliers', 'mieter', 'item', 'geraetetypen'));
     }
 
     public function update(ItemRequest $request, string $id)
@@ -123,10 +136,12 @@ class ItemController extends Controller
         $item = Item::findOrFail($id);
 
         $rentData = $this->prepareRentData($request);
+        $verleihData = $this->prepareVerleihData($request);
 
-        $item->update(array_merge($request->validated(), $rentData));
+        $item->update(array_merge($request->validated(), $rentData, $verleihData));
 
         $item->syncMietvorgang();
+        $item->syncVermietvorgang();
 
         $this->detailSync->syncCameraDetails($request, $item);
         $this->detailSync->syncMonitorDetails($request, $item);
@@ -149,6 +164,13 @@ class ItemController extends Controller
         return redirect()->route('items.edit', $item->id)->with('success', 'Mietvorgang-Zuordnung zurückgesetzt.');
     }
 
+    public function resetVermietvorgang(Item $item)
+    {
+        $item->resetVermietvorgangAssignment();
+
+        return redirect()->route('items.edit', $item->id)->with('success', 'Vermietvorgang-Zuordnung zurückgesetzt.');
+    }
+
     private function prepareRentData(Request $request): array
     {
         $supplierId = $request->suppliers_id ?: null;
@@ -162,6 +184,23 @@ class ItemController extends Controller
 
             'rent_end' => $supplierId && $request->rent_end
                 ? Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d')
+                : null,
+        ];
+    }
+
+    private function prepareVerleihData(Request $request): array
+    {
+        $mieterId = $request->mieter_id ?: null;
+
+        return [
+            'mieter_id' => $mieterId,
+
+            'verleih_start' => $mieterId && $request->verleih_start
+                ? Carbon::createFromFormat('d.m.Y', $request->verleih_start)->format('Y-m-d')
+                : null,
+
+            'verleih_end' => $mieterId && $request->verleih_end
+                ? Carbon::createFromFormat('d.m.Y', $request->verleih_end)->format('Y-m-d')
                 : null,
         ];
     }

@@ -160,12 +160,12 @@
                                 $confirmRoute = route('mietvorgaenge.confirmTransport', [$mv, $event['type']]);
                                 $linkRoute = route('mietvorgaenge.show', $mv);
                             } else {
-                                $production = $event['production'];
-                                $typeLabel = $event['type'] === 'start' ? 'Übergabe an Kunde' : 'Rückgabe vom Kunden';
-                                $title = $production->bezeichnung;
-                                $subtitle = 'Dry Hire';
-                                $confirmRoute = route('dry-hire.confirmTransport', [$production, $event['type']]);
-                                $linkRoute = route('productions.show', $production);
+                                $vv = $event['vermietvorgang'];
+                                $typeLabel = $event['type'] === 'start' ? 'Verleihbeginn' : 'Verleihende';
+                                $title = $vv->mieter->bezeichnung ?? 'Mieter gelöscht';
+                                $subtitle = $vv->items->pluck('bezeichnung')->implode(', ');
+                                $confirmRoute = route('vermietvorgaenge.confirmTransport', [$vv, $event['type']]);
+                                $linkRoute = route('vermietvorgaenge.show', $vv);
                             }
                         @endphp
                         <div class="flex items-start gap-3 border-b last:border-b-0 py-3">

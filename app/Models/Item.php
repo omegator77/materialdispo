@@ -16,7 +16,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['bezeichnung', 'nummer', 'units_id', 'suppliers_id', 'rent_start', 'rent_end'])
+            ->logOnly(['bezeichnung', 'nummer', 'units_id', 'suppliers_id', 'rent_start', 'rent_end', 'mieter_id', 'verleih_start', 'verleih_end'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('item');
@@ -38,12 +38,20 @@ class Item extends Model
         'rent_end',
         'mietvorgang_id',
         'mietvorgang_manual',
+        'mieter_id',
+        'verleih_start',
+        'verleih_end',
+        'vermietvorgang_id',
+        'vermietvorgang_manual',
     ];
 
     protected $casts = [
         'rent_start' => 'date',
         'rent_end' => 'date',
         'mietvorgang_manual' => 'boolean',
+        'verleih_start' => 'date',
+        'verleih_end' => 'date',
+        'vermietvorgang_manual' => 'boolean',
     ];
 
     public function unit()
@@ -64,6 +72,16 @@ class Item extends Model
     public function mietvorgang()
     {
         return $this->belongsTo(Mietvorgang::class);
+    }
+
+    public function mieter()
+    {
+        return $this->belongsTo(Mieter::class, 'mieter_id');
+    }
+
+    public function vermietvorgang()
+    {
+        return $this->belongsTo(Vermietvorgang::class);
     }
 
     /**
@@ -116,6 +134,59 @@ class Item extends Model
             'rent_end' => null,
             'mietvorgang_id' => null,
             'mietvorgang_manual' => false,
+        ]);
+    }
+
+    /**
+     * Ordnet das Gerät automatisch einem Vermietvorgang zu (gleicher Mieter +
+     * Zeitraum teilen sich einen Vorgang). Greift nicht, wenn das Gerät manuell
+     * einem Vermietvorgang zugeordnet wurde (sticky) — dort führt der Vermietvorgang.
+     */
+    public function syncVermietvorgang(): void
+    {
+        if ($this->vermietvorgang_manual) {
+            return;
+        }
+
+        if ($this->mieter_id && $this->verleih_start && $this->verleih_end) {
+            $vermietvorgang = Vermietvorgang::findOrCreateFor(
+                $this->mieter_id,
+                $this->verleih_start->format('Y-m-d'),
+                $this->verleih_end->format('Y-m-d')
+            );
+
+            $this->update(['vermietvorgang_id' => $vermietvorgang->id]);
+        } elseif ($this->vermietvorgang_id) {
+            $this->update(['vermietvorgang_id' => null]);
+        }
+    }
+
+    /**
+     * Hebt eine manuelle Vermietvorgang-Zuordnung auf und lässt das Gerät wieder
+     * in die automatische Mieter+Zeitraum-Gruppierung zurückfallen.
+     */
+    public function resetVermietvorgangAssignment(): void
+    {
+        $this->update(['vermietvorgang_id' => null, 'vermietvorgang_manual' => false]);
+        $this->syncVermietvorgang();
+    }
+
+    /**
+     * Entfernt das Gerät vollständig aus der Vermietverwaltung (Mieter,
+     * Verleih-Beginn/-Ende und Vermietvorgang-Zuordnung werden geleert). Anders
+     * als resetVermietvorgangAssignment() fällt das Gerät danach NICHT
+     * automatisch in eine Gruppe zurück, da es keine eigenen Verleihdaten mehr
+     * hat — nötig, damit "Entfernen" auf der Vermietvorgang-Seite tatsächlich
+     * wirkt und ein Vermietvorgang ohne Geräte gelöscht werden kann.
+     */
+    public function removeFromVermietvorgang(): void
+    {
+        $this->update([
+            'mieter_id' => null,
+            'verleih_start' => null,
+            'verleih_end' => null,
+            'vermietvorgang_id' => null,
+            'vermietvorgang_manual' => false,
         ]);
     }
 

@@ -30,7 +30,7 @@
                     </x-nav-link>
 
                     @php
-                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'suppliers.*', 'mailing-lists.*', 'mietvorgaenge.*'];
+                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'suppliers.*', 'mieter.*', 'mailing-lists.*', 'mietvorgaenge.*', 'vermietvorgaenge.*'];
                         if (Auth::user()->isUser()) {
                             $verwaltungRoutes = array_merge($verwaltungRoutes, ['activity-log.*']);
                         }
@@ -61,11 +61,17 @@
                                 <x-dropdown-link :href="route('suppliers.index')">
                                     {{ __('Vermieter') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link :href="route('mieter.index')">
+                                    {{ __('Mieter') }}
+                                </x-dropdown-link>
                                 <x-dropdown-link :href="route('mailing-lists.index')">
                                     {{ __('Mailinglisten') }}
                                 </x-dropdown-link>
                                 <x-dropdown-link :href="route('mietvorgaenge.index')">
                                     {{ __('Mietvorgänge') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('vermietvorgaenge.index')">
+                                    {{ __('Vermietvorgänge') }}
                                 </x-dropdown-link>
 
                                 @if(Auth::user()->isUser())
@@ -178,12 +184,20 @@
                     {{ __('Vermieter') }}
                 </x-responsive-nav-link>
 
+                <x-responsive-nav-link :href="route('mieter.index')" :active="request()->routeIs('mieter.*')">
+                    {{ __('Mieter') }}
+                </x-responsive-nav-link>
+
                 <x-responsive-nav-link :href="route('mailing-lists.index')" :active="request()->routeIs('mailing-lists.*')">
                     {{ __('Mailinglisten') }}
                 </x-responsive-nav-link>
 
                 <x-responsive-nav-link :href="route('mietvorgaenge.index')" :active="request()->routeIs('mietvorgaenge.*')">
                     {{ __('Mietvorgänge') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('vermietvorgaenge.index')" :active="request()->routeIs('vermietvorgaenge.*')">
+                    {{ __('Vermietvorgänge') }}
                 </x-responsive-nav-link>
 
                 @if(Auth::user()->isUser())

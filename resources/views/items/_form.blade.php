@@ -166,6 +166,75 @@
         </div>
     </section>
 
+    {{-- Verleih --}}
+    <section class="border-t pt-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            Verleih
+        </h3>
+
+        @if($item->vermietvorgang_manual ?? false)
+        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex flex-col sm:flex-row sm:items-center gap-2">
+            <span>
+                Dieses Gerät ist manuell einem
+                <a href="{{ route('vermietvorgaenge.show', $item->vermietvorgang_id) }}" class="underline hover:text-blue-900" target="_blank">Vermietvorgang</a>
+                zugeordnet — Mieter und Zeitraum werden dort verwaltet.
+            </span>
+            <form action="{{ route('items.resetVermietvorgang', $item->id) }}" method="POST" class="sm:ml-auto">
+                @csrf
+                <button type="submit" class="text-blue-700 hover:underline font-medium whitespace-nowrap">
+                    Zurücksetzen
+                </button>
+            </form>
+        </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="mieter_id" class="block text-sm font-medium text-gray-700">Mieter</label>
+                <select name="mieter_id" id="mieter_id" class="form-control w-full" @disabled($item->vermietvorgang_manual ?? false)>
+                    <option value="">Kein Mieter</option>
+                    @foreach($mieter as $m)
+                    <option value="{{ $m->id }}"
+                        {{ old('mieter_id', $item->mieter_id ?? '') == $m->id ? 'selected' : '' }}>
+                        {{ $m->bezeichnung }}
+                    </option>
+                    @endforeach
+                </select>
+                @if($item->vermietvorgang_manual ?? false)
+                <input type="hidden" name="mieter_id" value="{{ $item->mieter_id }}">
+                @endif
+            </div>
+
+            <div id="verleih-fields" class="md:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="verleih_start" class="block text-sm font-medium text-gray-700">Verleihbeginn</label>
+                        <input
+                            type="text"
+                            name="verleih_start"
+                            id="verleih_start"
+                            value="{{ old('verleih_start', $item->verleih_start ?? '') }}"
+                            class="form-control datepicker w-full"
+                            placeholder="TT.MM.JJJJ"
+                            @readonly($item->vermietvorgang_manual ?? false)>
+                    </div>
+
+                    <div>
+                        <label for="verleih_end" class="block text-sm font-medium text-gray-700">Verleihende</label>
+                        <input
+                            type="text"
+                            name="verleih_end"
+                            id="verleih_end"
+                            value="{{ old('verleih_end', $item->verleih_end ?? '') }}"
+                            class="form-control datepicker w-full"
+                            placeholder="TT.MM.JJJJ"
+                            @readonly($item->vermietvorgang_manual ?? false)>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     @if((int) ($item->units_id ?? 0) === 1)
     <section class="border-t pt-6 mt-6">
         <h4 class="text-lg font-semibold text-gray-800 mb-4">
@@ -470,5 +539,23 @@
 
         supplier.addEventListener('change', toggleRentalFields);
         toggleRentalFields();
+
+        const mieter = document.getElementById('mieter_id');
+        const verleihFields = document.getElementById('verleih-fields');
+        const verleihStart = document.getElementById('verleih_start');
+        const verleihEnd = document.getElementById('verleih_end');
+
+        function toggleVerleihFields() {
+            if (mieter.value) {
+                verleihFields.style.display = 'block';
+            } else {
+                verleihFields.style.display = 'none';
+                verleihStart.value = '';
+                verleihEnd.value = '';
+            }
+        }
+
+        mieter.addEventListener('change', toggleVerleihFields);
+        toggleVerleihFields();
     });
 </script>

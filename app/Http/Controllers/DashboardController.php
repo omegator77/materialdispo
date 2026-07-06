@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\Mietvorgang;
 use App\Models\Production;
+use App\Models\Vermietvorgang;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
@@ -53,8 +54,8 @@ class DashboardController extends Controller
 
     /**
      * Anstehende, noch nicht als "geklärt" markierte Termine der nächsten
-     * $days Tage für die Dashboard-Übersicht — Mietvorgänge (Mietbeginn/-ende)
-     * und Dry-Hire-Produktionen (Übergabe/Rückgabe) chronologisch gemischt.
+     * $days Tage für die Dashboard-Übersicht — Mietvorgänge und Vermietvorgänge
+     * (Mietbeginn/-ende bzw. Verleihbeginn/-ende) chronologisch gemischt.
      */
     private function upcomingTransportEvents(Carbon $today, int $days = 14): Collection
     {
@@ -84,33 +85,31 @@ class DashboardController extends Controller
                 return $entries;
             });
 
-        $dryHireEvents = Production::where('is_dry_hire', true)
-            ->whereHas('dryHire')
-            ->with('dryHire')
+        $vermietvorgangEvents = Vermietvorgang::with(['mieter', 'items'])
+            ->whereHas('items')
             ->where(function ($q) use ($today, $window) {
-                $q->whereBetween('booking_start', [$today, $window])
-                    ->orWhereBetween('booking_end', [$today, $window]);
+                $q->whereBetween('rent_start', [$today, $window])
+                    ->orWhereBetween('rent_end', [$today, $window]);
             })
             ->get()
-            ->flatMap(function (Production $production) use ($today, $window) {
+            ->flatMap(function (Vermietvorgang $vv) use ($today, $window) {
                 $entries = collect();
-                $dryHire = $production->dryHire;
 
-                $start = Carbon::parse($production->booking_start);
-                $end = Carbon::parse($production->booking_end);
+                $start = Carbon::parse($vv->rent_start);
+                $end = Carbon::parse($vv->rent_end);
 
-                if (! $dryHire->isTransportConfirmed('start') && $start->gte($today) && $start->lte($window)) {
-                    $entries->push(['kind' => 'dry_hire', 'production' => $production, 'type' => 'start', 'date' => $start]);
+                if (! $vv->isTransportConfirmed('start') && $start->gte($today) && $start->lte($window)) {
+                    $entries->push(['kind' => 'vermietvorgang', 'vermietvorgang' => $vv, 'type' => 'start', 'date' => $start]);
                 }
 
-                if (! $dryHire->isTransportConfirmed('end') && $end->gte($today) && $end->lte($window)) {
-                    $entries->push(['kind' => 'dry_hire', 'production' => $production, 'type' => 'end', 'date' => $end]);
+                if (! $vv->isTransportConfirmed('end') && $end->gte($today) && $end->lte($window)) {
+                    $entries->push(['kind' => 'vermietvorgang', 'vermietvorgang' => $vv, 'type' => 'end', 'date' => $end]);
                 }
 
                 return $entries;
             });
 
-        return $mietvorgangEvents->concat($dryHireEvents)->sortBy('date')->values();
+        return $mietvorgangEvents->concat($vermietvorgangEvents)->sortBy('date')->values();
     }
 
     /**

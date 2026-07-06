@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('productions', function (Blueprint $table) {
-            $table->boolean('is_dry_hire')->default(false)->after('packlist_notes');
+        Schema::create('mieter', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('bezeichnung');
+            $table->string('kontakt');
+            $table->string('phone');
+            $table->string('email')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('productions', function (Blueprint $table) {
-            $table->dropColumn('is_dry_hire');
-        });
+        Schema::dropIfExists('mieter');
     }
 };
