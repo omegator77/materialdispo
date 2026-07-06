@@ -122,6 +122,30 @@ class MietvorgangController extends Controller
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Gerät entfernt.');
     }
 
+    public function confirmTransport(Mietvorgang $mietvorgang, string $type)
+    {
+        abort_unless(in_array($type, ['start', 'end']), 404);
+
+        $mietvorgang->update([
+            "transport_{$type}_confirmed_at" => now(),
+            "transport_{$type}_confirmed_by" => auth()->id(),
+        ]);
+
+        return redirect()->back()->with('success', 'Transport als geklärt markiert.');
+    }
+
+    public function reopenTransport(Mietvorgang $mietvorgang, string $type)
+    {
+        abort_unless(in_array($type, ['start', 'end']), 404);
+
+        $mietvorgang->update([
+            "transport_{$type}_confirmed_at" => null,
+            "transport_{$type}_confirmed_by" => null,
+        ]);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
     private function prepareData(MietvorgangRequest $request): array
     {
         $data = [

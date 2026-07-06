@@ -148,6 +148,41 @@
             </div>
         </form>
 
+        {{-- Transport-Status --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Transport-Status</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach(['start' => 'Hinweg (Mietbeginn)', 'end' => 'Rückweg (Mietende)'] as $type => $label)
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">{{ $label }}</div>
+
+                    @if($mietvorgang->isTransportConfirmed($type))
+                        @php $confirmedBy = $type === 'start' ? $mietvorgang->transportStartConfirmedBy : $mietvorgang->transportEndConfirmedBy; @endphp
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Geklärt
+                            @if($confirmedBy) von {{ $confirmedBy->name }} @endif
+                            am {{ $mietvorgang->{"transport_{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenTransport', [$mietvorgang, $type]) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht geklärt.</p>
+                        <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, $type]) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als geklärt markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- Zugeordnete Geräte --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte ({{ $mietvorgang->items->count() }})</h3>

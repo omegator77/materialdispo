@@ -137,30 +137,44 @@
                     @endforelse
                 </div>
 
-                {{-- Roadmap klein --}}
-                <details class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
-                        Roadmap
-                    </summary>
+                {{-- Anstehende Transporte --}}
+                <div class="bg-white rounded-lg shadow-sm p-5">
+                    <h3 class="font-semibold text-gray-900 mb-4">
+                        Anstehende Transporte
+                    </h3>
 
-                    <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
-                        <li>✅ Registrierung deaktiviert</li>
-                        <li>✅ Mailversand eingerichtet</li>
-                        <li>✅ Timeline Grundversion</li>
-                        <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
-                        <li>✅ Aktivitätsprotokoll</li>
-                        <li>✅ Archiv für alte Produktionen (Packliste)</li>
-                        <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
-                        <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
-                        <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
-                        <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
-                        <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
-                        <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
-                        <li>⬜ Globale Suche über alle Bereiche</li>
-                        <li>⬜ Packlisten per Mail</li>
-                        <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
-                    </ul>
-                </details>
+                    @forelse($upcomingTransportEvents as $event)
+                        @php
+                            $daysUntil = \Carbon\Carbon::today()->diffInDays($event['date'], false);
+                            $whenLabel = match(true) {
+                                $daysUntil <= 0 => 'heute',
+                                $daysUntil === 1 => 'morgen',
+                                default => "in {$daysUntil} Tagen",
+                            };
+                            $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
+                            $mv = $event['mietvorgang'];
+                        @endphp
+                        <div class="flex items-start gap-3 border-b last:border-b-0 py-3">
+                            <form action="{{ route('mietvorgaenge.confirmTransport', [$mv, $event['type']]) }}" method="POST" class="mt-0.5 shrink-0">
+                                @csrf
+                                <button type="submit" title="Als geklärt markieren"
+                                        class="w-5 h-5 rounded border border-gray-300 hover:border-orange-400 hover:bg-orange-50 block"></button>
+                            </form>
+                            <a href="{{ route('mietvorgaenge.show', $mv) }}" class="flex-1 hover:text-orange-600">
+                                <div class="font-medium text-gray-900">
+                                    {{ ucfirst($whenLabel) }} {{ $typeLabel }} — {{ $mv->supplier->bezeichnung ?? 'Vermieter gelöscht' }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ $mv->items->pluck('bezeichnung')->implode(', ') }}
+                                </div>
+                            </a>
+                        </div>
+                    @empty
+                        <div class="text-sm text-gray-500">
+                            Keine anstehenden Transporte in den nächsten 14 Tagen.
+                        </div>
+                    @endforelse
+                </div>
             </div>
 
             {{-- Zuletzt angelegte Produktionen --}}
@@ -208,6 +222,31 @@
                     </table>
                 </div>
             </div>
+
+            {{-- Roadmap --}}
+            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
+                    Roadmap
+                </summary>
+
+                <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
+                    <li>✅ Registrierung deaktiviert</li>
+                    <li>✅ Mailversand eingerichtet</li>
+                    <li>✅ Timeline Grundversion</li>
+                    <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
+                    <li>✅ Aktivitätsprotokoll</li>
+                    <li>✅ Archiv für alte Produktionen (Packliste)</li>
+                    <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
+                    <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
+                    <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
+                    <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
+                    <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
+                    <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
+                    <li>⬜ Globale Suche über alle Bereiche</li>
+                    <li>⬜ Packlisten per Mail</li>
+                    <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
+                </ul>
+            </details>
 
         </div>
     </div>

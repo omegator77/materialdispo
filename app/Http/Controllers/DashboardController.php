@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\Mietvorgang;
 use App\Models\Production;
 use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
@@ -44,7 +45,44 @@ class DashboardController extends Controller
             'latestProductions' => Production::latest()
                 ->limit(5)
                 ->get(),
+
+            'upcomingTransportEvents' => $this->upcomingTransportEvents($today),
         ]);
+    }
+
+    /**
+     * Anstehende, noch nicht als "geklärt" markierte Mietbeginn-/Mietende-
+     * Termine der nächsten $days Tage, für die Dashboard-Übersicht.
+     */
+    private function upcomingTransportEvents(Carbon $today, int $days = 14): \Illuminate\Support\Collection
+    {
+        $window = $today->copy()->addDays($days);
+
+        return Mietvorgang::with(['supplier', 'items'])
+            ->whereHas('items')
+            ->where(function ($q) use ($today, $window) {
+                $q->whereBetween('rent_start', [$today, $window])
+                    ->orWhereBetween('rent_end', [$today, $window]);
+            })
+            ->get()
+            ->flatMap(function (Mietvorgang $mv) use ($today, $window) {
+                $entries = collect();
+
+                $start = Carbon::parse($mv->rent_start);
+                $end = Carbon::parse($mv->rent_end);
+
+                if (! $mv->isTransportConfirmed('start') && $start->gte($today) && $start->lte($window)) {
+                    $entries->push(['mietvorgang' => $mv, 'type' => 'start', 'date' => $start]);
+                }
+
+                if (! $mv->isTransportConfirmed('end') && $end->gte($today) && $end->lte($window)) {
+                    $entries->push(['mietvorgang' => $mv, 'type' => 'end', 'date' => $end]);
+                }
+
+                return $entries;
+            })
+            ->sortBy('date')
+            ->values();
     }
 
     /**

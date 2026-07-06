@@ -59,12 +59,18 @@ class Mietvorgang extends Model
         'reminder_days_before_start',
         'reminder_days_before_end',
         'mailing_list_id',
+        'transport_start_confirmed_at',
+        'transport_start_confirmed_by',
+        'transport_end_confirmed_at',
+        'transport_end_confirmed_by',
     ];
 
     protected $casts = [
         'rent_start' => 'date',
         'rent_end' => 'date',
         'notify_supplier' => 'boolean',
+        'transport_start_confirmed_at' => 'datetime',
+        'transport_end_confirmed_at' => 'datetime',
     ];
 
     const TRANSPORT_TYPES_START = [
@@ -97,6 +103,21 @@ class Mietvorgang extends Model
     public function mailingList()
     {
         return $this->belongsTo(MailingList::class);
+    }
+
+    public function transportStartConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'transport_start_confirmed_by');
+    }
+
+    public function transportEndConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'transport_end_confirmed_by');
+    }
+
+    public function isTransportConfirmed(string $type): bool
+    {
+        return $this->{"transport_{$type}_confirmed_at"} !== null;
     }
 
     public function effectiveReminderDaysBeforeStart(): int

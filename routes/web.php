@@ -67,6 +67,12 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->parameters(['mietvorgaenge' => 'mietvorgang']);
     Route::post('mietvorgaenge/{mietvorgang}/attach-items', [MietvorgangController::class, 'attachItems'])->name('mietvorgaenge.attachItems');
     Route::delete('mietvorgaenge/{mietvorgang}/detach-item/{item}', [MietvorgangController::class, 'detachItem'])->name('mietvorgaenge.detachItem');
+    Route::post('mietvorgaenge/{mietvorgang}/confirm-transport/{type}', [MietvorgangController::class, 'confirmTransport'])
+        ->whereIn('type', ['start', 'end'])
+        ->name('mietvorgaenge.confirmTransport');
+    Route::delete('mietvorgaenge/{mietvorgang}/confirm-transport/{type}', [MietvorgangController::class, 'reopenTransport'])
+        ->whereIn('type', ['start', 'end'])
+        ->name('mietvorgaenge.reopenTransport');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });
