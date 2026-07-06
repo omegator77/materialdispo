@@ -9,13 +9,17 @@ use App\Models\Mieter;
 use App\Models\Production;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Services\ItemAvailabilityService;
 use App\Services\ItemDetailSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ItemController extends Controller
 {
-    public function __construct(private ItemDetailSyncService $detailSync) {}
+    public function __construct(
+        private ItemDetailSyncService $detailSync,
+        private ItemAvailabilityService $availability,
+    ) {}
 
     public function index(Request $request)
     {
@@ -137,6 +141,15 @@ class ItemController extends Controller
 
         $rentData = $this->prepareRentData($request);
         $verleihData = $this->prepareVerleihData($request);
+
+        if ($verleihData['mieter_id'] && $verleihData['verleih_start'] && $verleihData['verleih_end']) {
+            $check = $this->availability->checkForVerleih($item, $verleihData['verleih_start'], $verleihData['verleih_end']);
+
+            if (! $check['available']) {
+                return redirect()->back()->withInput()
+                    ->withErrors(['verleih_start' => "Gerät kann nicht vermietet werden: {$check['reason']}"]);
+            }
+        }
 
         $item->update(array_merge($request->validated(), $rentData, $verleihData));
 

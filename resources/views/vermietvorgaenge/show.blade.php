@@ -20,6 +20,12 @@
         </div>
         @endif
 
+        @if(session('error'))
+        <div class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
+            {{ session('error') }}
+        </div>
+        @endif
+
         <form action="{{ route('vermietvorgaenge.update', $vermietvorgang) }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
             @csrf
             @method('PUT')

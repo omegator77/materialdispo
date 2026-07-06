@@ -7,11 +7,14 @@ use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mieter;
 use App\Models\Vermietvorgang;
+use App\Services\ItemAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class VermietvorgangController extends Controller
 {
+    public function __construct(private ItemAvailabilityService $availability) {}
+
     public function index()
     {
         $vermietvorgaenge = Vermietvorgang::with('mieter')
@@ -90,7 +93,22 @@ class VermietvorgangController extends Controller
     {
         $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values();
 
-        Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($vermietvorgang) {
+        $added = [];
+        $skipped = [];
+
+        Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($vermietvorgang, &$added, &$skipped) {
+            $check = $this->availability->checkForVerleih(
+                $item,
+                $vermietvorgang->rent_start->format('Y-m-d'),
+                $vermietvorgang->rent_end->format('Y-m-d')
+            );
+
+            if (! $check['available']) {
+                $skipped[] = "{$item->bezeichnung} ({$check['reason']})";
+
+                return;
+            }
+
             $item->update([
                 'mieter_id' => $vermietvorgang->mieter_id,
                 'verleih_start' => $vermietvorgang->rent_start,
@@ -104,9 +122,22 @@ class VermietvorgangController extends Controller
                 ->event('attached')
                 ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
                 ->log("Gerät \"{$item->bezeichnung}\" dem Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) zugeordnet");
+
+            $added[] = $item->bezeichnung;
         });
 
-        return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with('success', 'Geräte zugeordnet.');
+        $messageParts = [];
+        if (count($added)) {
+            $messageParts[] = count($added).' Gerät(e) zugeordnet: '.implode(', ', $added);
+        }
+        if (count($skipped)) {
+            $messageParts[] = 'Übersprungen: '.implode(', ', $skipped);
+        }
+
+        $messageType = count($added) ? 'success' : 'error';
+        $message = $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.';
+
+        return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with($messageType, $message);
     }
 
     public function detachItem(Vermietvorgang $vermietvorgang, Item $item)
