@@ -21,13 +21,13 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="booking_start" class="block text-sm font-medium text-gray-700 mb-1">Mietbeginn</label>
+                            <label for="booking_start" class="block text-sm font-medium text-gray-700 mb-1">Produktionsbeginn</label>
                             <input type="text" name="booking_start" id="booking_start"
                                    class="form-control w-full datepicker"
                                    value="{{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '' }}">
                         </div>
                         <div>
-                            <label for="booking_end" class="block text-sm font-medium text-gray-700 mb-1">Mietende</label>
+                            <label for="booking_end" class="block text-sm font-medium text-gray-700 mb-1">Produktionsende</label>
                             <input type="text" name="booking_end" id="booking_end"
                                    class="form-control w-full datepicker"
                                    value="{{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '' }}">

@@ -14,7 +14,7 @@
         </div>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6">
+    <div class="max-w-7xl w-11/12 mx-auto mt-6" x-data="geraetetypSearch()">
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded mb-4">
@@ -27,6 +27,38 @@
             {{ session('error') }}
         </div>
         @endif
+
+        {{-- Suche & Filter --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+                <div class="w-full sm:w-72">
+                    <label for="geraetetypUnitFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                        Gruppe filtern
+                    </label>
+                    <select id="geraetetypUnitFilter" x-model="unitId" @change="filter()" class="form-control w-full">
+                        <option value="">Alle Gruppen</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->bezeichnung }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="w-full sm:flex-1">
+                    <label for="geraetetypSearch" class="block text-sm font-medium text-gray-700 mb-1">
+                        Suche
+                    </label>
+                    <input
+                        type="text"
+                        id="geraetetypSearch"
+                        x-model="query"
+                        @input.debounce.150ms="filter()"
+                        placeholder="Bezeichnung oder Bemerkung durchsuchen…"
+                        class="form-control w-full"
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+        </div>
 
         {{-- Desktop / Tablet --}}
         <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
@@ -43,7 +75,9 @@
 
                 <tbody>
                     @forelse($geraetetypen as $geraetetyp)
-                        <tr class="border-b hover:bg-gray-50">
+                        <tr class="border-b hover:bg-gray-50"
+                            data-search="{{ $geraetetyp->bezeichnung }} {{ $geraetetyp->description }}"
+                            data-unit-id="{{ $geraetetyp->units_id }}">
                             <td class="px-4 py-3 font-medium text-gray-900">
                                 {{ $geraetetyp->bezeichnung }}
                             </td>
@@ -87,12 +121,18 @@
                     @endforelse
                 </tbody>
             </table>
+
+            <div data-search-empty class="hidden text-center py-6 text-gray-500">
+                Keine Gerätetypen gefunden.
+            </div>
         </div>
 
         {{-- Handy --}}
         <div class="md:hidden space-y-3">
             @forelse($geraetetypen as $geraetetyp)
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4"
+                     data-search="{{ $geraetetyp->bezeichnung }} {{ $geraetetyp->description }}"
+                     data-unit-id="{{ $geraetetyp->units_id }}">
                     <div class="font-semibold text-gray-900">
                         {{ $geraetetyp->bezeichnung }}
                     </div>
@@ -130,6 +170,36 @@
                     Noch keine Gerätetypen angelegt.
                 </div>
             @endforelse
+
+            <div data-search-empty class="hidden bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-500">
+                Keine Gerätetypen gefunden.
+            </div>
         </div>
     </div>
+
+    <script>
+    function geraetetypSearch() {
+        return {
+            query: '',
+            unitId: '',
+            filter() {
+                const needle = this.query.trim().toLowerCase();
+                const rows = document.querySelectorAll('[data-search]');
+                let visibleCount = 0;
+
+                rows.forEach(el => {
+                    const matchesSearch = needle === '' || el.dataset.search.toLowerCase().includes(needle);
+                    const matchesUnit = this.unitId === '' || el.dataset.unitId === this.unitId;
+                    const matches = matchesSearch && matchesUnit;
+                    el.classList.toggle('hidden', !matches);
+                    if (matches) visibleCount++;
+                });
+
+                document.querySelectorAll('[data-search-empty]').forEach(el => {
+                    el.classList.toggle('hidden', !((needle !== '' || this.unitId !== '') && visibleCount === 0 && rows.length > 0));
+                });
+            }
+        };
+    }
+    </script>
 </x-app-layout>

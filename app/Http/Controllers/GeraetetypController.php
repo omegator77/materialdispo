@@ -12,8 +12,9 @@ class GeraetetypController extends Controller
     public function index()
     {
         $geraetetypen = Geraetetyp::with('unit')->withCount('items')->orderBy('units_id')->orderBy('bezeichnung')->get();
+        $units = Unit::orderBy('bezeichnung')->get();
 
-        return view('geraetetypen.index', compact('geraetetypen'));
+        return view('geraetetypen.index', compact('geraetetypen', 'units'));
     }
 
     public function create()
