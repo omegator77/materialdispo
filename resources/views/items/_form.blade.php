@@ -103,10 +103,26 @@
             Mietmaterial
         </h3>
 
+        @if($item->mietvorgang_manual ?? false)
+        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex flex-col sm:flex-row sm:items-center gap-2">
+            <span>
+                Dieses Gerät ist manuell einem
+                <a href="{{ route('mietvorgaenge.show', $item->mietvorgang_id) }}" class="underline hover:text-blue-900" target="_blank">Mietvorgang</a>
+                zugeordnet — Vermieter und Zeitraum werden dort verwaltet.
+            </span>
+            <form action="{{ route('items.resetMietvorgang', $item->id) }}" method="POST" class="sm:ml-auto">
+                @csrf
+                <button type="submit" class="text-blue-700 hover:underline font-medium whitespace-nowrap">
+                    Zurücksetzen
+                </button>
+            </form>
+        </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="suppliers_id" class="block text-sm font-medium text-gray-700">Vermieter</label>
-                <select name="suppliers_id" id="suppliers_id" class="form-control w-full">
+                <select name="suppliers_id" id="suppliers_id" class="form-control w-full" @disabled($item->mietvorgang_manual ?? false)>
                     <option value="">Eigentum / kein Vermieter</option>
                     @foreach($suppliers as $supplier)
                     <option value="{{ $supplier->id }}"
@@ -115,6 +131,9 @@
                     </option>
                     @endforeach
                 </select>
+                @if($item->mietvorgang_manual ?? false)
+                <input type="hidden" name="suppliers_id" value="{{ $item->suppliers_id }}">
+                @endif
             </div>
 
             <div id="rental-fields" class="md:col-span-2">
@@ -127,7 +146,8 @@
                             id="rent_start"
                             value="{{ old('rent_start', $item->rent_start ?? '') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ">
+                            placeholder="TT.MM.JJJJ"
+                            @readonly($item->mietvorgang_manual ?? false)>
                     </div>
 
                     <div>
@@ -138,7 +158,8 @@
                             id="rent_end"
                             value="{{ old('rent_end', $item->rent_end ?? '') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ">
+                            placeholder="TT.MM.JJJJ"
+                            @readonly($item->mietvorgang_manual ?? false)>
                     </div>
                 </div>
             </div>

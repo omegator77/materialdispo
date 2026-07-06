@@ -16,6 +16,9 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\VbProtokollController;
 use App\Http\Controllers\GeraetetypController;
 use App\Http\Controllers\PackvorgangController;
+use App\Http\Controllers\MailingListController;
+use App\Http\Controllers\MietvorgangController;
+use App\Http\Controllers\TestMailController;
 
 Route::redirect('/', '/login');
 
@@ -30,6 +33,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::put('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'update'])->name('geraetetypen.update');
     Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
+    Route::post('items/{item}/reset-mietvorgang', [ItemController::class, 'resetMietvorgang'])->name('items.resetMietvorgang');
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
 
     Route::get('productions/templates-search', [ProductionController::class, 'searchTemplates'])->name('productions.searchTemplates');
@@ -54,6 +58,16 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
 
     Route::post('productions/{production}/packvorgang/complete', [PackvorgangController::class, 'complete'])->name('packvorgang.complete');
     Route::post('productions/{production}/packvorgang/reopen', [PackvorgangController::class, 'reopen'])->name('packvorgang.reopen');
+
+    Route::resource('/mailing-lists', MailingListController::class)->except(['index', 'show']);
+
+    Route::resource('/mietvorgaenge', MietvorgangController::class)
+        ->except(['index', 'show', 'edit'])
+        ->parameters(['mietvorgaenge' => 'mietvorgang']);
+    Route::post('mietvorgaenge/{mietvorgang}/attach-items', [MietvorgangController::class, 'attachItems'])->name('mietvorgaenge.attachItems');
+    Route::delete('mietvorgaenge/{mietvorgang}/detach-item/{item}', [MietvorgangController::class, 'detachItem'])->name('mietvorgaenge.detachItem');
+
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });
 
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
@@ -65,6 +79,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);
+    Route::resource('/mailing-lists', MailingListController::class)->only(['index']);
+    Route::resource('/mietvorgaenge', MietvorgangController::class)
+        ->only(['index', 'show'])
+        ->parameters(['mietvorgaenge' => 'mietvorgang']);
 
     Route::get('/itemprods', [ItemproductionController::class, 'index'])->name('itemprods');
     Route::get('productions/{id}/pdf', [ProductionController::class, 'generatePDF'])->name('productions.pdf');
@@ -87,7 +105,7 @@ Route::middleware(['auth'])->group(function () {
 // Admin only — Benutzerverwaltung
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('/users', UserController::class);
-    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::post('/test-mail', [TestMailController::class, 'send'])->name('test-mail.send');
 });
 
 require __DIR__.'/auth.php';

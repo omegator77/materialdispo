@@ -18,6 +18,7 @@
                 <div class="bg-white rounded-lg shadow-sm p-5 h-36">
                     <div class="text-sm text-gray-500">Geräte gesamt</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $itemsCount }}</div>
+                    <div class="text-xs text-gray-400 mt-1">davon {{ $rentedItemsCount }} gemietet</div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm p-5 h-36">
@@ -25,7 +26,7 @@
                     <div class="text-3xl font-bold text-gray-900">{{ $todayBookedItemsCount }}</div>
                 </div>
 
-                @if(Auth::user()->isAdmin())
+                @if(Auth::user()->isUser())
                 <a href="{{ route('activity-log.index') }}" class="bg-white rounded-lg shadow-sm p-5 hover:bg-gray-50 transition-colors h-36 flex flex-col">
                     <div class="text-sm text-gray-500 mb-2 shrink-0">Letzte Aktionen</div>
                     <div class="flex-1 overflow-y-auto">
@@ -137,12 +138,12 @@
                 </div>
 
                 {{-- Roadmap klein --}}
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
                         Roadmap
-                    </h3>
+                    </summary>
 
-                    <ul class="space-y-2 text-sm text-gray-700">
+                    <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
                         <li>✅ Registrierung deaktiviert</li>
                         <li>✅ Mailversand eingerichtet</li>
                         <li>✅ Timeline Grundversion</li>
@@ -154,11 +155,12 @@
                         <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
                         <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
                         <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
+                        <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
                         <li>⬜ Globale Suche über alle Bereiche</li>
                         <li>⬜ Packlisten per Mail</li>
                         <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
                     </ul>
-                </div>
+                </details>
             </div>
 
             {{-- Zuletzt angelegte Produktionen --}}

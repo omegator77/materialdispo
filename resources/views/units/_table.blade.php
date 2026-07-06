@@ -1,4 +1,20 @@
-<div class="max-w-7xl w-11/12 mx-auto mt-6">
+<div class="max-w-7xl w-11/12 mx-auto mt-6" x-data="unitSearch()">
+
+    {{-- Suche --}}
+    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 mb-4">
+        <label for="unitSearch" class="block text-sm font-medium text-gray-700 mb-1">
+            Suche
+        </label>
+        <input
+            type="text"
+            id="unitSearch"
+            x-model="query"
+            @input.debounce.150ms="filter()"
+            placeholder="Gruppe oder Beschreibung durchsuchen…"
+            class="form-control w-full"
+            autocomplete="off"
+        >
+    </div>
 
     {{-- Desktop / Tablet --}}
     <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
@@ -13,7 +29,7 @@
 
             <tbody>
                 @forelse($units as $unit)
-                    <tr class="border-b hover:bg-gray-50">
+                    <tr class="border-b hover:bg-gray-50" data-search="{{ $unit->bezeichnung }} {{ $unit->description }}">
                         <td class="px-4 py-3 font-medium">
                             <a href="{{ route('items.index', ['unit_id' => $unit->id]) }}"
                                class="text-gray-900 hover:text-orange-500">
@@ -50,12 +66,16 @@
                 @endforelse
             </tbody>
         </table>
+
+        <div data-search-empty class="hidden text-center py-6 text-gray-500">
+            Keine Gruppe gefunden.
+        </div>
     </div>
 
     {{-- Handy --}}
     <div class="md:hidden space-y-3">
         @forelse($units as $unit)
-            <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+            <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $unit->bezeichnung }} {{ $unit->description }}">
                 <div>
                     <a href="{{ route('items.index', ['unit_id' => $unit->id]) }}"
                        class="text-lg font-semibold text-gray-900 hover:text-orange-500">
@@ -86,6 +106,34 @@
                 Noch keine Gruppen angelegt.
             </div>
         @endforelse
+
+        <div data-search-empty class="hidden bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+            Keine Gruppe gefunden.
+        </div>
     </div>
 
 </div>
+
+<script>
+function unitSearch() {
+    return {
+        query: '',
+        filter() {
+            const needle = this.query.trim().toLowerCase();
+            const rows = document.querySelectorAll('[data-search]');
+            let visibleCount = 0;
+
+            rows.forEach(el => {
+                const haystack = el.dataset.search.toLowerCase();
+                const matches = needle === '' || haystack.includes(needle);
+                el.classList.toggle('hidden', !matches);
+                if (matches) visibleCount++;
+            });
+
+            document.querySelectorAll('[data-search-empty]').forEach(el => {
+                el.classList.toggle('hidden', !(needle !== '' && visibleCount === 0 && rows.length > 0));
+            });
+        }
+    };
+}
+</script>
