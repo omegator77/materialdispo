@@ -51,12 +51,24 @@ class VermietvorgangController extends Controller
         $mailingLists = MailingList::orderBy('name')->get();
         $defaultMailingList = MailingList::where('is_default', true)->first();
 
-        $assignableItems = Item::whereNotNull('mieter_id')
-            ->where(function ($q) use ($vermietvorgang) {
+        // Anders als bei Mietvorgang (wo nur bereits als Mietmaterial markierte
+        // Geräte zur Auswahl stehen) geht es hier um eigenes Material, das noch
+        // gar keinem Mieter zugeordnet sein muss — daher stehen alle Geräte zur
+        // Wahl, die nicht bereits diesem Vermietvorgang zugeordnet sind, gefiltert
+        // auf tatsächliche Verfügbarkeit im Verleihzeitraum.
+        $assignableItems = Item::where(function ($q) use ($vermietvorgang) {
                 $q->whereNull('vermietvorgang_id')->orWhere('vermietvorgang_id', '!=', $vermietvorgang->id);
             })
             ->orderBy('bezeichnung')
-            ->get();
+            ->get()
+            ->filter(function (Item $item) use ($vermietvorgang) {
+                return $this->availability->checkForVerleih(
+                    $item,
+                    $vermietvorgang->rent_start->format('Y-m-d'),
+                    $vermietvorgang->rent_end->format('Y-m-d')
+                )['available'];
+            })
+            ->values();
 
         return view('vermietvorgaenge.show', compact('vermietvorgang', 'mieter', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
