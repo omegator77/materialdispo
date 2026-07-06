@@ -61,11 +61,7 @@ class SendTransportReminders extends Command
         $recipients = $mietvorgang->mailingList?->recipients->pluck('email') ?? collect();
 
         if ($recipients->isEmpty()) {
-            $defaultListId = config('reminders.default_mailing_list_id');
-
-            if ($defaultListId) {
-                $recipients = MailingList::find($defaultListId)?->recipients->pluck('email') ?? collect();
-            }
+            $recipients = MailingList::where('is_default', true)->first()?->recipients->pluck('email') ?? collect();
         }
 
         if ($recipients->isEmpty() && ! $mietvorgang->notify_supplier) {

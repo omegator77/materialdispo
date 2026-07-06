@@ -128,7 +128,9 @@
                 <div class="mt-4">
                     <label for="mailing_list_id" class="block text-sm font-medium text-gray-700">Mailingliste</label>
                     <select name="mailing_list_id" id="mailing_list_id" class="form-control w-full">
-                        <option value="">— keine (nur Standard-Mailingliste, falls konfiguriert) —</option>
+                        <option value="">
+                            {{ $defaultMailingList ? '— keine (Standardliste: '.$defaultMailingList->name.') —' : '— keine (keine Standardliste festgelegt) —' }}
+                        </option>
                         @foreach($mailingLists as $list)
                         <option value="{{ $list->id }}" @selected(old('mailing_list_id', $mietvorgang->mailing_list_id ?? '') == $list->id)>
                             {{ $list->name }}

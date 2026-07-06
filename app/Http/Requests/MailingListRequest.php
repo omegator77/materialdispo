@@ -16,6 +16,7 @@ class MailingListRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'is_default' => ['nullable', 'boolean'],
             'recipient_name' => ['nullable', 'array'],
             'recipient_name.*' => ['nullable', 'string', 'max:255'],
             'recipient_email' => ['nullable', 'array'],
