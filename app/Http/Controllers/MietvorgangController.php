@@ -26,8 +26,9 @@ class MietvorgangController extends Controller
     {
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
+        $defaultMailingList = MailingList::where('is_default', true)->first();
 
-        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists'));
+        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList'));
     }
 
     public function store(MietvorgangRequest $request)
@@ -45,6 +46,7 @@ class MietvorgangController extends Controller
 
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
+        $defaultMailingList = MailingList::where('is_default', true)->first();
 
         $assignableItems = Item::whereNotNull('suppliers_id')
             ->where(function ($q) use ($mietvorgang) {
@@ -53,7 +55,7 @@ class MietvorgangController extends Controller
             ->orderBy('bezeichnung')
             ->get();
 
-        return view('mietvorgaenge.show', compact('mietvorgang', 'suppliers', 'mailingLists', 'assignableItems'));
+        return view('mietvorgaenge.show', compact('mietvorgang', 'suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
 
     public function update(MietvorgangRequest $request, Mietvorgang $mietvorgang)

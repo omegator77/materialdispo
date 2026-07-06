@@ -60,6 +60,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::post('productions/{production}/packvorgang/reopen', [PackvorgangController::class, 'reopen'])->name('packvorgang.reopen');
 
     Route::resource('/mailing-lists', MailingListController::class)->except(['index', 'show']);
+    Route::post('mailing-lists/{mailing_list}/make-default', [MailingListController::class, 'makeDefault'])->name('mailing-lists.makeDefault');
 
     Route::resource('/mietvorgaenge', MietvorgangController::class)
         ->except(['index', 'show', 'edit'])

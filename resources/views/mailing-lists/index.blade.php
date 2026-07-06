@@ -62,6 +62,9 @@
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">
                                 {{ $mailingList->name }}
+                                @if($mailingList->is_default)
+                                <span class="ml-2 inline-block bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">Standard</span>
+                                @endif
                             </td>
 
                             <td class="px-4 py-3">
@@ -75,6 +78,16 @@
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
                                     @if(Auth::user()->isUser())
+                                    @unless($mailingList->is_default)
+                                    <form action="{{ route('mailing-lists.makeDefault', $mailingList->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit"
+                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
+                                            Als Standard
+                                        </button>
+                                    </form>
+                                    @endunless
+
                                     <a href="{{ route('mailing-lists.edit', $mailingList->id) }}"
                                        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
                                         Bearbeiten
@@ -114,6 +127,9 @@
                     <div>
                         <p class="text-lg font-semibold text-gray-900">
                             {{ $mailingList->name }}
+                            @if($mailingList->is_default)
+                            <span class="ml-2 inline-block bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">Standard</span>
+                            @endif
                         </p>
 
                         <p class="text-sm text-gray-500">
@@ -126,7 +142,17 @@
                     </p>
 
                     @if(Auth::user()->isUser())
-                    <div class="mt-4 flex gap-2">
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @unless($mailingList->is_default)
+                        <form action="{{ route('mailing-lists.makeDefault', $mailingList->id) }}" method="POST" class="flex-1">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                                Als Standard
+                            </button>
+                        </form>
+                        @endunless
+
                         <a href="{{ route('mailing-lists.edit', $mailingList->id) }}"
                            class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
                             Bearbeiten
