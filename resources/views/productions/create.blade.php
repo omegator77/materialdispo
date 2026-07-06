@@ -74,14 +74,14 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="booking_start" class="block text-sm font-medium text-gray-700 mb-1">Mietbeginn</label>
+                            <label for="booking_start" class="block text-sm font-medium text-gray-700 mb-1">Produktionsbeginn</label>
                             <input type="text" name="booking_start" id="booking_start"
                                    class="form-control w-full datepicker"
                                    placeholder="TT.MM.JJJJ"
                                    value="{{ old('booking_start') }}">
                         </div>
                         <div>
-                            <label for="booking_end" class="block text-sm font-medium text-gray-700 mb-1">Mietende</label>
+                            <label for="booking_end" class="block text-sm font-medium text-gray-700 mb-1">Produktionsende</label>
                             <input type="text" name="booking_end" id="booking_end"
                                    class="form-control w-full datepicker"
                                    placeholder="TT.MM.JJJJ"

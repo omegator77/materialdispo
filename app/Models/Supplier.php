@@ -20,4 +20,9 @@ class Supplier extends Model
     {
         return $this->hasMany(Item::class, 'suppliers_id');
     }
+
+    public function mietvorgaenge()
+    {
+        return $this->hasMany(Mietvorgang::class, 'suppliers_id');
+    }
 }

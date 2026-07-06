@@ -77,6 +77,8 @@ class ItemController extends Controller
 
         $item = Item::create(array_merge($request->validated(), $rentData));
 
+        $item->syncMietvorgang();
+
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
 
@@ -124,6 +126,8 @@ class ItemController extends Controller
 
         $item->update(array_merge($request->validated(), $rentData));
 
+        $item->syncMietvorgang();
+
         $this->detailSync->syncCameraDetails($request, $item);
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
@@ -136,6 +140,13 @@ class ItemController extends Controller
         Item::where('id', $id)->delete();
 
         return redirect()->route('items.index');
+    }
+
+    public function resetMietvorgang(Item $item)
+    {
+        $item->resetMietvorgangAssignment();
+
+        return redirect()->route('items.edit', $item->id)->with('success', 'Mietvorgang-Zuordnung zurückgesetzt.');
     }
 
     private function prepareRentData(Request $request): array

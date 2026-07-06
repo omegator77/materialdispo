@@ -71,6 +71,45 @@
             @endif
         </div>
 
+        {{-- Mietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Mietvorgang-Seite --}}
+        @if($mietvorgaenge->isNotEmpty())
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Mietvorgänge (Transport)</h3>
+
+            <div class="space-y-3">
+                @foreach($mietvorgaenge as $mietvorgang)
+                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm text-gray-600">
+                        <strong class="text-gray-900">{{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}</strong>
+                        &middot; {{ \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y') }}
+                        – {{ \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y') }}
+                        &middot; {{ $production->items->where('mietvorgang_id', $mietvorgang->id)->pluck('bezeichnung')->implode(', ') }}
+
+                        <div class="mt-1 flex flex-wrap gap-2">
+                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                                Hinweg: {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_START[$mietvorgang->transport_type_start] ?? 'offen' }}
+                            </span>
+                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                                Rückweg: {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_END[$mietvorgang->transport_type_end] ?? 'offen' }}
+                            </span>
+                            @if($mietvorgang->notify_supplier)
+                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                                Lieferant wird benachrichtigt
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
+                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                        Bearbeiten →
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
         @if($vbAbgleich && $vbAbgleich->isNotEmpty())
         @php

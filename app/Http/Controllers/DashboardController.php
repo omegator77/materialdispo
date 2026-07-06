@@ -15,6 +15,7 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'itemsCount' => Item::count(),
+            'rentedItemsCount' => Item::whereNotNull('suppliers_id')->count(),
 
             'lastActivities' => Activity::with('causer')->latest()->limit(5)->get(),
 
