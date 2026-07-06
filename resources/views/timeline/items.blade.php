@@ -5,12 +5,19 @@
                 Geräte-Timeline
             </h2>
             {{-- Zoom-Steuerung (Desktop sichtbar, Mobile im Timeline-Header) --}}
-            <div class="hidden sm:flex items-center gap-2" id="zoom-controls-header">
-                <span class="text-xs text-gray-500">Zoom:</span>
-                <button onclick="timelineZoom(-1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">−</button>
-                <span id="zoom-label-header" class="text-xs font-mono w-10 text-center text-gray-700">100%</span>
-                <button onclick="timelineZoom(+1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">+</button>
-                <button onclick="timelineZoomReset()" class="text-xs text-blue-600 hover:underline ml-1">Reset</button>
+            <div class="hidden sm:flex items-center gap-4">
+                <div class="flex items-center gap-3 text-xs text-gray-600">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span> Produktion</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-300 inline-block"></span> Gemietet</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-purple-300 inline-block"></span> Vermietet</span>
+                </div>
+                <div class="flex items-center gap-2" id="zoom-controls-header">
+                    <span class="text-xs text-gray-500">Zoom:</span>
+                    <button onclick="timelineZoom(-1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">−</button>
+                    <span id="zoom-label-header" class="text-xs font-mono w-10 text-center text-gray-700">100%</span>
+                    <button onclick="timelineZoom(+1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">+</button>
+                    <button onclick="timelineZoomReset()" class="text-xs text-blue-600 hover:underline ml-1">Reset</button>
+                </div>
             </div>
         </div>
     </x-slot>
@@ -175,6 +182,49 @@
                                                     </div>
                                                 @endforeach
 
+                                                {{-- Gemietet (eingehend) / Vermietet (ausgehend) — Hintergrundbalken --}}
+                                                <div class="absolute inset-0 flex items-center pointer-events-none px-0">
+                                                    @if($item->suppliers_id && $item->rent_start && $item->rent_end)
+                                                        @php
+                                                            $rentStart = \Carbon\Carbon::parse($item->rent_start)->startOfDay();
+                                                            $rentEnd   = \Carbon\Carbon::parse($item->rent_end)->startOfDay();
+                                                        @endphp
+                                                        @if($rentEnd->gte($timelineStart) && $rentStart->lte($timelineEnd))
+                                                            @php
+                                                                $visStart = $rentStart->lt($timelineStart) ? $timelineStart : $rentStart;
+                                                                $visEnd   = $rentEnd->gt($timelineEnd)     ? $timelineEnd   : $rentEnd;
+                                                                $offset   = $timelineStart->diffInDays($visStart);
+                                                                $length   = $visStart->diffInDays($visEnd) + 1;
+                                                            @endphp
+                                                            <div class="rent-bar timeline-range-bar absolute pointer-events-auto h-full bg-amber-200/70 border-x border-amber-400/60"
+                                                                title="Gemietet von {{ $item->supplier->bezeichnung ?? 'Vermieter gelöscht' }} ({{ $rentStart->format('d.m.Y') }} – {{ $rentEnd->format('d.m.Y') }})"
+                                                                data-offset="{{ $offset }}"
+                                                                data-length="{{ $length }}"
+                                                            ></div>
+                                                        @endif
+                                                    @endif
+
+                                                    @if($item->mieter_id && $item->verleih_start && $item->verleih_end)
+                                                        @php
+                                                            $verleihStart = \Carbon\Carbon::parse($item->verleih_start)->startOfDay();
+                                                            $verleihEnd   = \Carbon\Carbon::parse($item->verleih_end)->startOfDay();
+                                                        @endphp
+                                                        @if($verleihEnd->gte($timelineStart) && $verleihStart->lte($timelineEnd))
+                                                            @php
+                                                                $visStart = $verleihStart->lt($timelineStart) ? $timelineStart : $verleihStart;
+                                                                $visEnd   = $verleihEnd->gt($timelineEnd)     ? $timelineEnd     : $verleihEnd;
+                                                                $offset   = $timelineStart->diffInDays($visStart);
+                                                                $length   = $visStart->diffInDays($visEnd) + 1;
+                                                            @endphp
+                                                            <div class="verleih-bar timeline-range-bar absolute pointer-events-auto h-full bg-purple-200/70 border-x border-purple-400/60"
+                                                                title="Vermietet an {{ $item->mieter->bezeichnung ?? 'Mieter gelöscht' }} ({{ $verleihStart->format('d.m.Y') }} – {{ $verleihEnd->format('d.m.Y') }})"
+                                                                data-offset="{{ $offset }}"
+                                                                data-length="{{ $length }}"
+                                                            ></div>
+                                                        @endif
+                                                    @endif
+                                                </div>
+
                                                 {{-- Produktionsbalken --}}
                                                 <div class="absolute inset-0 flex items-center pointer-events-none px-0">
                                                     @foreach($item->productions as $production)
@@ -245,7 +295,7 @@
             document.documentElement.style.setProperty('--col-width', COL_WIDTH_BASE + 'px');
 
             // Balken neu positionieren
-            document.querySelectorAll('.production-bar').forEach(bar => {
+            document.querySelectorAll('.production-bar, .timeline-range-bar').forEach(bar => {
                 const offset = parseInt(bar.dataset.offset);
                 const length = parseInt(bar.dataset.length);
                 bar.style.left  = (offset * dw) + 'px';
