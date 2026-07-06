@@ -19,6 +19,7 @@ use App\Http\Controllers\PackvorgangController;
 use App\Http\Controllers\MailingListController;
 use App\Http\Controllers\MietvorgangController;
 use App\Http\Controllers\TestMailController;
+use App\Http\Controllers\DryHireController;
 
 Route::redirect('/', '/login');
 
@@ -73,6 +74,14 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('mietvorgaenge/{mietvorgang}/confirm-transport/{type}', [MietvorgangController::class, 'reopenTransport'])
         ->whereIn('type', ['start', 'end'])
         ->name('mietvorgaenge.reopenTransport');
+
+    Route::put('productions/{production}/dry-hire', [DryHireController::class, 'update'])->name('dry-hire.update');
+    Route::post('productions/{production}/dry-hire/confirm-transport/{type}', [DryHireController::class, 'confirmTransport'])
+        ->whereIn('type', ['start', 'end'])
+        ->name('dry-hire.confirmTransport');
+    Route::delete('productions/{production}/dry-hire/confirm-transport/{type}', [DryHireController::class, 'reopenTransport'])
+        ->whereIn('type', ['start', 'end'])
+        ->name('dry-hire.reopenTransport');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });

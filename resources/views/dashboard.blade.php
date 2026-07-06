@@ -137,10 +137,10 @@
                     @endforelse
                 </div>
 
-                {{-- Anstehende Transporte --}}
+                {{-- Nächste Termine --}}
                 <div class="bg-white rounded-lg shadow-sm p-5">
                     <h3 class="font-semibold text-gray-900 mb-4">
-                        Anstehende Transporte
+                        Nächste Termine
                     </h3>
 
                     @forelse($upcomingTransportEvents as $event)
@@ -151,27 +151,41 @@
                                 $daysUntil === 1 => 'morgen',
                                 default => "in {$daysUntil} Tagen",
                             };
-                            $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
-                            $mv = $event['mietvorgang'];
+
+                            if ($event['kind'] === 'mietvorgang') {
+                                $mv = $event['mietvorgang'];
+                                $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
+                                $title = "{$mv->supplier->bezeichnung ?? 'Vermieter gelöscht'}";
+                                $subtitle = $mv->items->pluck('bezeichnung')->implode(', ');
+                                $confirmRoute = route('mietvorgaenge.confirmTransport', [$mv, $event['type']]);
+                                $linkRoute = route('mietvorgaenge.show', $mv);
+                            } else {
+                                $production = $event['production'];
+                                $typeLabel = $event['type'] === 'start' ? 'Übergabe an Kunde' : 'Rückgabe vom Kunden';
+                                $title = $production->bezeichnung;
+                                $subtitle = 'Dry Hire';
+                                $confirmRoute = route('dry-hire.confirmTransport', [$production, $event['type']]);
+                                $linkRoute = route('productions.show', $production);
+                            }
                         @endphp
                         <div class="flex items-start gap-3 border-b last:border-b-0 py-3">
-                            <form action="{{ route('mietvorgaenge.confirmTransport', [$mv, $event['type']]) }}" method="POST" class="mt-0.5 shrink-0">
+                            <form action="{{ $confirmRoute }}" method="POST" class="mt-0.5 shrink-0">
                                 @csrf
                                 <button type="submit" title="Als geklärt markieren"
                                         class="w-5 h-5 rounded border border-gray-300 hover:border-orange-400 hover:bg-orange-50 block"></button>
                             </form>
-                            <a href="{{ route('mietvorgaenge.show', $mv) }}" class="flex-1 hover:text-orange-600">
+                            <a href="{{ $linkRoute }}" class="flex-1 hover:text-orange-600">
                                 <div class="font-medium text-gray-900">
-                                    {{ ucfirst($whenLabel) }} {{ $typeLabel }} — {{ $mv->supplier->bezeichnung ?? 'Vermieter gelöscht' }}
+                                    {{ ucfirst($whenLabel) }} {{ $typeLabel }} — {{ $title }}
                                 </div>
                                 <div class="text-sm text-gray-500">
-                                    {{ $mv->items->pluck('bezeichnung')->implode(', ') }}
+                                    {{ $subtitle }}
                                 </div>
                             </a>
                         </div>
                     @empty
                         <div class="text-sm text-gray-500">
-                            Keine anstehenden Transporte in den nächsten 14 Tagen.
+                            Keine anstehenden Termine in den nächsten 14 Tagen.
                         </div>
                     @endforelse
                 </div>

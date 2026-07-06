@@ -110,6 +110,118 @@
         </div>
         @endif
 
+        {{-- Dry Hire: eigenes Material geht an einen Kunden raus --}}
+        @if($production->is_dry_hire)
+        @php $dryHire = $production->dryHire; @endphp
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Dry Hire</h3>
+
+            <form action="{{ route('dry-hire.update', $production) }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Lieferung — wie kommt das Gerät zum Kunden?</label>
+                        <select name="delivery_type" class="form-control w-full">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Models\DryHire::DELIVERY_TYPES as $value => $label)
+                            <option value="{{ $value }}" @selected(old('delivery_type', $dryHire?->delivery_type) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Rückgabe — wie kommt es zurück?</label>
+                        <select name="return_type" class="form-control w-full">
+                            <option value="">— wählen —</option>
+                            @foreach(\App\Models\DryHire::RETURN_TYPES as $value => $label)
+                            <option value="{{ $value }}" @selected(old('return_type', $dryHire?->return_type) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Kunden-E-Mail</label>
+                        <input type="email" name="customer_email" class="form-control w-full"
+                               value="{{ old('customer_email', $dryHire?->customer_email) }}">
+                    </div>
+                    <div class="flex items-end">
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="notify_customer" value="1" @checked(old('notify_customer', $dryHire?->notify_customer))>
+                            Kunde automatisch benachrichtigen
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Erinnerung vor Lieferung (Tage)</label>
+                        <input type="number" min="0" max="60" name="reminder_days_before_start" class="form-control w-full"
+                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               value="{{ old('reminder_days_before_start', $dryHire?->reminder_days_before_start) }}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Erinnerung vor Rückgabe (Tage)</label>
+                        <input type="number" min="0" max="60" name="reminder_days_before_end" class="form-control w-full"
+                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               value="{{ old('reminder_days_before_end', $dryHire?->reminder_days_before_end) }}">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mailingliste</label>
+                    <select name="mailing_list_id" class="form-control w-full">
+                        <option value="">— keine (nur Standard-Mailingliste, falls konfiguriert) —</option>
+                        @foreach($mailingLists as $list)
+                        <option value="{{ $list->id }}" @selected(old('mailing_list_id', $dryHire?->mailing_list_id) == $list->id)>{{ $list->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                        Speichern
+                    </button>
+                </div>
+            </form>
+
+            @if($dryHire)
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
+                @foreach(['start' => 'Übergabe an Kunde', 'end' => 'Rückgabe vom Kunden'] as $type => $label)
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">{{ $label }}</div>
+
+                    @if($dryHire->isTransportConfirmed($type))
+                        @php $confirmedBy = $type === 'start' ? $dryHire->startConfirmedBy : $dryHire->endConfirmedBy; @endphp
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Geklärt
+                            @if($confirmedBy) von {{ $confirmedBy->name }} @endif
+                            am {{ $dryHire->{"{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('dry-hire.reopenTransport', [$production, $type]) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht geklärt.</p>
+                        <form action="{{ route('dry-hire.confirmTransport', [$production, $type]) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als geklärt markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+        @endif
+
         {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
         @if($vbAbgleich && $vbAbgleich->isNotEmpty())
         @php

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AttachItemRequest;
 use App\Http\Requests\ProductionRequest;
+use App\Models\DryHire;
 use App\Models\Item;
+use App\Models\MailingList;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
@@ -74,7 +76,12 @@ class ProductionController extends Controller
             'booking_start' => $bookingStart,
             'booking_end' => $bookingEnd,
             'packlist_notes' => $request->packlist_notes,
+            'is_dry_hire' => $request->boolean('is_dry_hire'),
         ]);
+
+        if ($production->is_dry_hire) {
+            DryHire::firstOrCreate(['production_id' => $production->id]);
+        }
 
         if ($request->filled('from_production_id')) {
             $source = Production::find($request->from_production_id);
@@ -96,6 +103,7 @@ class ProductionController extends Controller
             'cameraConfigs.tripodItem',
             'cameraConfigs.headItem',
             'cameraConfigs.adapterItem',
+            'dryHire',
         ])->findOrFail($id);
 
         $unitFilter = $request->get('unit');
@@ -110,12 +118,15 @@ class ProductionController extends Controller
 
         $mietvorgaenge = $production->items->pluck('mietvorgang')->filter()->unique('id')->values();
 
+        $mailingLists = MailingList::orderBy('name')->get();
+
         return view('productions.show', compact(
             'production',
             'availableItems',
             'unitFilter',
             'allUnits',
-            'mietvorgaenge'
+            'mietvorgaenge',
+            'mailingLists'
         ));
     }
 
@@ -136,7 +147,12 @@ class ProductionController extends Controller
             'booking_start' => $bookingStart,
             'booking_end' => $bookingEnd,
             'packlist_notes' => $request->packlist_notes,
+            'is_dry_hire' => $request->boolean('is_dry_hire'),
         ]);
+
+        if ($production->is_dry_hire) {
+            DryHire::firstOrCreate(['production_id' => $production->id]);
+        }
 
         return redirect('/productions')->with('success', 'Produktion erfolgreich aktualisiert.');
     }

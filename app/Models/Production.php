@@ -35,11 +35,13 @@ class Production extends Model
         'packlist_notes',
         'packvorgang_confirmed_at',
         'packvorgang_confirmed_by',
+        'is_dry_hire',
         // Weitere Spalten, falls benötigt
     ];
 
     protected $casts = [
         'packvorgang_confirmed_at' => 'datetime',
+        'is_dry_hire' => 'boolean',
     ];
 
     public function items()
@@ -58,6 +60,11 @@ class Production extends Model
     public function vbProtokoll()
     {
         return $this->hasOne(VbProtokoll::class);
+    }
+
+    public function dryHire()
+    {
+        return $this->hasOne(DryHire::class);
     }
 
     public function itemPacks()

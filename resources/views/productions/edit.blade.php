@@ -41,6 +41,11 @@
                                   placeholder="Hinweise für die gesamte Packliste...">{{ old('packlist_notes', $production->packlist_notes ?? '') }}</textarea>
                     </div>
 
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="is_dry_hire" value="1" @checked(old('is_dry_hire', $production->is_dry_hire))>
+                        Dry Hire (eigenes Material wird an einen Kunden vermietet)
+                    </label>
+
                     @if($errors->any())
                         <ul class="text-sm text-red-600 space-y-1">
                             @foreach($errors->all() as $error)
