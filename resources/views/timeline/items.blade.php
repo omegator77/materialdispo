@@ -8,8 +8,8 @@
             <div class="hidden sm:flex items-center gap-4">
                 <div class="flex items-center gap-3 text-xs text-gray-600">
                     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span> Produktion</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-300 inline-block"></span> Gemietet</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-purple-300 inline-block"></span> Vermietet</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-200 inline-block"></span> Gemietet</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-purple-600 inline-block"></span> Vermietet</span>
                 </div>
                 <div class="flex items-center gap-2" id="zoom-controls-header">
                     <span class="text-xs text-gray-500">Zoom:</span>
@@ -182,7 +182,7 @@
                                                     </div>
                                                 @endforeach
 
-                                                {{-- Gemietet (eingehend) / Vermietet (ausgehend) — Hintergrundbalken --}}
+                                                {{-- Gemietet (eingehend) — Hintergrundbalken, damit Produktions-/Vermietet-Balken darüber liegen --}}
                                                 <div class="absolute inset-0 flex items-center pointer-events-none px-0">
                                                     @if($item->suppliers_id && $item->rent_start && $item->rent_end)
                                                         @php
@@ -196,14 +196,17 @@
                                                                 $offset   = $timelineStart->diffInDays($visStart);
                                                                 $length   = $visStart->diffInDays($visEnd) + 1;
                                                             @endphp
-                                                            <div class="rent-bar timeline-range-bar absolute pointer-events-auto h-full bg-amber-200/70 border-x border-amber-400/60"
+                                                            <div class="rent-bar timeline-range-bar absolute pointer-events-auto h-full bg-amber-200/70 border-x border-amber-400/60 z-0"
                                                                 title="Gemietet von {{ $item->supplier->bezeichnung ?? 'Vermieter gelöscht' }} ({{ $rentStart->format('d.m.Y') }} – {{ $rentEnd->format('d.m.Y') }})"
                                                                 data-offset="{{ $offset }}"
                                                                 data-length="{{ $length }}"
                                                             ></div>
                                                         @endif
                                                     @endif
+                                                </div>
 
+                                                {{-- Produktionsbalken + Vermietet (ausgehend) — klickbare Balken oberhalb --}}
+                                                <div class="absolute inset-0 flex items-center pointer-events-none px-0">
                                                     @if($item->mieter_id && $item->verleih_start && $item->verleih_end)
                                                         @php
                                                             $verleihStart = \Carbon\Carbon::parse($item->verleih_start)->startOfDay();
@@ -216,17 +219,23 @@
                                                                 $offset   = $timelineStart->diffInDays($visStart);
                                                                 $length   = $visStart->diffInDays($visEnd) + 1;
                                                             @endphp
-                                                            <div class="verleih-bar timeline-range-bar absolute pointer-events-auto h-full bg-purple-200/70 border-x border-purple-400/60"
+                                                            <a href="{{ route('vermietvorgaenge.show', $item->vermietvorgang_id) }}"
+                                                                class="verleih-bar timeline-range-bar absolute pointer-events-auto flex items-center h-6 rounded px-1.5
+                                                                       bg-purple-600 hover:bg-purple-700 active:bg-purple-800
+                                                                       text-white text-[11px] font-medium
+                                                                       overflow-hidden whitespace-nowrap
+                                                                       shadow-sm transition-colors z-10
+                                                                       focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
                                                                 title="Vermietet an {{ $item->mieter->bezeichnung ?? 'Mieter gelöscht' }} ({{ $verleihStart->format('d.m.Y') }} – {{ $verleihEnd->format('d.m.Y') }})"
                                                                 data-offset="{{ $offset }}"
                                                                 data-length="{{ $length }}"
-                                                            ></div>
+                                                                style="top: 50%; transform: translateY(-50%);"
+                                                            >
+                                                                <span class="bar-label">Vermietet: {{ $item->mieter->bezeichnung ?? 'Mieter gelöscht' }}</span>
+                                                            </a>
                                                         @endif
                                                     @endif
-                                                </div>
 
-                                                {{-- Produktionsbalken --}}
-                                                <div class="absolute inset-0 flex items-center pointer-events-none px-0">
                                                     @foreach($item->productions as $production)
                                                         @php
                                                             $prodStart   = \Carbon\Carbon::parse($production->booking_start)->startOfDay();
