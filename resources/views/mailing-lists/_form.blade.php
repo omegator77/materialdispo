@@ -39,6 +39,11 @@
                 >
             </div>
         </div>
+
+        <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
+            <input type="checkbox" name="is_default" value="1" @checked(old('is_default', $mailingList->is_default ?? false))>
+            Als Standardliste verwenden (wird genutzt, wenn bei einem Mietvorgang keine explizite Mailingliste ausgewählt ist)
+        </label>
     </section>
 
     <section

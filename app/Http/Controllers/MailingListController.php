@@ -25,6 +25,7 @@ class MailingListController extends Controller
         $mailingList = MailingList::create($request->validated());
 
         $this->syncRecipients($request, $mailingList);
+        $this->syncDefault($request, $mailingList);
 
         return redirect()->route('mailing-lists.index')->with('success', 'Mailingliste angelegt.');
     }
@@ -41,6 +42,7 @@ class MailingListController extends Controller
         $mailingList->update($request->validated());
 
         $this->syncRecipients($request, $mailingList);
+        $this->syncDefault($request, $mailingList);
 
         return redirect()->route('mailing-lists.index')->with('success', 'Mailingliste aktualisiert.');
     }
@@ -50,6 +52,22 @@ class MailingListController extends Controller
         $mailingList->delete();
 
         return redirect()->route('mailing-lists.index')->with('success', 'Mailingliste gelöscht.');
+    }
+
+    public function makeDefault(MailingList $mailingList)
+    {
+        $mailingList->makeDefault();
+
+        return redirect()->route('mailing-lists.index')->with('success', "„{$mailingList->name}“ ist jetzt die Standardliste.");
+    }
+
+    private function syncDefault(Request $request, MailingList $mailingList): void
+    {
+        if ($request->boolean('is_default')) {
+            $mailingList->makeDefault();
+        } elseif ($mailingList->is_default) {
+            $mailingList->update(['is_default' => false]);
+        }
     }
 
     /**
