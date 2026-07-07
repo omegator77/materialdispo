@@ -22,9 +22,17 @@ class DashboardController extends Controller
 
             'lastActivities' => Activity::with('causer')->latest()->limit(5)->get(),
 
-            'activeProductionsCount' => Production::whereDate('booking_start', '<=', $today)
+            'activeVorgaengeCount' => Production::whereDate('booking_start', '<=', $today)
                 ->whereDate('booking_end', '>=', $today)
-                ->count(),
+                ->count()
+                + Mietvorgang::whereHas('items')
+                    ->whereDate('rent_start', '<=', $today)
+                    ->whereDate('rent_end', '>=', $today)
+                    ->count()
+                + Vermietvorgang::whereHas('items')
+                    ->whereDate('rent_start', '<=', $today)
+                    ->whereDate('rent_end', '>=', $today)
+                    ->count(),
 
             'todayBookedItemsCount' => Item::where(function ($query) use ($today) {
                 $query->whereHas('productions', function ($q) use ($today) {

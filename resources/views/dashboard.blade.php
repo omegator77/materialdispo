@@ -11,8 +11,8 @@
             {{-- Kennzahlen --}}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
                 <div class="bg-white rounded-lg shadow-sm p-5 h-36">
-                    <div class="text-sm text-gray-500">Aktive Produktionen</div>
-                    <div class="text-3xl font-bold text-gray-900">{{ $activeProductionsCount }}</div>
+                    <div class="text-sm text-gray-500">Aktive Vorgänge</div>
+                    <div class="text-3xl font-bold text-gray-900">{{ $activeVorgaengeCount }}</div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow-sm p-5 h-36">
