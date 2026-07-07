@@ -21,8 +21,13 @@ use App\Http\Controllers\MietvorgangController;
 use App\Http\Controllers\MieterController;
 use App\Http\Controllers\VermietvorgangController;
 use App\Http\Controllers\TestMailController;
+use App\Http\Controllers\SlackInteractionController;
 
 Route::redirect('/', '/login');
+
+// Slack ruft diesen Endpunkt ohne Session/CSRF-Token auf; Absicherung erfolgt
+// über die Signaturprüfung (X-Slack-Signature) im Controller selbst.
+Route::post('/slack/interactions', [SlackInteractionController::class, 'handle'])->name('slack.interactions');
 
 // Admin + Benutzer — Schreibzugriff
 // Muss vor den read-only Resource-Routes stehen, damit z. B. "units/create"
