@@ -87,10 +87,10 @@
 
                         <div class="mt-1 flex flex-wrap gap-2">
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
-                                Hinweg: {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_START[$mietvorgang->transport_type_start] ?? 'offen' }}
+                                Hinweg: {{ $mietvorgang->transport_type_start ?: 'offen' }}
                             </span>
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
-                                Rückweg: {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_END[$mietvorgang->transport_type_end] ?? 'offen' }}
+                                Rückweg: {{ $mietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($mietvorgang->notify_supplier)
                             <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
@@ -126,10 +126,10 @@
 
                         <div class="mt-1 flex flex-wrap gap-2">
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
-                                Hinweg: {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_START[$vermietvorgang->transport_type_start] ?? 'offen' }}
+                                Hinweg: {{ $vermietvorgang->transport_type_start ?: 'offen' }}
                             </span>
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
-                                Rückweg: {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_END[$vermietvorgang->transport_type_end] ?? 'offen' }}
+                                Rückweg: {{ $vermietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($vermietvorgang->notify_mieter)
                             <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">

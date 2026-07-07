@@ -21,9 +21,12 @@ class SlackInteractionController extends Controller
         'kontrolliert' => 'kontrolliert',
     ];
 
-    private const LABELS = [
-        'start' => 'Transport (Hinweg)',
-        'end' => 'Transport (Rückweg)',
+    /**
+     * Labels für die richtungsunabhängigen Subtypes. "start"/"end" haben kein
+     * festes Label — das hängt von Mietvorgang/Vermietvorgang ab und kommt
+     * über $vorgang->transportActionLabel($subtype).
+     */
+    private const NON_TRANSPORT_LABELS = [
         'gerichtet' => 'Gerichtet',
         'kontrolliert' => 'Entgegengenommen und kontrolliert',
     ];
@@ -92,7 +95,9 @@ class SlackInteractionController extends Controller
         $confirmedByUserId = $this->resolveAppUserId($payload['user']['id'] ?? null);
         $causer = $confirmedByUserId ? User::find($confirmedByUserId) : null;
         $field = self::FIELD_PREFIXES[$subtype];
-        $label = self::LABELS[$subtype];
+        $label = in_array($subtype, ['start', 'end'], true)
+            ? $vorgang->transportActionLabel($subtype)
+            : self::NON_TRANSPORT_LABELS[$subtype];
 
         $vorgang->update([
             "{$field}_confirmed_at" => now(),
@@ -110,7 +115,14 @@ class SlackInteractionController extends Controller
             ->event('confirmed')
             ->log($description);
 
-        $this->replaceMessage($responseUrl, "✅ {$label} bestätigt von {$slackUserName} am ".now()->format('d.m.Y H:i'));
+        $confirmationText = "✅ {$label} bestätigt von {$slackUserName} am ".now()->format('d.m.Y H:i');
+        $originalBlocks = $payload['message']['blocks'] ?? null;
+
+        if ($originalBlocks) {
+            $this->updateMessageAfterConfirm($responseUrl, $originalBlocks, $actionId, $confirmationText);
+        } else {
+            $this->replaceMessage($responseUrl, $confirmationText);
+        }
     }
 
     /**
@@ -140,6 +152,46 @@ class SlackInteractionController extends Controller
 
         Http::post($responseUrl, [
             'text' => $text,
+            'replace_original' => true,
+        ]);
+    }
+
+    /**
+     * Entfernt nur den geklickten Button aus der bestehenden Nachricht und
+     * hängt eine Bestätigungszeile an — im Gegensatz zu replaceMessage()
+     * bleibt ein zweiter, noch offener Button (z. B. "Gerichtet" neben dem
+     * Transport-Button) dabei erhalten, statt die ganze Nachricht zu
+     * überschreiben.
+     *
+     * @param  array<int, array<string, mixed>>  $originalBlocks
+     */
+    private function updateMessageAfterConfirm(?string $responseUrl, array $originalBlocks, string $confirmedActionId, string $confirmationText): void
+    {
+        if (! $responseUrl) {
+            return;
+        }
+
+        $blocks = collect($originalBlocks)
+            ->map(function (array $block) use ($confirmedActionId, $confirmationText) {
+                if (($block['type'] ?? null) === 'section' && isset($block['text']['text'])) {
+                    $block['text']['text'] .= "\n{$confirmationText}";
+                }
+
+                if (($block['type'] ?? null) === 'actions') {
+                    $block['elements'] = collect($block['elements'] ?? [])
+                        ->reject(fn (array $el) => ($el['action_id'] ?? null) === $confirmedActionId)
+                        ->values()
+                        ->all();
+                }
+
+                return $block;
+            })
+            ->reject(fn (array $block) => ($block['type'] ?? null) === 'actions' && empty($block['elements']))
+            ->values()
+            ->all();
+
+        Http::post($responseUrl, [
+            'blocks' => $blocks,
             'replace_original' => true,
         ]);
     }

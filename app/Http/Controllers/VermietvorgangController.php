@@ -174,10 +174,10 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => auth()->id(),
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, true);
 
-        return redirect()->back()->with('success', 'Transport als geklärt markiert.');
+        return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
 
     public function reopenTransport(Vermietvorgang $vermietvorgang, string $type)
@@ -189,7 +189,7 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => null,
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, false);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');

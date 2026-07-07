@@ -76,18 +76,6 @@ class Mietvorgang extends Model
         'kontrolliert_confirmed_at' => 'datetime',
     ];
 
-    const TRANSPORT_TYPES_START = [
-        'kurier' => 'Kurier',
-        'wir_holen_ab' => 'Wir holen ab',
-        'lieferant_liefert' => 'Lieferant liefert',
-    ];
-
-    const TRANSPORT_TYPES_END = [
-        'kurier' => 'Kurier',
-        'wir_bringen_zurueck' => 'Wir bringen zurück',
-        'lieferant_holt_ab' => 'Lieferant holt ab',
-    ];
-
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'suppliers_id');
@@ -121,6 +109,15 @@ class Mietvorgang extends Model
     public function isTransportConfirmed(string $type): bool
     {
         return $this->{"transport_{$type}_confirmed_at"} !== null;
+    }
+
+    /**
+     * Mietvorgang = Geräte kommen rein: beim Hinweg wird vom Vermieter
+     * angenommen, beim Rückweg an den Vermieter wieder übergeben.
+     */
+    public function transportActionLabel(string $type): string
+    {
+        return $type === 'start' ? 'Angenommen' : 'Übergeben';
     }
 
     public function kontrolliertConfirmedBy()

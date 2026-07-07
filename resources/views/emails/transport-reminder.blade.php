@@ -22,9 +22,9 @@
         <p>
             <strong>Transportart ({{ $reminderType === 'start' ? 'Hinweg' : 'Rückweg' }}):</strong>
             @if($reminderType === 'start')
-                {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_START[$mietvorgang->transport_type_start] ?? 'noch nicht festgelegt' }}
+                {{ $mietvorgang->transport_type_start ?: 'noch nicht festgelegt' }}
             @else
-                {{ \App\Models\Mietvorgang::TRANSPORT_TYPES_END[$mietvorgang->transport_type_end] ?? 'noch nicht festgelegt' }}
+                {{ $mietvorgang->transport_type_end ?: 'noch nicht festgelegt' }}
             @endif
         </p>
 

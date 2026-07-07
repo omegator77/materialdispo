@@ -74,24 +74,14 @@
                         <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
                             Hinweg — wie kommt das Gerät zu uns?
                         </label>
-                        <select name="transport_type_start" id="transport_type_start" class="form-control w-full">
-                            <option value="">— wählen —</option>
-                            @foreach(\App\Models\Mietvorgang::TRANSPORT_TYPES_START as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_start', $mietvorgang->transport_type_start) === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="transport_type_start" id="transport_type_start" class="form-control w-full" value="{{ old('transport_type_start', $mietvorgang->transport_type_start) }}">
                     </div>
 
                     <div>
                         <label for="transport_type_end" class="block text-sm font-medium text-gray-700">
                             Rückweg — wie geht es zurück?
                         </label>
-                        <select name="transport_type_end" id="transport_type_end" class="form-control w-full">
-                            <option value="">— wählen —</option>
-                            @foreach(\App\Models\Mietvorgang::TRANSPORT_TYPES_END as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_end', $mietvorgang->transport_type_end) === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="transport_type_end" id="transport_type_end" class="form-control w-full" value="{{ old('transport_type_end', $mietvorgang->transport_type_end) }}">
                     </div>
                 </div>
 
@@ -154,13 +144,17 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach(['start' => 'Hinweg (Mietbeginn)', 'end' => 'Rückweg (Mietende)'] as $type => $label)
+                @php
+                    $actionLabel = $mietvorgang->transportActionLabel($type);
+                    $actionLabelLower = mb_strtolower($actionLabel);
+                @endphp
                 <div class="border border-gray-200 rounded p-4">
                     <div class="text-sm font-medium text-gray-700 mb-2">{{ $label }}</div>
 
                     @if($mietvorgang->isTransportConfirmed($type))
                         @php $confirmedBy = $type === 'start' ? $mietvorgang->transportStartConfirmedBy : $mietvorgang->transportEndConfirmedBy; @endphp
                         <p class="text-sm text-green-700 mb-2">
-                            ✓ Geklärt
+                            ✓ {{ $actionLabel }}
                             @if($confirmedBy) von {{ $confirmedBy->name }} @endif
                             am {{ $mietvorgang->{"transport_{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
                         </p>
@@ -170,11 +164,11 @@
                             <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
                         </form>
                     @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht geklärt.</p>
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $actionLabelLower }}.</p>
                         <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, $type]) }}" method="POST">
                             @csrf
                             <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als geklärt markieren
+                                Als {{ $actionLabelLower }} markieren
                             </button>
                         </form>
                     @endif
