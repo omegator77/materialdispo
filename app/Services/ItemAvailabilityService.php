@@ -35,7 +35,19 @@ class ItemAvailabilityService
             }
         }
 
-        // 2. Produktionskonflikt: Gerät bereits in überlappender Produktion gebucht
+        // 2. Verleihfenster: Gerät ist während eines Verleihzeitraums (Vermietung an
+        //    einen Kunden) für Produktionen nicht verfügbar, sofern sich der
+        //    Zeitraum mit der Produktion überschneidet.
+        if ($item->mieter_id && $item->verleih_start && $item->verleih_end) {
+            if ($item->verleih_start <= $production->booking_end && $item->verleih_end >= $production->booking_start) {
+                return [
+                    'available' => false,
+                    'reason' => 'Vermietet an '.($item->mieter->bezeichnung ?? 'Mieter gelöscht'),
+                ];
+            }
+        }
+
+        // 3. Produktionskonflikt: Gerät bereits in überlappender Produktion gebucht
         $conflict = $item->productions()
             ->where('productions.id', '!=', $production->id)
             ->where('booking_start', '<=', $production->booking_end)
@@ -49,7 +61,7 @@ class ItemAvailabilityService
             ];
         }
 
-        // 3. Kamerakonfig-Konflikt: Gerät in Kamerazug einer überlappenden Produktion
+        // 4. Kamerakonfig-Konflikt: Gerät in Kamerazug einer überlappenden Produktion
         $configConflict = CameraConfig::query()
             ->where('production_id', '!=', $production->id)
             ->whereHas('production', function ($q) use ($production) {
@@ -60,6 +72,49 @@ class ItemAvailabilityService
         if ($ignoreConfig) {
             $configConflict->where('id', '!=', $ignoreConfig->id);
         }
+
+        $this->applyItemInConfigFilter($configConflict, $item->id);
+
+        $configConflict = $configConflict->with('production')->first();
+
+        if ($configConflict) {
+            return [
+                'available' => false,
+                'reason' => 'In Kamerakonfiguration: '.$configConflict->production->bezeichnung,
+            ];
+        }
+
+        return [
+            'available' => true,
+            'reason' => null,
+        ];
+    }
+
+    /**
+     * Prüft ob ein Gerät für einen Verleihzeitraum (Vermietung an einen Kunden)
+     * verfügbar ist — d.h. nicht bereits während dieses Zeitraums einer
+     * Produktion oder Kamerakonfiguration zugeordnet ist.
+     * Gibt ['available' => bool, 'reason' => string|null] zurück.
+     */
+    public function checkForVerleih(Item $item, string $verleihStart, string $verleihEnd): array
+    {
+        $conflict = $item->productions()
+            ->where('booking_start', '<=', $verleihEnd)
+            ->where('booking_end', '>=', $verleihStart)
+            ->first();
+
+        if ($conflict) {
+            return [
+                'available' => false,
+                'reason' => 'Gebucht in Produktion: '.$conflict->bezeichnung,
+            ];
+        }
+
+        $configConflict = CameraConfig::query()
+            ->whereHas('production', function ($q) use ($verleihStart, $verleihEnd) {
+                $q->where('booking_start', '<=', $verleihEnd)
+                    ->where('booking_end', '>=', $verleihStart);
+            });
 
         $this->applyItemInConfigFilter($configConflict, $item->id);
 

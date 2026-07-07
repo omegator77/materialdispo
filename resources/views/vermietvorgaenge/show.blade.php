@@ -2,10 +2,10 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Mietvorgang: {{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
+                Vermietvorgang: {{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
             </h2>
 
-            <a href="{{ route('mietvorgaenge.index') }}"
+            <a href="{{ route('vermietvorgaenge.index') }}"
                class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
                 Zurück
             </a>
@@ -20,7 +20,13 @@
         </div>
         @endif
 
-        <form action="{{ route('mietvorgaenge.update', $mietvorgang) }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
+        @if(session('error'))
+        <div class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
+            {{ session('error') }}
+        </div>
+        @endif
+
+        <form action="{{ route('vermietvorgaenge.update', $vermietvorgang) }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
             @csrf
             @method('PUT')
 
@@ -35,32 +41,32 @@
             @endif
 
             <section>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Vermieter &amp; Zeitraum</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Mieter &amp; Zeitraum</h3>
                 <p class="text-xs text-gray-500 mb-4">Änderungen hier werden auf alle zugeordneten Geräte übertragen.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="suppliers_id" class="block text-sm font-medium text-gray-700">Vermieter</label>
-                        <select name="suppliers_id" id="suppliers_id" class="form-control w-full" required>
-                            @foreach($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" @selected(old('suppliers_id', $mietvorgang->suppliers_id) == $supplier->id)>
-                                {{ $supplier->bezeichnung }}
+                        <label for="mieter_id" class="block text-sm font-medium text-gray-700">Mieter</label>
+                        <select name="mieter_id" id="mieter_id" class="form-control w-full" required>
+                            @foreach($mieter as $m)
+                            <option value="{{ $m->id }}" @selected(old('mieter_id', $vermietvorgang->mieter_id) == $m->id)>
+                                {{ $m->bezeichnung }}
                             </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div>
-                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Mietbeginn</label>
+                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Verleihbeginn</label>
                         <input type="text" name="rent_start" id="rent_start"
-                               value="{{ old('rent_start', \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y')) }}"
+                               value="{{ old('rent_start', \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y')) }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
 
                     <div>
-                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Mietende</label>
+                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Verleihende</label>
                         <input type="text" name="rent_end" id="rent_end"
-                               value="{{ old('rent_end', \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y')) }}"
+                               value="{{ old('rent_end', \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y')) }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
                 </div>
@@ -72,32 +78,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
-                            Hinweg — wie kommt das Gerät zu uns?
+                            Hinweg — wie kommt das Gerät zum Mieter?
                         </label>
                         <select name="transport_type_start" id="transport_type_start" class="form-control w-full">
                             <option value="">— wählen —</option>
-                            @foreach(\App\Models\Mietvorgang::TRANSPORT_TYPES_START as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_start', $mietvorgang->transport_type_start) === $value)>{{ $label }}</option>
+                            @foreach(\App\Models\Vermietvorgang::TRANSPORT_TYPES_START as $value => $label)
+                            <option value="{{ $value }}" @selected(old('transport_type_start', $vermietvorgang->transport_type_start) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div>
                         <label for="transport_type_end" class="block text-sm font-medium text-gray-700">
-                            Rückweg — wie geht es zurück?
+                            Rückweg — wie kommt es zurück?
                         </label>
                         <select name="transport_type_end" id="transport_type_end" class="form-control w-full">
                             <option value="">— wählen —</option>
-                            @foreach(\App\Models\Mietvorgang::TRANSPORT_TYPES_END as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_end', $mietvorgang->transport_type_end) === $value)>{{ $label }}</option>
+                            @foreach(\App\Models\Vermietvorgang::TRANSPORT_TYPES_END as $value => $label)
+                            <option value="{{ $value }}" @selected(old('transport_type_end', $vermietvorgang->transport_type_end) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
 
                 <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
-                    <input type="checkbox" name="notify_supplier" value="1" @checked(old('notify_supplier', $mietvorgang->notify_supplier))>
-                    Lieferant automatisch benachrichtigen
+                    <input type="checkbox" name="notify_mieter" value="1" @checked(old('notify_mieter', $vermietvorgang->notify_mieter))>
+                    Mieter automatisch benachrichtigen
                 </label>
             </section>
 
@@ -107,21 +113,21 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
-                            Erinnerung vor Mietbeginn (Tage)
+                            Erinnerung vor Verleihbeginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
                                class="form-control w-full"
                                placeholder="Standard: {{ config('reminders.default_days_before') }}"
-                               value="{{ old('reminder_days_before_start', $mietvorgang->reminder_days_before_start ?? '') }}">
+                               value="{{ old('reminder_days_before_start', $vermietvorgang->reminder_days_before_start ?? '') }}">
                     </div>
                     <div>
                         <label for="reminder_days_before_end" class="block text-sm font-medium text-gray-700">
-                            Erinnerung vor Mietende (Tage)
+                            Erinnerung vor Verleihende (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
                                class="form-control w-full"
                                placeholder="Standard: {{ config('reminders.default_days_before') }}"
-                               value="{{ old('reminder_days_before_end', $mietvorgang->reminder_days_before_end ?? '') }}">
+                               value="{{ old('reminder_days_before_end', $vermietvorgang->reminder_days_before_end ?? '') }}">
                     </div>
                 </div>
 
@@ -132,7 +138,7 @@
                             {{ $defaultMailingList ? '— keine (Standardliste: '.$defaultMailingList->name.') —' : '— keine (keine Standardliste festgelegt) —' }}
                         </option>
                         @foreach($mailingLists as $list)
-                        <option value="{{ $list->id }}" @selected(old('mailing_list_id', $mietvorgang->mailing_list_id ?? '') == $list->id)>
+                        <option value="{{ $list->id }}" @selected(old('mailing_list_id', $vermietvorgang->mailing_list_id ?? '') == $list->id)>
                             {{ $list->name }}
                         </option>
                         @endforeach
@@ -153,25 +159,25 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Transport-Status</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach(['start' => 'Hinweg (Mietbeginn)', 'end' => 'Rückweg (Mietende)'] as $type => $label)
+                @foreach(['start' => 'Hinweg (Verleihbeginn)', 'end' => 'Rückweg (Verleihende)'] as $type => $label)
                 <div class="border border-gray-200 rounded p-4">
                     <div class="text-sm font-medium text-gray-700 mb-2">{{ $label }}</div>
 
-                    @if($mietvorgang->isTransportConfirmed($type))
-                        @php $confirmedBy = $type === 'start' ? $mietvorgang->transportStartConfirmedBy : $mietvorgang->transportEndConfirmedBy; @endphp
+                    @if($vermietvorgang->isTransportConfirmed($type))
+                        @php $confirmedBy = $type === 'start' ? $vermietvorgang->transportStartConfirmedBy : $vermietvorgang->transportEndConfirmedBy; @endphp
                         <p class="text-sm text-green-700 mb-2">
                             ✓ Geklärt
                             @if($confirmedBy) von {{ $confirmedBy->name }} @endif
-                            am {{ $mietvorgang->{"transport_{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
+                            am {{ $vermietvorgang->{"transport_{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
                         </p>
-                        <form action="{{ route('mietvorgaenge.reopenTransport', [$mietvorgang, $type]) }}" method="POST">
+                        <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, $type]) }}" method="POST">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
                         </form>
                     @else
                         <p class="text-sm text-gray-500 mb-2">Noch nicht geklärt.</p>
-                        <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, $type]) }}" method="POST">
+                        <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, $type]) }}" method="POST">
                             @csrf
                             <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
                                 Als geklärt markieren
@@ -185,20 +191,20 @@
 
         {{-- Zugeordnete Geräte --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte ({{ $mietvorgang->items->count() }})</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte ({{ $vermietvorgang->items->count() }})</h3>
 
             <div class="space-y-2 mb-6">
-                @forelse($mietvorgang->items as $item)
+                @forelse($vermietvorgang->items as $item)
                 <div class="flex items-center justify-between border border-gray-200 rounded px-4 py-2 text-sm">
                     <div>
                         {{ $item->bezeichnung }} @if($item->nummer)<span class="text-gray-400">({{ $item->nummer }})</span>@endif
-                        @if($item->mietvorgang_manual)
+                        @if($item->vermietvorgang_manual)
                         <span class="ml-2 inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">Manuell</span>
                         @endif
                     </div>
 
-                    <form action="{{ route('mietvorgaenge.detachItem', [$mietvorgang, $item]) }}" method="POST"
-                          onsubmit="return confirm('Gerät wirklich entfernen? Vermieter und Mietzeitraum werden am Gerät gelöscht.');">
+                    <form action="{{ route('vermietvorgaenge.detachItem', [$vermietvorgang, $item]) }}" method="POST"
+                          onsubmit="return confirm('Gerät wirklich entfernen? Mieter und Verleihzeitraum werden am Gerät gelöscht.');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline">
@@ -212,8 +218,8 @@
             </div>
 
             {{-- Geräte-Picker --}}
-            <form action="{{ route('mietvorgaenge.attachItems', $mietvorgang) }}" method="POST"
-                  x-data="mietvorgangItemPicker({
+            <form action="{{ route('vermietvorgaenge.attachItems', $vermietvorgang) }}" method="POST"
+                  x-data="vermietvorgangItemPicker({
                       items: [
                           @foreach($assignableItems as $item)
                           { id: {{ $item->id }}, label: @js($item->bezeichnung . ($item->nummer ? ' (' . $item->nummer . ')' : '')) },
@@ -273,7 +279,7 @@
     </div>
 
     <script>
-        function mietvorgangItemPicker({ items }) {
+        function vermietvorgangItemPicker({ items }) {
             return {
                 items,
                 query: '',

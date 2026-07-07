@@ -94,21 +94,11 @@
                         Laufende Produktionen
                     </h3>
 
-                    @forelse($runningProductions as $production)
-                        <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900 flex items-center gap-2">
-                                @include('partials._pack-status-badge', ['production' => $production])
-                                {{ $production->bezeichnung }}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                                –
-                                {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
-                            </div>
-                        </a>
+                    @forelse($runningEntries as $entry)
+                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'running'])
                     @empty
                         <div class="text-sm text-gray-500">
-                            Heute läuft keine Produktion.
+                            Heute läuft nichts.
                         </div>
                     @endforelse
                 </div>
@@ -119,48 +109,67 @@
                         Nächste Produktionen
                     </h3>
 
-                    @forelse($upcomingProductions as $production)
-                        <a href="{{ route('productions.show', $production->id) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
-                            <div class="font-medium text-gray-900 flex items-center gap-2">
-                                @include('partials._pack-status-badge', ['production' => $production])
-                                {{ $production->bezeichnung }}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                Start:
-                                {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
-                            </div>
-                        </a>
+                    @forelse($upcomingEntries as $entry)
+                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'upcoming'])
                     @empty
                         <div class="text-sm text-gray-500">
-                            Keine kommenden Produktionen gefunden.
+                            Nichts Anstehendes gefunden.
                         </div>
                     @endforelse
                 </div>
 
-                {{-- Roadmap klein --}}
-                <details class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
-                        Roadmap
-                    </summary>
+                {{-- Nächste Termine --}}
+                <div class="bg-white rounded-lg shadow-sm p-5">
+                    <h3 class="font-semibold text-gray-900 mb-4">
+                        Nächste Termine
+                    </h3>
 
-                    <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
-                        <li>✅ Registrierung deaktiviert</li>
-                        <li>✅ Mailversand eingerichtet</li>
-                        <li>✅ Timeline Grundversion</li>
-                        <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
-                        <li>✅ Aktivitätsprotokoll</li>
-                        <li>✅ Archiv für alte Produktionen (Packliste)</li>
-                        <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
-                        <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
-                        <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
-                        <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
-                        <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
-                        <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
-                        <li>⬜ Globale Suche über alle Bereiche</li>
-                        <li>⬜ Packlisten per Mail</li>
-                        <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
-                    </ul>
-                </details>
+                    @forelse($upcomingTransportEvents as $event)
+                        @php
+                            $daysUntil = \Carbon\Carbon::today()->diffInDays($event['date'], false);
+                            $whenLabel = match(true) {
+                                $daysUntil <= 0 => 'heute',
+                                $daysUntil === 1 => 'morgen',
+                                default => "in {$daysUntil} Tagen",
+                            };
+
+                            if ($event['kind'] === 'mietvorgang') {
+                                $mv = $event['mietvorgang'];
+                                $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
+                                $title = $mv->supplier->bezeichnung ?? 'Vermieter gelöscht';
+                                $subtitle = $mv->items->pluck('bezeichnung')->implode(', ');
+                                $confirmRoute = route('mietvorgaenge.confirmTransport', [$mv, $event['type']]);
+                                $linkRoute = route('mietvorgaenge.show', $mv);
+                            } else {
+                                $vv = $event['vermietvorgang'];
+                                $typeLabel = $event['type'] === 'start' ? 'Verleihbeginn' : 'Verleihende';
+                                $title = $vv->mieter->bezeichnung ?? 'Mieter gelöscht';
+                                $subtitle = $vv->items->pluck('bezeichnung')->implode(', ');
+                                $confirmRoute = route('vermietvorgaenge.confirmTransport', [$vv, $event['type']]);
+                                $linkRoute = route('vermietvorgaenge.show', $vv);
+                            }
+                        @endphp
+                        <div class="flex items-start gap-3 border-b last:border-b-0 py-3">
+                            <form action="{{ $confirmRoute }}" method="POST" class="mt-0.5 shrink-0">
+                                @csrf
+                                <button type="submit" title="Als geklärt markieren"
+                                        class="w-5 h-5 rounded border border-gray-300 hover:border-orange-400 hover:bg-orange-50 block"></button>
+                            </form>
+                            <a href="{{ $linkRoute }}" class="flex-1 hover:text-orange-600">
+                                <div class="font-medium text-gray-900">
+                                    {{ ucfirst($whenLabel) }} {{ $typeLabel }} — {{ $title }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ $subtitle }}
+                                </div>
+                            </a>
+                        </div>
+                    @empty
+                        <div class="text-sm text-gray-500">
+                            Keine anstehenden Termine in den nächsten 14 Tagen.
+                        </div>
+                    @endforelse
+                </div>
             </div>
 
             {{-- Zuletzt angelegte Produktionen --}}
@@ -208,6 +217,31 @@
                     </table>
                 </div>
             </div>
+
+            {{-- Roadmap --}}
+            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
+                    Roadmap
+                </summary>
+
+                <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
+                    <li>✅ Registrierung deaktiviert</li>
+                    <li>✅ Mailversand eingerichtet</li>
+                    <li>✅ Timeline Grundversion</li>
+                    <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
+                    <li>✅ Aktivitätsprotokoll</li>
+                    <li>✅ Archiv für alte Produktionen (Packliste)</li>
+                    <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
+                    <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
+                    <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
+                    <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
+                    <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
+                    <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
+                    <li>⬜ Globale Suche über alle Bereiche</li>
+                    <li>⬜ Packlisten per Mail</li>
+                    <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
+                </ul>
+            </details>
 
         </div>
     </div>

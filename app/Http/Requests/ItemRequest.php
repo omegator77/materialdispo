@@ -22,6 +22,7 @@ class ItemRequest extends FormRequest
             'units_id' => ['required', 'exists:units,id'],
             'geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
             'suppliers_id' => ['nullable', 'exists:suppliers,id'],
+            'mieter_id' => ['nullable', 'exists:mieter,id'],
             'bezeichnung' => ['required', 'string', 'max:255'],
             'nummer' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -39,6 +40,21 @@ class ItemRequest extends FormRequest
 
             'rent_end' => $this->filled('suppliers_id')
                 ? ['required', 'date_format:d.m.Y', 'after_or_equal:rent_start']
+                : ['nullable'],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Verleihdaten
+            |--------------------------------------------------------------------------
+            | Ein Item wird an einen Mieter verliehen, sobald ein Mieter gesetzt ist.
+            | Ohne Mieter werden verleih_start und verleih_end später auf null gesetzt.
+            */
+            'verleih_start' => $this->filled('mieter_id')
+                ? ['required', 'date_format:d.m.Y']
+                : ['nullable'],
+
+            'verleih_end' => $this->filled('mieter_id')
+                ? ['required', 'date_format:d.m.Y', 'after_or_equal:verleih_start']
                 : ['nullable'],
 
             /*

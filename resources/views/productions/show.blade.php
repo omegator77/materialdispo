@@ -110,6 +110,45 @@
         </div>
         @endif
 
+        {{-- Vermietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Vermietvorgang-Seite --}}
+        @if($vermietvorgaenge->isNotEmpty())
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Vermietvorgänge (Transport)</h3>
+
+            <div class="space-y-3">
+                @foreach($vermietvorgaenge as $vermietvorgang)
+                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm text-gray-600">
+                        <strong class="text-gray-900">{{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}</strong>
+                        &middot; {{ \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y') }}
+                        – {{ \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y') }}
+                        &middot; {{ $production->items->where('vermietvorgang_id', $vermietvorgang->id)->pluck('bezeichnung')->implode(', ') }}
+
+                        <div class="mt-1 flex flex-wrap gap-2">
+                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                                Hinweg: {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_START[$vermietvorgang->transport_type_start] ?? 'offen' }}
+                            </span>
+                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                                Rückweg: {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_END[$vermietvorgang->transport_type_end] ?? 'offen' }}
+                            </span>
+                            @if($vermietvorgang->notify_mieter)
+                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                                Mieter wird benachrichtigt
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}"
+                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                        Bearbeiten →
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
         @if($vbAbgleich && $vbAbgleich->isNotEmpty())
         @php

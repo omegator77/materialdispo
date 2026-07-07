@@ -16,6 +16,8 @@ class TimelineController extends Controller
 
         $items = Item::with([
             'unit',
+            'supplier',
+            'mieter',
             'productions' => function ($query) use ($start, $end) {
                 $query->whereDate('booking_start', '<=', $end)
                     ->whereDate('booking_end', '>=', $start);
