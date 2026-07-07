@@ -58,7 +58,7 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get(),
 
-            'upcomingTransportEvents' => $this->upcomingTransportEvents($today),
+            'openVorgaenge' => $this->openVorgaenge(),
         ]);
     }
 
@@ -126,63 +126,105 @@ class DashboardController extends Controller
     }
 
     /**
-     * Anstehende, noch nicht als "geklärt" markierte Termine der nächsten
-     * $days Tage für die Dashboard-Übersicht — Mietvorgänge und Vermietvorgänge
-     * (Mietbeginn/-ende bzw. Verleihbeginn/-ende) chronologisch gemischt.
+     * Miet-/Vermietvorgänge (mit Items), bei denen noch nicht alle 4 Häkchen
+     * (Transport-Hinweg/-Rückweg + die beiden Material-Status-Häkchen) gesetzt
+     * sind — für die "Offene Vorgänge"-Kachel. Kein Zeitfenster: ein Vorgang
+     * bleibt sichtbar, bis er komplett abgehakt ist.
      */
-    private function upcomingTransportEvents(Carbon $today, int $days = 14): Collection
+    private function openVorgaenge(int $limit = 10): Collection
     {
-        $window = $today->copy()->addDays($days);
-
-        $mietvorgangEvents = Mietvorgang::with(['supplier', 'items'])
+        $mietvorgaenge = Mietvorgang::with(['supplier', 'items'])
             ->whereHas('items')
-            ->where(function ($q) use ($today, $window) {
-                $q->whereBetween('rent_start', [$today, $window])
-                    ->orWhereBetween('rent_end', [$today, $window]);
-            })
             ->get()
-            ->flatMap(function (Mietvorgang $mv) use ($today, $window) {
-                $entries = collect();
+            ->map(function (Mietvorgang $mv) {
+                $checks = [
+                    [
+                        'label' => $mv->transportActionLabel('start'),
+                        'done' => $mv->isTransportConfirmed('start'),
+                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'start']),
+                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'start']),
+                    ],
+                    [
+                        'label' => $mv->transportActionLabel('end'),
+                        'done' => $mv->isTransportConfirmed('end'),
+                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'end']),
+                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'end']),
+                    ],
+                    [
+                        'label' => 'Entgegengenommen und kontrolliert',
+                        'done' => $mv->isKontrolliert(),
+                        'confirmRoute' => route('mietvorgaenge.confirmKontrolliert', $mv),
+                        'reopenRoute' => route('mietvorgaenge.reopenKontrolliert', $mv),
+                    ],
+                    [
+                        'label' => 'Bereit zur Rückgabe',
+                        'done' => $mv->isBereitZurRueckgabe(),
+                        'confirmRoute' => route('mietvorgaenge.confirmBereitZurRueckgabe', $mv),
+                        'reopenRoute' => route('mietvorgaenge.reopenBereitZurRueckgabe', $mv),
+                    ],
+                ];
 
-                $start = Carbon::parse($mv->rent_start);
-                $end = Carbon::parse($mv->rent_end);
+                return [
+                    'kind' => 'mietvorgang',
+                    'model' => $mv,
+                    'title' => $mv->supplier?->bezeichnung ?? 'Vermieter gelöscht',
+                    'badge' => 'Miete',
+                    'badgeClass' => 'bg-amber-50 text-amber-700',
+                    'showRoute' => route('mietvorgaenge.show', $mv),
+                    'checks' => $checks,
+                    'doneCount' => collect($checks)->where('done', true)->count(),
+                ];
+            })
+            ->filter(fn (array $e) => $e['doneCount'] < 4);
 
-                if (! $mv->isTransportConfirmed('start') && $start->gte($today) && $start->lte($window)) {
-                    $entries->push(['kind' => 'mietvorgang', 'mietvorgang' => $mv, 'type' => 'start', 'date' => $start]);
-                }
-
-                if (! $mv->isTransportConfirmed('end') && $end->gte($today) && $end->lte($window)) {
-                    $entries->push(['kind' => 'mietvorgang', 'mietvorgang' => $mv, 'type' => 'end', 'date' => $end]);
-                }
-
-                return $entries;
-            });
-
-        $vermietvorgangEvents = Vermietvorgang::with(['mieter', 'items'])
+        $vermietvorgaenge = Vermietvorgang::with(['mieter', 'items'])
             ->whereHas('items')
-            ->where(function ($q) use ($today, $window) {
-                $q->whereBetween('rent_start', [$today, $window])
-                    ->orWhereBetween('rent_end', [$today, $window]);
-            })
             ->get()
-            ->flatMap(function (Vermietvorgang $vv) use ($today, $window) {
-                $entries = collect();
+            ->map(function (Vermietvorgang $vv) {
+                $checks = [
+                    [
+                        'label' => $vv->transportActionLabel('start'),
+                        'done' => $vv->isTransportConfirmed('start'),
+                        'confirmRoute' => route('vermietvorgaenge.confirmTransport', [$vv, 'start']),
+                        'reopenRoute' => route('vermietvorgaenge.reopenTransport', [$vv, 'start']),
+                    ],
+                    [
+                        'label' => $vv->transportActionLabel('end'),
+                        'done' => $vv->isTransportConfirmed('end'),
+                        'confirmRoute' => route('vermietvorgaenge.confirmTransport', [$vv, 'end']),
+                        'reopenRoute' => route('vermietvorgaenge.reopenTransport', [$vv, 'end']),
+                    ],
+                    [
+                        'label' => 'Gerichtet',
+                        'done' => $vv->isGerichtet(),
+                        'confirmRoute' => route('vermietvorgaenge.confirmGerichtet', $vv),
+                        'reopenRoute' => route('vermietvorgaenge.reopenGerichtet', $vv),
+                    ],
+                    [
+                        'label' => 'Vollständig zurück',
+                        'done' => $vv->isVollstaendigZurueck(),
+                        'confirmRoute' => route('vermietvorgaenge.confirmVollstaendigZurueck', $vv),
+                        'reopenRoute' => route('vermietvorgaenge.reopenVollstaendigZurueck', $vv),
+                    ],
+                ];
 
-                $start = Carbon::parse($vv->rent_start);
-                $end = Carbon::parse($vv->rent_end);
+                return [
+                    'kind' => 'vermietvorgang',
+                    'model' => $vv,
+                    'title' => $vv->mieter?->bezeichnung ?? 'Mieter gelöscht',
+                    'badge' => 'Verleih',
+                    'badgeClass' => 'bg-purple-50 text-purple-700',
+                    'showRoute' => route('vermietvorgaenge.show', $vv),
+                    'checks' => $checks,
+                    'doneCount' => collect($checks)->where('done', true)->count(),
+                ];
+            })
+            ->filter(fn (array $e) => $e['doneCount'] < 4);
 
-                if (! $vv->isTransportConfirmed('start') && $start->gte($today) && $start->lte($window)) {
-                    $entries->push(['kind' => 'vermietvorgang', 'vermietvorgang' => $vv, 'type' => 'start', 'date' => $start]);
-                }
-
-                if (! $vv->isTransportConfirmed('end') && $end->gte($today) && $end->lte($window)) {
-                    $entries->push(['kind' => 'vermietvorgang', 'vermietvorgang' => $vv, 'type' => 'end', 'date' => $end]);
-                }
-
-                return $entries;
-            });
-
-        return $mietvorgangEvents->concat($vermietvorgangEvents)->sortBy('date')->values();
+        return $mietvorgaenge->concat($vermietvorgaenge)
+            ->sortBy(fn (array $e) => $e['model']->rent_start)
+            ->take($limit)
+            ->values();
     }
 
     /**
