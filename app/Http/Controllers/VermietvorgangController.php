@@ -174,10 +174,10 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => auth()->id(),
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, true);
 
-        return redirect()->back()->with('success', 'Transport als geklärt markiert.');
+        return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
 
     public function reopenTransport(Vermietvorgang $vermietvorgang, string $type)
@@ -189,7 +189,7 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => null,
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, false);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
@@ -215,6 +215,30 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Gerichtet', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    public function confirmVollstaendigZurueck(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'vollstaendig_zurueck_confirmed_at' => now(),
+            'vollstaendig_zurueck_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Vollständig zurück', true);
+
+        return redirect()->back()->with('success', 'Als vollständig zurück markiert.');
+    }
+
+    public function reopenVollstaendigZurueck(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'vollstaendig_zurueck_confirmed_at' => null,
+            'vollstaendig_zurueck_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Vollständig zurück', false);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }

@@ -131,10 +131,10 @@ class MietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => auth()->id(),
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, true);
 
-        return redirect()->back()->with('success', 'Transport als geklärt markiert.');
+        return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
 
     public function reopenTransport(Mietvorgang $mietvorgang, string $type)
@@ -146,7 +146,7 @@ class MietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => null,
         ]);
 
-        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, false);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
@@ -172,6 +172,30 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    public function confirmBereitZurRueckgabe(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'bereit_zur_rueckgabe_confirmed_at' => now(),
+            'bereit_zur_rueckgabe_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', true);
+
+        return redirect()->back()->with('success', 'Als bereit zur Rückgabe markiert.');
+    }
+
+    public function reopenBereitZurRueckgabe(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'bereit_zur_rueckgabe_confirmed_at' => null,
+            'bereit_zur_rueckgabe_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', false);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }

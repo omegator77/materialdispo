@@ -84,6 +84,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->name('mietvorgaenge.reopenTransport');
     Route::post('mietvorgaenge/{mietvorgang}/confirm-kontrolliert', [MietvorgangController::class, 'confirmKontrolliert'])->name('mietvorgaenge.confirmKontrolliert');
     Route::delete('mietvorgaenge/{mietvorgang}/confirm-kontrolliert', [MietvorgangController::class, 'reopenKontrolliert'])->name('mietvorgaenge.reopenKontrolliert');
+    Route::post('mietvorgaenge/{mietvorgang}/confirm-bereit-zur-rueckgabe', [MietvorgangController::class, 'confirmBereitZurRueckgabe'])->name('mietvorgaenge.confirmBereitZurRueckgabe');
+    Route::delete('mietvorgaenge/{mietvorgang}/confirm-bereit-zur-rueckgabe', [MietvorgangController::class, 'reopenBereitZurRueckgabe'])->name('mietvorgaenge.reopenBereitZurRueckgabe');
 
     Route::resource('/vermietvorgaenge', VermietvorgangController::class)
         ->except(['index', 'show', 'edit'])
@@ -98,6 +100,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->name('vermietvorgaenge.reopenTransport');
     Route::post('vermietvorgaenge/{vermietvorgang}/confirm-gerichtet', [VermietvorgangController::class, 'confirmGerichtet'])->name('vermietvorgaenge.confirmGerichtet');
     Route::delete('vermietvorgaenge/{vermietvorgang}/confirm-gerichtet', [VermietvorgangController::class, 'reopenGerichtet'])->name('vermietvorgaenge.reopenGerichtet');
+    Route::post('vermietvorgaenge/{vermietvorgang}/confirm-vollstaendig-zurueck', [VermietvorgangController::class, 'confirmVollstaendigZurueck'])->name('vermietvorgaenge.confirmVollstaendigZurueck');
+    Route::delete('vermietvorgaenge/{vermietvorgang}/confirm-vollstaendig-zurueck', [VermietvorgangController::class, 'reopenVollstaendigZurueck'])->name('vermietvorgaenge.reopenVollstaendigZurueck');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
 });

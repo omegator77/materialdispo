@@ -59,24 +59,14 @@
                         <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
                             Hinweg — wie kommt das Gerät zum Mieter?
                         </label>
-                        <select name="transport_type_start" id="transport_type_start" class="form-control w-full">
-                            <option value="">— wählen —</option>
-                            @foreach(\App\Models\Vermietvorgang::TRANSPORT_TYPES_START as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_start') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="transport_type_start" id="transport_type_start" class="form-control w-full" value="{{ old('transport_type_start') }}">
                     </div>
 
                     <div>
                         <label for="transport_type_end" class="block text-sm font-medium text-gray-700">
                             Rückweg — wie kommt es zurück?
                         </label>
-                        <select name="transport_type_end" id="transport_type_end" class="form-control w-full">
-                            <option value="">— wählen —</option>
-                            @foreach(\App\Models\Vermietvorgang::TRANSPORT_TYPES_END as $value => $label)
-                            <option value="{{ $value }}" @selected(old('transport_type_end') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="transport_type_end" id="transport_type_end" class="form-control w-full" value="{{ old('transport_type_end') }}">
                     </div>
                 </div>
 

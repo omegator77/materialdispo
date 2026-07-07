@@ -58,11 +58,11 @@
                             </td>
 
                             <td class="px-4 py-3">
-                                {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_START[$vermietvorgang->transport_type_start] ?? '—' }}
+                                {{ $vermietvorgang->transport_type_start ?: '—' }}
                             </td>
 
                             <td class="px-4 py-3">
-                                {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_END[$vermietvorgang->transport_type_end] ?? '—' }}
+                                {{ $vermietvorgang->transport_type_end ?: '—' }}
                             </td>
 
                             <td class="px-4 py-3">
@@ -119,8 +119,8 @@
                     </p>
 
                     <div class="mt-3 space-y-1 text-sm text-gray-700">
-                        <p><span class="font-medium">Hinweg:</span> {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_START[$vermietvorgang->transport_type_start] ?? '—' }}</p>
-                        <p><span class="font-medium">Rückweg:</span> {{ \App\Models\Vermietvorgang::TRANSPORT_TYPES_END[$vermietvorgang->transport_type_end] ?? '—' }}</p>
+                        <p><span class="font-medium">Hinweg:</span> {{ $vermietvorgang->transport_type_start ?: '—' }}</p>
+                        <p><span class="font-medium">Rückweg:</span> {{ $vermietvorgang->transport_type_end ?: '—' }}</p>
                         <p><span class="font-medium">Geräte:</span> {{ $vermietvorgang->items_count }}</p>
                     </div>
 

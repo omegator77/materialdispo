@@ -2,9 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Vermietvorgang;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class VermietvorgangRequest extends FormRequest
 {
@@ -21,8 +19,8 @@ class VermietvorgangRequest extends FormRequest
             'mieter_id' => [...$requiredOnCreate, 'exists:mieter,id'],
             'rent_start' => [...$requiredOnCreate, 'date_format:d.m.Y'],
             'rent_end' => [...$requiredOnCreate, 'date_format:d.m.Y', 'after_or_equal:rent_start'],
-            'transport_type_start' => ['nullable', Rule::in(array_keys(Vermietvorgang::TRANSPORT_TYPES_START))],
-            'transport_type_end' => ['nullable', Rule::in(array_keys(Vermietvorgang::TRANSPORT_TYPES_END))],
+            'transport_type_start' => ['nullable', 'string', 'max:255'],
+            'transport_type_end' => ['nullable', 'string', 'max:255'],
             'notify_mieter' => ['nullable', 'boolean'],
             'reminder_days_before_start' => ['nullable', 'integer', 'min:0', 'max:60'],
             'reminder_days_before_end' => ['nullable', 'integer', 'min:0', 'max:60'],

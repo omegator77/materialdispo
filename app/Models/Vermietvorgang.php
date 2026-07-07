@@ -65,6 +65,8 @@ class Vermietvorgang extends Model
         'transport_end_confirmed_by',
         'gerichtet_confirmed_at',
         'gerichtet_confirmed_by',
+        'vollstaendig_zurueck_confirmed_at',
+        'vollstaendig_zurueck_confirmed_by',
     ];
 
     protected $casts = [
@@ -74,18 +76,7 @@ class Vermietvorgang extends Model
         'transport_start_confirmed_at' => 'datetime',
         'transport_end_confirmed_at' => 'datetime',
         'gerichtet_confirmed_at' => 'datetime',
-    ];
-
-    const TRANSPORT_TYPES_START = [
-        'kurier' => 'Kurier',
-        'wir_liefern' => 'Wir liefern',
-        'mieter_holt_ab' => 'Mieter holt ab',
-    ];
-
-    const TRANSPORT_TYPES_END = [
-        'kurier' => 'Kurier',
-        'wir_holen_ab' => 'Wir holen ab',
-        'mieter_bringt_zurueck' => 'Mieter bringt zurück',
+        'vollstaendig_zurueck_confirmed_at' => 'datetime',
     ];
 
     public function mieter()
@@ -123,6 +114,15 @@ class Vermietvorgang extends Model
         return $this->{"transport_{$type}_confirmed_at"} !== null;
     }
 
+    /**
+     * Vermietvorgang = Geräte gehen raus: beim Hinweg wird an den Mieter
+     * übergeben, beim Rückweg vom Mieter wieder angenommen.
+     */
+    public function transportActionLabel(string $type): string
+    {
+        return $type === 'start' ? 'Übergeben' : 'Angenommen';
+    }
+
     public function gerichtetConfirmedBy()
     {
         return $this->belongsTo(User::class, 'gerichtet_confirmed_by');
@@ -131,6 +131,16 @@ class Vermietvorgang extends Model
     public function isGerichtet(): bool
     {
         return $this->gerichtet_confirmed_at !== null;
+    }
+
+    public function vollstaendigZurueckConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'vollstaendig_zurueck_confirmed_by');
+    }
+
+    public function isVollstaendigZurueck(): bool
+    {
+        return $this->vollstaendig_zurueck_confirmed_at !== null;
     }
 
     public function effectiveReminderDaysBeforeStart(): int
