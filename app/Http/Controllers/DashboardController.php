@@ -26,9 +26,21 @@ class DashboardController extends Controller
                 ->whereDate('booking_end', '>=', $today)
                 ->count(),
 
-            'todayBookedItemsCount' => Item::whereHas('productions', function ($query) use ($today) {
-                $query->whereDate('booking_start', '<=', $today)
-                    ->whereDate('booking_end', '>=', $today);
+            'todayBookedItemsCount' => Item::where(function ($query) use ($today) {
+                $query->whereHas('productions', function ($q) use ($today) {
+                    $q->whereDate('booking_start', '<=', $today)
+                        ->whereDate('booking_end', '>=', $today);
+                })
+                ->orWhere(function ($q) use ($today) {
+                    $q->whereNotNull('mietvorgang_id')
+                        ->whereDate('rent_start', '<=', $today)
+                        ->whereDate('rent_end', '>=', $today);
+                })
+                ->orWhere(function ($q) use ($today) {
+                    $q->whereNotNull('vermietvorgang_id')
+                        ->whereDate('verleih_start', '<=', $today)
+                        ->whereDate('verleih_end', '>=', $today);
+                });
             })->count(),
 
             'runningEntries' => $this->runningEntries($today),

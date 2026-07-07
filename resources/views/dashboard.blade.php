@@ -88,10 +88,10 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {{-- Laufende Produktionen --}}
+                {{-- Laufende Vorgänge --}}
                 <div class="bg-white rounded-lg shadow-sm p-5">
                     <h3 class="font-semibold text-gray-900 mb-4">
-                        Laufende Produktionen
+                        Laufende Vorgänge
                     </h3>
 
                     @forelse($runningEntries as $entry)
@@ -103,10 +103,10 @@
                     @endforelse
                 </div>
 
-                {{-- Kommende Produktionen --}}
+                {{-- Kommende Vorgänge --}}
                 <div class="bg-white rounded-lg shadow-sm p-5">
                     <h3 class="font-semibold text-gray-900 mb-4">
-                        Nächste Produktionen
+                        Nächste Vorgänge
                     </h3>
 
                     @forelse($upcomingEntries as $entry)
