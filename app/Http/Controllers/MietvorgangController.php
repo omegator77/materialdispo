@@ -131,6 +131,9 @@ class MietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => auth()->id(),
         ]);
 
+        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $this->logConfirmation($mietvorgang, $label, true);
+
         return redirect()->back()->with('success', 'Transport als geklärt markiert.');
     }
 
@@ -143,7 +146,45 @@ class MietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => null,
         ]);
 
+        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $this->logConfirmation($mietvorgang, $label, false);
+
         return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    public function confirmKontrolliert(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'kontrolliert_confirmed_at' => now(),
+            'kontrolliert_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', true);
+
+        return redirect()->back()->with('success', 'Als entgegengenommen und kontrolliert markiert.');
+    }
+
+    public function reopenKontrolliert(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'kontrolliert_confirmed_at' => null,
+            'kontrolliert_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    private function logConfirmation(Mietvorgang $mietvorgang, string $label, bool $confirmed): void
+    {
+        $supplier = $mietvorgang->supplier?->bezeichnung ?? 'unbekannter Vermieter';
+
+        activity('mietvorgang')
+            ->performedOn($mietvorgang)
+            ->causedBy(auth()->user())
+            ->event($confirmed ? 'confirmed' : 'reopened')
+            ->log(($confirmed ? "{$label} über die Anwendung als geklärt markiert" : "{$label} wieder geöffnet")." (Vermieter: {$supplier})");
     }
 
     private function prepareData(MietvorgangRequest $request): array

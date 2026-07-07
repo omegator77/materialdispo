@@ -63,6 +63,8 @@ class Vermietvorgang extends Model
         'transport_start_confirmed_by',
         'transport_end_confirmed_at',
         'transport_end_confirmed_by',
+        'gerichtet_confirmed_at',
+        'gerichtet_confirmed_by',
     ];
 
     protected $casts = [
@@ -71,6 +73,7 @@ class Vermietvorgang extends Model
         'notify_mieter' => 'boolean',
         'transport_start_confirmed_at' => 'datetime',
         'transport_end_confirmed_at' => 'datetime',
+        'gerichtet_confirmed_at' => 'datetime',
     ];
 
     const TRANSPORT_TYPES_START = [
@@ -118,6 +121,16 @@ class Vermietvorgang extends Model
     public function isTransportConfirmed(string $type): bool
     {
         return $this->{"transport_{$type}_confirmed_at"} !== null;
+    }
+
+    public function gerichtetConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'gerichtet_confirmed_by');
+    }
+
+    public function isGerichtet(): bool
+    {
+        return $this->gerichtet_confirmed_at !== null;
     }
 
     public function effectiveReminderDaysBeforeStart(): int

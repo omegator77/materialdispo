@@ -189,6 +189,38 @@
             </div>
         </div>
 
+        {{-- Material-Status --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Material-Status</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Gerichtet</div>
+
+                    @if($vermietvorgang->isGerichtet())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Gerichtet
+                            @if($vermietvorgang->gerichtetConfirmedBy) von {{ $vermietvorgang->gerichtetConfirmedBy->name }} @endif
+                            am {{ $vermietvorgang->gerichtet_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('vermietvorgaenge.reopenGerichtet', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht gerichtet.</p>
+                        <form action="{{ route('vermietvorgaenge.confirmGerichtet', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als gerichtet markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         {{-- Zugeordnete Geräte --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte ({{ $vermietvorgang->items->count() }})</h3>
