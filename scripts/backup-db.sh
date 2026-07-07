@@ -29,7 +29,7 @@ FILENAME="laravel_${TIMESTAMP}.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
 
-docker exec "$MYSQL_CONTAINER" sh -c "exec mysqldump -u ${MYSQL_USER} -p\"\$MYSQL_PASSWORD\" --single-transaction --quick ${DB_NAME}" \
+docker exec "$MYSQL_CONTAINER" sh -c "exec mysqldump -u ${MYSQL_USER} -p\"\$MYSQL_PASSWORD\" --single-transaction --quick --no-tablespaces ${DB_NAME}" \
     | gzip > "$BACKUP_DIR/$FILENAME"
 
 find "$BACKUP_DIR" -name 'laravel_*.sql.gz' -type f -mtime +"$RETENTION_DAYS" -delete
