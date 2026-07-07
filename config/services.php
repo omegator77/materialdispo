@@ -35,6 +35,7 @@ return [
         ],
         'bot_token' => env('SLACK_BOT_TOKEN'),
         'signing_secret' => env('SLACK_SIGNING_SECRET'),
+        'reminder_channel' => env('SLACK_REMINDER_CHANNEL'),
     ],
 
 ];
