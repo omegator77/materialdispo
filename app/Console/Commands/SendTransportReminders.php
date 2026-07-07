@@ -136,7 +136,15 @@ class SendTransportReminders extends Command
             $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
         }
 
-        $this->slack->send("confirm:mietvorgang:{$type}", $mietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines);
+        $buttons = [
+            ['action_id' => "confirm:mietvorgang:{$type}", 'label' => 'Als geklärt markieren'],
+        ];
+
+        if ($type === 'start') {
+            $buttons[] = ['action_id' => 'confirm:mietvorgang:kontrolliert', 'label' => 'Entgegengenommen und kontrolliert'];
+        }
+
+        $this->slack->send($mietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);
     }
 
     private function maybeSendVermietung(Vermietvorgang $vermietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
@@ -213,6 +221,14 @@ class SendTransportReminders extends Command
             $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
         }
 
-        $this->slack->send("confirm:vermietvorgang:{$type}", $vermietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines);
+        $buttons = [
+            ['action_id' => "confirm:vermietvorgang:{$type}", 'label' => 'Als geklärt markieren'],
+        ];
+
+        if ($type === 'start') {
+            $buttons[] = ['action_id' => 'confirm:vermietvorgang:gerichtet', 'label' => 'Gerichtet'];
+        }
+
+        $this->slack->send($vermietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);
     }
 }

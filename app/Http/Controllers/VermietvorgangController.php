@@ -174,6 +174,9 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => auth()->id(),
         ]);
 
+        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $this->logConfirmation($vermietvorgang, $label, true);
+
         return redirect()->back()->with('success', 'Transport als geklärt markiert.');
     }
 
@@ -186,7 +189,45 @@ class VermietvorgangController extends Controller
             "transport_{$type}_confirmed_by" => null,
         ]);
 
+        $label = $type === 'start' ? 'Transport (Hinweg)' : 'Transport (Rückweg)';
+        $this->logConfirmation($vermietvorgang, $label, false);
+
         return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    public function confirmGerichtet(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'gerichtet_confirmed_at' => now(),
+            'gerichtet_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Gerichtet', true);
+
+        return redirect()->back()->with('success', 'Als gerichtet markiert.');
+    }
+
+    public function reopenGerichtet(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'gerichtet_confirmed_at' => null,
+            'gerichtet_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Gerichtet', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
+    private function logConfirmation(Vermietvorgang $vermietvorgang, string $label, bool $confirmed): void
+    {
+        $mieter = $vermietvorgang->mieter?->bezeichnung ?? 'unbekannter Mieter';
+
+        activity('vermietvorgang')
+            ->performedOn($vermietvorgang)
+            ->causedBy(auth()->user())
+            ->event($confirmed ? 'confirmed' : 'reopened')
+            ->log(($confirmed ? "{$label} über die Anwendung als geklärt markiert" : "{$label} wieder geöffnet")." (Mieter: {$mieter})");
     }
 
     private function prepareData(VermietvorgangRequest $request): array
