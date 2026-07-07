@@ -65,6 +65,8 @@ class Mietvorgang extends Model
         'transport_end_confirmed_by',
         'kontrolliert_confirmed_at',
         'kontrolliert_confirmed_by',
+        'bereit_zur_rueckgabe_confirmed_at',
+        'bereit_zur_rueckgabe_confirmed_by',
     ];
 
     protected $casts = [
@@ -74,6 +76,7 @@ class Mietvorgang extends Model
         'transport_start_confirmed_at' => 'datetime',
         'transport_end_confirmed_at' => 'datetime',
         'kontrolliert_confirmed_at' => 'datetime',
+        'bereit_zur_rueckgabe_confirmed_at' => 'datetime',
     ];
 
     public function supplier()
@@ -128,6 +131,16 @@ class Mietvorgang extends Model
     public function isKontrolliert(): bool
     {
         return $this->kontrolliert_confirmed_at !== null;
+    }
+
+    public function bereitZurRueckgabeConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'bereit_zur_rueckgabe_confirmed_by');
+    }
+
+    public function isBereitZurRueckgabe(): bool
+    {
+        return $this->bereit_zur_rueckgabe_confirmed_at !== null;
     }
 
     public function effectiveReminderDaysBeforeStart(): int

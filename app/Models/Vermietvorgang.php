@@ -65,6 +65,8 @@ class Vermietvorgang extends Model
         'transport_end_confirmed_by',
         'gerichtet_confirmed_at',
         'gerichtet_confirmed_by',
+        'vollstaendig_zurueck_confirmed_at',
+        'vollstaendig_zurueck_confirmed_by',
     ];
 
     protected $casts = [
@@ -74,6 +76,7 @@ class Vermietvorgang extends Model
         'transport_start_confirmed_at' => 'datetime',
         'transport_end_confirmed_at' => 'datetime',
         'gerichtet_confirmed_at' => 'datetime',
+        'vollstaendig_zurueck_confirmed_at' => 'datetime',
     ];
 
     public function mieter()
@@ -128,6 +131,16 @@ class Vermietvorgang extends Model
     public function isGerichtet(): bool
     {
         return $this->gerichtet_confirmed_at !== null;
+    }
+
+    public function vollstaendigZurueckConfirmedBy()
+    {
+        return $this->belongsTo(User::class, 'vollstaendig_zurueck_confirmed_by');
+    }
+
+    public function isVollstaendigZurueck(): bool
+    {
+        return $this->vollstaendig_zurueck_confirmed_at !== null;
     }
 
     public function effectiveReminderDaysBeforeStart(): int

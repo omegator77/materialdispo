@@ -19,6 +19,8 @@ class SlackInteractionController extends Controller
         'end' => 'transport_end',
         'gerichtet' => 'gerichtet',
         'kontrolliert' => 'kontrolliert',
+        'vollstaendig_zurueck' => 'vollstaendig_zurueck',
+        'bereit_zur_rueckgabe' => 'bereit_zur_rueckgabe',
     ];
 
     /**
@@ -29,15 +31,18 @@ class SlackInteractionController extends Controller
     private const NON_TRANSPORT_LABELS = [
         'gerichtet' => 'Gerichtet',
         'kontrolliert' => 'Entgegengenommen und kontrolliert',
+        'vollstaendig_zurueck' => 'Vollständig zurück',
+        'bereit_zur_rueckgabe' => 'Bereit zur Rückgabe',
     ];
 
     /**
-     * Welche Subtypes für welchen Vorgangs-Typ gültig sind — "gerichtet" nur
-     * für Vermietvorgang, "kontrolliert" nur für Mietvorgang.
+     * Welche Subtypes für welchen Vorgangs-Typ gültig sind — "gerichtet"/
+     * "vollstaendig_zurueck" nur für Vermietvorgang, "kontrolliert"/
+     * "bereit_zur_rueckgabe" nur für Mietvorgang.
      */
     private const VALID_SUBTYPES = [
-        'mietvorgang' => ['start', 'end', 'kontrolliert'],
-        'vermietvorgang' => ['start', 'end', 'gerichtet'],
+        'mietvorgang' => ['start', 'end', 'kontrolliert', 'bereit_zur_rueckgabe'],
+        'vermietvorgang' => ['start', 'end', 'gerichtet', 'vollstaendig_zurueck'],
     ];
 
     public function handle(Request $request)

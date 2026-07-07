@@ -140,6 +140,8 @@ class SendTransportReminders extends Command
 
         if ($type === 'start') {
             $buttons[] = ['action_id' => 'confirm:mietvorgang:kontrolliert', 'label' => 'Entgegengenommen und kontrolliert'];
+        } else {
+            $buttons[] = ['action_id' => 'confirm:mietvorgang:bereit_zur_rueckgabe', 'label' => 'Bereit zur Rückgabe'];
         }
 
         $this->slack->send($mietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);
@@ -223,6 +225,8 @@ class SendTransportReminders extends Command
 
         if ($type === 'start') {
             $buttons[] = ['action_id' => 'confirm:vermietvorgang:gerichtet', 'label' => 'Gerichtet'];
+        } else {
+            $buttons[] = ['action_id' => 'confirm:vermietvorgang:vollstaendig_zurueck', 'label' => 'Vollständig zurück'];
         }
 
         $this->slack->send($vermietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);

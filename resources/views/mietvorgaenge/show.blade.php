@@ -206,6 +206,31 @@
                         </form>
                     @endif
                 </div>
+
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Bereit zur Rückgabe</div>
+
+                    @if($mietvorgang->isBereitZurRueckgabe())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Bereit zur Rückgabe
+                            @if($mietvorgang->bereitZurRueckgabeConfirmedBy) von {{ $mietvorgang->bereitZurRueckgabeConfirmedBy->name }} @endif
+                            am {{ $mietvorgang->bereit_zur_rueckgabe_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenBereitZurRueckgabe', $mietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht bereit zur Rückgabe.</p>
+                        <form action="{{ route('mietvorgaenge.confirmBereitZurRueckgabe', $mietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als bereit zur Rückgabe markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
         </div>
 

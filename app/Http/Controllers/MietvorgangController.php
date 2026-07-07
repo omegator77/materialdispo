@@ -176,6 +176,30 @@ class MietvorgangController extends Controller
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
 
+    public function confirmBereitZurRueckgabe(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'bereit_zur_rueckgabe_confirmed_at' => now(),
+            'bereit_zur_rueckgabe_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', true);
+
+        return redirect()->back()->with('success', 'Als bereit zur Rückgabe markiert.');
+    }
+
+    public function reopenBereitZurRueckgabe(Mietvorgang $mietvorgang)
+    {
+        $mietvorgang->update([
+            'bereit_zur_rueckgabe_confirmed_at' => null,
+            'bereit_zur_rueckgabe_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
     private function logConfirmation(Mietvorgang $mietvorgang, string $label, bool $confirmed): void
     {
         $supplier = $mietvorgang->supplier?->bezeichnung ?? 'unbekannter Vermieter';

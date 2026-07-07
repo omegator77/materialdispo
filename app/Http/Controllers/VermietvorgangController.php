@@ -219,6 +219,30 @@ class VermietvorgangController extends Controller
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
 
+    public function confirmVollstaendigZurueck(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'vollstaendig_zurueck_confirmed_at' => now(),
+            'vollstaendig_zurueck_confirmed_by' => auth()->id(),
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Vollständig zurück', true);
+
+        return redirect()->back()->with('success', 'Als vollständig zurück markiert.');
+    }
+
+    public function reopenVollstaendigZurueck(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->update([
+            'vollstaendig_zurueck_confirmed_at' => null,
+            'vollstaendig_zurueck_confirmed_by' => null,
+        ]);
+
+        $this->logConfirmation($vermietvorgang, 'Vollständig zurück', false);
+
+        return redirect()->back()->with('success', 'Wieder geöffnet.');
+    }
+
     private function logConfirmation(Vermietvorgang $vermietvorgang, string $label, bool $confirmed): void
     {
         $mieter = $vermietvorgang->mieter?->bezeichnung ?? 'unbekannter Mieter';
