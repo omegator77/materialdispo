@@ -118,55 +118,17 @@
                     @endforelse
                 </div>
 
-                {{-- Nächste Termine --}}
+                {{-- Offene Vorgänge --}}
                 <div class="bg-white rounded-lg shadow-sm p-5">
                     <h3 class="font-semibold text-gray-900 mb-4">
-                        Nächste Termine
+                        Offene Vorgänge
                     </h3>
 
-                    @forelse($upcomingTransportEvents as $event)
-                        @php
-                            $daysUntil = \Carbon\Carbon::today()->diffInDays($event['date'], false);
-                            $whenLabel = match(true) {
-                                $daysUntil <= 0 => 'heute',
-                                $daysUntil === 1 => 'morgen',
-                                default => "in {$daysUntil} Tagen",
-                            };
-
-                            if ($event['kind'] === 'mietvorgang') {
-                                $mv = $event['mietvorgang'];
-                                $typeLabel = $event['type'] === 'start' ? 'Mietbeginn' : 'Mietende';
-                                $title = $mv->supplier->bezeichnung ?? 'Vermieter gelöscht';
-                                $subtitle = $mv->items->pluck('bezeichnung')->implode(', ');
-                                $confirmRoute = route('mietvorgaenge.confirmTransport', [$mv, $event['type']]);
-                                $linkRoute = route('mietvorgaenge.show', $mv);
-                            } else {
-                                $vv = $event['vermietvorgang'];
-                                $typeLabel = $event['type'] === 'start' ? 'Verleihbeginn' : 'Verleihende';
-                                $title = $vv->mieter->bezeichnung ?? 'Mieter gelöscht';
-                                $subtitle = $vv->items->pluck('bezeichnung')->implode(', ');
-                                $confirmRoute = route('vermietvorgaenge.confirmTransport', [$vv, $event['type']]);
-                                $linkRoute = route('vermietvorgaenge.show', $vv);
-                            }
-                        @endphp
-                        <div class="flex items-start gap-3 border-b last:border-b-0 py-3">
-                            <form action="{{ $confirmRoute }}" method="POST" class="mt-0.5 shrink-0">
-                                @csrf
-                                <button type="submit" title="Als geklärt markieren"
-                                        class="w-5 h-5 rounded border border-gray-300 hover:border-orange-400 hover:bg-orange-50 block"></button>
-                            </form>
-                            <a href="{{ $linkRoute }}" class="flex-1 hover:text-orange-600">
-                                <div class="font-medium text-gray-900">
-                                    {{ ucfirst($whenLabel) }} {{ $typeLabel }} — {{ $title }}
-                                </div>
-                                <div class="text-sm text-gray-500">
-                                    {{ $subtitle }}
-                                </div>
-                            </a>
-                        </div>
+                    @forelse($openVorgaenge as $entry)
+                        @include('dashboard._vorgang-status', ['entry' => $entry])
                     @empty
                         <div class="text-sm text-gray-500">
-                            Keine anstehenden Termine in den nächsten 14 Tagen.
+                            Alle Miet-/Vermietvorgänge sind vollständig abgehakt.
                         </div>
                     @endforelse
                 </div>
