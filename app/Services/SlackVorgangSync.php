@@ -53,7 +53,7 @@ class SlackVorgangSync
             $this->statusEntry('mietvorgang', 'end', $endLabel, 'Als '.mb_strtolower($endLabel).' markieren', $mietvorgang->transport_end_confirmed_at, $mietvorgang->transportEndConfirmedBy),
         ];
 
-        $this->render($mietvorgang, '📦 '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete(), 'slack_reminder_channel');
+        $this->render($mietvorgang, '📥 MIETE — '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete(), 'slack_reminder_channel');
     }
 
     public function syncVermietvorgang(Vermietvorgang $vermietvorgang): void
@@ -92,7 +92,7 @@ class SlackVorgangSync
             $this->statusEntry('vermietvorgang', 'vollstaendig_zurueck', 'Geprüft', 'Geprüft', $vermietvorgang->vollstaendig_zurueck_confirmed_at, $vermietvorgang->vollstaendigZurueckConfirmedBy),
         ];
 
-        $this->render($vermietvorgang, '📦 '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete(), 'slack_reminder_channel');
+        $this->render($vermietvorgang, '📤 VERMIETUNG — '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete(), 'slack_reminder_channel');
     }
 
     /**
@@ -145,7 +145,7 @@ class SlackVorgangSync
         ] : null;
         $statuses = [$packStatus];
 
-        $this->render($production, '📦 '.$production->bezeichnung, $lines, $statuses, $production->isComplete(), 'slack_production_channel');
+        $this->render($production, '🎬 PRODUKTION — '.$production->bezeichnung, $lines, $statuses, $production->isComplete(), 'slack_production_channel');
     }
 
     /**
@@ -197,9 +197,9 @@ class SlackVorgangSync
         }
 
         $label = match (true) {
-            $vorgang instanceof Mietvorgang => $vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt',
-            $vorgang instanceof Vermietvorgang => $vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt',
-            default => $vorgang->bezeichnung ?? 'unbekannt',
+            $vorgang instanceof Mietvorgang => 'MIETE — '.($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt'),
+            $vorgang instanceof Vermietvorgang => 'VERMIETUNG — '.($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt'),
+            default => 'PRODUKTION — '.($vorgang->bezeichnung ?? 'unbekannt'),
         };
 
         $url = match (true) {
