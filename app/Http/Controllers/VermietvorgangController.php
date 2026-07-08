@@ -8,12 +8,13 @@ use App\Models\MailingList;
 use App\Models\Mieter;
 use App\Models\Vermietvorgang;
 use App\Services\ItemAvailabilityService;
+use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class VermietvorgangController extends Controller
 {
-    public function __construct(private ItemAvailabilityService $availability) {}
+    public function __construct(private ItemAvailabilityService $availability, private SlackVorgangSync $slack) {}
 
     public function index()
     {
@@ -86,6 +87,8 @@ class VermietvorgangController extends Controller
             'verleih_end' => $vermietvorgang->rent_end,
         ]);
 
+        $this->slack->syncVermietvorgang($vermietvorgang);
+
         return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with('success', 'Vermietvorgang aktualisiert.');
     }
 
@@ -149,6 +152,10 @@ class VermietvorgangController extends Controller
         $messageType = count($added) ? 'success' : 'error';
         $message = $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.';
 
+        if (count($added)) {
+            $this->slack->syncVermietvorgang($vermietvorgang);
+        }
+
         return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with($messageType, $message);
     }
 
@@ -176,6 +183,7 @@ class VermietvorgangController extends Controller
 
         $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
@@ -191,6 +199,7 @@ class VermietvorgangController extends Controller
 
         $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -203,6 +212,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Gerichtet', true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als gerichtet markiert.');
     }
@@ -215,6 +225,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Gerichtet', false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -227,6 +238,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Vollständig zurück', true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als vollständig zurück markiert.');
     }
@@ -239,6 +251,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Vollständig zurück', false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }

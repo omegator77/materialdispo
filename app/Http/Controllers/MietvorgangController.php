@@ -7,11 +7,14 @@ use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mietvorgang;
 use App\Models\Supplier;
+use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MietvorgangController extends Controller
 {
+    public function __construct(private SlackVorgangSync $slack) {}
+
     public function index()
     {
         $mietvorgaenge = Mietvorgang::with('supplier')
@@ -71,6 +74,8 @@ class MietvorgangController extends Controller
             'rent_end' => $mietvorgang->rent_end,
         ]);
 
+        $this->slack->syncMietvorgang($mietvorgang);
+
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Mietvorgang aktualisiert.');
     }
 
@@ -106,6 +111,8 @@ class MietvorgangController extends Controller
                 ->log("Gerät \"{$item->bezeichnung}\" dem Mietvorgang ({$mietvorgang->supplier->bezeichnung}) zugeordnet");
         });
 
+        $this->slack->syncMietvorgang($mietvorgang);
+
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
     }
 
@@ -133,6 +140,7 @@ class MietvorgangController extends Controller
 
         $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
@@ -148,6 +156,7 @@ class MietvorgangController extends Controller
 
         $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -160,6 +169,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als entgegengenommen und kontrolliert markiert.');
     }
@@ -172,6 +182,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -184,6 +195,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als bereit zur Rückgabe markiert.');
     }
@@ -196,6 +208,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }

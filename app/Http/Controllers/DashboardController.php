@@ -137,6 +137,9 @@ class DashboardController extends Controller
             ->whereHas('items')
             ->get()
             ->map(function (Mietvorgang $mv) {
+                // Chronologische Reihenfolge: Angenommen -> Geprüft -> Zur
+                // Rückgabe fertig -> Übergeben (unabhängig von den internen
+                // Feldnamen kontrolliert/bereit_zur_rueckgabe).
                 $checks = [
                     [
                         'label' => $mv->transportActionLabel('start'),
@@ -145,22 +148,22 @@ class DashboardController extends Controller
                         'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'start']),
                     ],
                     [
-                        'label' => $mv->transportActionLabel('end'),
-                        'done' => $mv->isTransportConfirmed('end'),
-                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'end']),
-                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'end']),
-                    ],
-                    [
-                        'label' => 'Entgegengenommen und kontrolliert',
+                        'label' => 'Geprüft',
                         'done' => $mv->isKontrolliert(),
                         'confirmRoute' => route('mietvorgaenge.confirmKontrolliert', $mv),
                         'reopenRoute' => route('mietvorgaenge.reopenKontrolliert', $mv),
                     ],
                     [
-                        'label' => 'Bereit zur Rückgabe',
+                        'label' => 'Zur Rückgabe fertig',
                         'done' => $mv->isBereitZurRueckgabe(),
                         'confirmRoute' => route('mietvorgaenge.confirmBereitZurRueckgabe', $mv),
                         'reopenRoute' => route('mietvorgaenge.reopenBereitZurRueckgabe', $mv),
+                    ],
+                    [
+                        'label' => $mv->transportActionLabel('end'),
+                        'done' => $mv->isTransportConfirmed('end'),
+                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'end']),
+                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'end']),
                     ],
                 ];
 
@@ -181,7 +184,16 @@ class DashboardController extends Controller
             ->whereHas('items')
             ->get()
             ->map(function (Vermietvorgang $vv) {
+                // Chronologische Reihenfolge: Gerichtet -> Übergeben ->
+                // Angenommen -> Geprüft (unabhängig vom internen Feldnamen
+                // vollstaendig_zurueck).
                 $checks = [
+                    [
+                        'label' => 'Gerichtet',
+                        'done' => $vv->isGerichtet(),
+                        'confirmRoute' => route('vermietvorgaenge.confirmGerichtet', $vv),
+                        'reopenRoute' => route('vermietvorgaenge.reopenGerichtet', $vv),
+                    ],
                     [
                         'label' => $vv->transportActionLabel('start'),
                         'done' => $vv->isTransportConfirmed('start'),
@@ -195,13 +207,7 @@ class DashboardController extends Controller
                         'reopenRoute' => route('vermietvorgaenge.reopenTransport', [$vv, 'end']),
                     ],
                     [
-                        'label' => 'Gerichtet',
-                        'done' => $vv->isGerichtet(),
-                        'confirmRoute' => route('vermietvorgaenge.confirmGerichtet', $vv),
-                        'reopenRoute' => route('vermietvorgaenge.reopenGerichtet', $vv),
-                    ],
-                    [
-                        'label' => 'Vollständig zurück',
+                        'label' => 'Geprüft',
                         'done' => $vv->isVollstaendigZurueck(),
                         'confirmRoute' => route('vermietvorgaenge.confirmVollstaendigZurueck', $vv),
                         'reopenRoute' => route('vermietvorgaenge.reopenVollstaendigZurueck', $vv),

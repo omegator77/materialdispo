@@ -67,6 +67,8 @@ class Mietvorgang extends Model
         'kontrolliert_confirmed_by',
         'bereit_zur_rueckgabe_confirmed_at',
         'bereit_zur_rueckgabe_confirmed_by',
+        'slack_channel',
+        'slack_message_ts',
     ];
 
     protected $casts = [
@@ -141,6 +143,18 @@ class Mietvorgang extends Model
     public function isBereitZurRueckgabe(): bool
     {
         return $this->bereit_zur_rueckgabe_confirmed_at !== null;
+    }
+
+    /**
+     * Vorgang gilt als abgeschlossen, wenn die Geräte an den Vermieter
+     * übergeben wurden UND als bereit zur Rückgabe bestätigt sind — das
+     * Pendant zu Vermietvorgang::isComplete() (dort "vollständig zurück"),
+     * "kontrolliert" ist dagegen der Eingangs-Check beim Hinweg. Bestimmt, ob
+     * die Slack-Nachricht noch Buttons zeigt oder als final gerendert wird.
+     */
+    public function isComplete(): bool
+    {
+        return $this->isTransportConfirmed('end') && $this->isBereitZurRueckgabe();
     }
 
     public function effectiveReminderDaysBeforeStart(): int

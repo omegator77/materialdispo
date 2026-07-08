@@ -67,6 +67,8 @@ class Vermietvorgang extends Model
         'gerichtet_confirmed_by',
         'vollstaendig_zurueck_confirmed_at',
         'vollstaendig_zurueck_confirmed_by',
+        'slack_channel',
+        'slack_message_ts',
     ];
 
     protected $casts = [
@@ -141,6 +143,16 @@ class Vermietvorgang extends Model
     public function isVollstaendigZurueck(): bool
     {
         return $this->vollstaendig_zurueck_confirmed_at !== null;
+    }
+
+    /**
+     * Vorgang gilt als abgeschlossen, wenn die Geräte vom Mieter zurück
+     * angenommen wurden UND als vollständig zurück bestätigt sind. Bestimmt,
+     * ob die Slack-Nachricht noch Buttons zeigt oder als final gerendert wird.
+     */
+    public function isComplete(): bool
+    {
+        return $this->isTransportConfirmed('end') && $this->isVollstaendigZurueck();
     }
 
     public function effectiveReminderDaysBeforeStart(): int

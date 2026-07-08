@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mietvorgang;
 use App\Models\User;
 use App\Models\Vermietvorgang;
+use App\Services\SlackVorgangSync;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -44,6 +45,8 @@ class SlackInteractionController extends Controller
         'mietvorgang' => ['start', 'end', 'kontrolliert', 'bereit_zur_rueckgabe'],
         'vermietvorgang' => ['start', 'end', 'gerichtet', 'vollstaendig_zurueck'],
     ];
+
+    public function __construct(private SlackVorgangSync $slack) {}
 
     public function handle(Request $request)
     {
@@ -120,13 +123,10 @@ class SlackInteractionController extends Controller
             ->event('confirmed')
             ->log($description);
 
-        $confirmationText = "✅ {$label} bestätigt von {$slackUserName} am ".now()->format('d.m.Y H:i');
-        $originalBlocks = $payload['message']['blocks'] ?? null;
-
-        if ($originalBlocks) {
-            $this->updateMessageAfterConfirm($responseUrl, $originalBlocks, $actionId, $confirmationText);
+        if ($kind === 'mietvorgang') {
+            $this->slack->syncMietvorgang($vorgang);
         } else {
-            $this->replaceMessage($responseUrl, $confirmationText);
+            $this->slack->syncVermietvorgang($vorgang);
         }
     }
 
@@ -157,46 +157,6 @@ class SlackInteractionController extends Controller
 
         Http::post($responseUrl, [
             'text' => $text,
-            'replace_original' => true,
-        ]);
-    }
-
-    /**
-     * Entfernt nur den geklickten Button aus der bestehenden Nachricht und
-     * hängt eine Bestätigungszeile an — im Gegensatz zu replaceMessage()
-     * bleibt ein zweiter, noch offener Button (z. B. "Gerichtet" neben dem
-     * Transport-Button) dabei erhalten, statt die ganze Nachricht zu
-     * überschreiben.
-     *
-     * @param  array<int, array<string, mixed>>  $originalBlocks
-     */
-    private function updateMessageAfterConfirm(?string $responseUrl, array $originalBlocks, string $confirmedActionId, string $confirmationText): void
-    {
-        if (! $responseUrl) {
-            return;
-        }
-
-        $blocks = collect($originalBlocks)
-            ->map(function (array $block) use ($confirmedActionId, $confirmationText) {
-                if (($block['type'] ?? null) === 'section' && isset($block['text']['text'])) {
-                    $block['text']['text'] .= "\n{$confirmationText}";
-                }
-
-                if (($block['type'] ?? null) === 'actions') {
-                    $block['elements'] = collect($block['elements'] ?? [])
-                        ->reject(fn (array $el) => ($el['action_id'] ?? null) === $confirmedActionId)
-                        ->values()
-                        ->all();
-                }
-
-                return $block;
-            })
-            ->reject(fn (array $block) => ($block['type'] ?? null) === 'actions' && empty($block['elements']))
-            ->values()
-            ->all();
-
-        Http::post($responseUrl, [
-            'blocks' => $blocks,
             'replace_original' => true,
         ]);
     }
