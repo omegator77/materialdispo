@@ -8,6 +8,7 @@ use App\Models\Production;
 use App\Models\Unit;
 use App\Models\VbProtokoll;
 use App\Models\VbProtokollFoto;
+use App\Services\SlackVorgangSync;
 use App\Services\VbProtokollAnforderungSyncService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Storage;
 
 class VbProtokollController extends Controller
 {
-    public function __construct(private VbProtokollAnforderungSyncService $anforderungen) {}
+    public function __construct(
+        private VbProtokollAnforderungSyncService $anforderungen,
+        private SlackVorgangSync $slack,
+    ) {}
 
     public function create(Production $production)
     {
@@ -42,6 +46,8 @@ class VbProtokollController extends Controller
 
         $this->anforderungen->sync($vbProtokoll, $request->anforderungenInput());
         $this->storeFotos($vbProtokoll, $request);
+
+        $this->slack->syncProduction($production);
 
         return redirect()
             ->route('vb-protokoll.show', $production->id)
@@ -72,6 +78,8 @@ class VbProtokollController extends Controller
 
         $this->anforderungen->sync($vbProtokoll, $request->anforderungenInput());
         $this->storeFotos($vbProtokoll, $request);
+
+        $this->slack->syncProduction($production);
 
         return redirect()
             ->route('vb-protokoll.show', $production->id)
@@ -114,6 +122,8 @@ class VbProtokollController extends Controller
         }
 
         $vbProtokoll->delete();
+
+        $this->slack->syncProduction($production);
 
         return redirect()
             ->route('productions.show', $production->id)

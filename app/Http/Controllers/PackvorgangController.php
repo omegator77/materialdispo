@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\ProductionItemPack;
+use App\Services\SlackVorgangSync;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class PackvorgangController extends Controller
 {
+    public function __construct(private SlackVorgangSync $slack) {}
+
     public function show(Production $production)
     {
         $production->load(['items.unit', 'cameraConfigs.item.unit', 'cameraConfigs.lensItem', 'cameraConfigs.tripodItem', 'cameraConfigs.headItem', 'cameraConfigs.adapterItem', 'itemPacks', 'packvorgangConfirmedBy']);
@@ -80,6 +83,8 @@ class PackvorgangController extends Controller
 
         $production->load('itemPacks');
 
+        $this->slack->syncProduction($production);
+
         return response()->json([
             'packed' => $packed,
             'packedBy' => $packed ? auth()->user()->name : null,
@@ -96,6 +101,8 @@ class PackvorgangController extends Controller
             'packvorgang_confirmed_by' => auth()->id(),
         ]);
 
+        $this->slack->syncProduction($production);
+
         return redirect()
             ->route('packvorgang.show', $production)
             ->with('success', 'Packvorgang als abgeschlossen markiert.');
@@ -107,6 +114,8 @@ class PackvorgangController extends Controller
             'packvorgang_confirmed_at' => null,
             'packvorgang_confirmed_by' => null,
         ]);
+
+        $this->slack->syncProduction($production);
 
         return redirect()
             ->route('packvorgang.show', $production)

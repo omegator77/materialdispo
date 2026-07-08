@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Mietvorgang;
+use App\Models\Production;
 use App\Models\Setting;
 use App\Models\Vermietvorgang;
 use Illuminate\Support\Facades\Http;
@@ -52,7 +53,7 @@ class SlackVorgangSync
             $this->statusEntry('mietvorgang', 'end', $endLabel, 'Als '.mb_strtolower($endLabel).' markieren', $mietvorgang->transport_end_confirmed_at, $mietvorgang->transportEndConfirmedBy),
         ];
 
-        $this->render($mietvorgang, '📦 '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete());
+        $this->render($mietvorgang, '📦 '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete(), 'slack_reminder_channel');
     }
 
     public function syncVermietvorgang(Vermietvorgang $vermietvorgang): void
@@ -91,7 +92,60 @@ class SlackVorgangSync
             $this->statusEntry('vermietvorgang', 'vollstaendig_zurueck', 'Geprüft', 'Geprüft', $vermietvorgang->vollstaendig_zurueck_confirmed_at, $vermietvorgang->vollstaendigZurueckConfirmedBy),
         ];
 
-        $this->render($vermietvorgang, '📦 '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete());
+        $this->render($vermietvorgang, '📦 '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete(), 'slack_reminder_channel');
+    }
+
+    /**
+     * Hält die Slack-Nachricht einer Produktion aktuell: Stammdaten,
+     * Zuordnungsstatus-Ampel (aus dem VB-Protokoll-Abgleich), Packstatus und
+     * Links zu VB-Protokoll/Packliste/PDF. Anders als bei Mietvorgang/
+     * Vermietvorgang gibt es keinen items()-Guard — die Nachricht soll schon
+     * beim Anlegen der Produktion erscheinen, bevor Geräte zugeordnet sind.
+     */
+    public function syncProduction(Production $production): void
+    {
+        if (! $production->bezeichnung || ! $production->booking_start || ! $production->booking_end) {
+            return;
+        }
+
+        $production->loadMissing(['vbProtokoll.anforderungen', 'itemPacks', 'packvorgangConfirmedBy']);
+
+        $status = $production->assignmentStatus();
+        $ampel = ['grau' => '⚪', 'rot' => '🔴', 'gruen' => '🟢'][$status['level']];
+
+        $gepackt = $production->packedItemIds()->count();
+        $gesamt = $production->packlistEntries()->count();
+        $packInfo = "{$gepackt}/{$gesamt} Geräte gepackt";
+        if ($production->packvorgang_confirmed_at) {
+            $by = $production->packvorgangConfirmedBy?->name ? " von {$production->packvorgangConfirmedBy->name}" : '';
+            $packInfo .= " — ✅ abgeschlossen{$by} am {$production->packvorgang_confirmed_at->format('d.m.Y H:i')} Uhr";
+        }
+
+        $vbProtokollLink = $production->vbProtokoll
+            ? '<'.route('vb-protokoll.show', $production).'|VB-Protokoll ansehen>'
+            : '<'.route('vb-protokoll.create', $production).'|VB-Protokoll anlegen>';
+
+        $lines = [
+            ['label' => 'Zeitraum', 'value' => \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y').' – '.\Carbon\Carbon::parse($production->booking_end)->format('d.m.Y')],
+            ['label' => 'Kunde', 'value' => $production->vbProtokoll?->kunde ?: '–'],
+            ['label' => 'Ort', 'value' => $production->vbProtokoll?->produktionsort ?: '–'],
+            ['label' => 'Zuordnungsstatus', 'value' => "{$ampel} {$status['label']}"],
+            ['label' => 'Packstatus', 'value' => $packInfo],
+            ['label' => 'VB-Protokoll', 'value' => $vbProtokollLink],
+            ['label' => 'Packliste', 'value' => '<'.route('packvorgang.show', $production).'|Packliste ansehen> · <'.route('packvorgang.pdf', $production).'|als PDF>'],
+            ['label' => 'Link', 'value' => '<'.route('productions.show', $production).'|Zur Produktion in der App>'],
+        ];
+
+        $packStatus = $this->statusEntry('production', 'packvorgang', 'Packvorgang abgeschlossen', 'Packvorgang abschließen', $production->packvorgang_confirmed_at, $production->packvorgangConfirmedBy);
+        $packStatus['confirmDialog'] = $gepackt < $gesamt ? [
+            'title' => 'Noch nicht vollständig gepackt',
+            'text' => "Es sind erst {$gepackt}/{$gesamt} Geräte als gepackt markiert. Trotzdem abschließen?",
+            'confirm' => 'Abschließen',
+            'deny' => 'Abbrechen',
+        ] : null;
+        $statuses = [$packStatus];
+
+        $this->render($production, '📦 '.$production->bezeichnung, $lines, $statuses, $production->isComplete(), 'slack_production_channel');
     }
 
     /**
@@ -99,7 +153,7 @@ class SlackVorgangSync
      * Vorgangs-Nachricht, statt eine neue Top-Level-Nachricht anzulegen — die
      * Hauptnachricht bleibt die einzige Quelle der Wahrheit für den Status.
      */
-    public function threadReply(Mietvorgang|Vermietvorgang $vorgang, string $text): void
+    public function threadReply(Mietvorgang|Vermietvorgang|Production $vorgang, string $text): void
     {
         $token = config('services.slack.bot_token');
 
@@ -124,7 +178,7 @@ class SlackVorgangSync
      * hält den Kanal aufgeräumt, ohne die Nachricht ganz zu löschen. Wird
      * einmalig ausgeführt (slack_compacted_at markiert das danach).
      */
-    public function compactIfDue(Mietvorgang|Vermietvorgang $vorgang): void
+    public function compactIfDue(Mietvorgang|Vermietvorgang|Production $vorgang): void
     {
         if (! $vorgang->slack_message_ts || $vorgang->slack_compacted_at) {
             return;
@@ -142,13 +196,17 @@ class SlackVorgangSync
             return;
         }
 
-        $label = $vorgang instanceof Mietvorgang
-            ? ($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt')
-            : ($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt');
+        $label = match (true) {
+            $vorgang instanceof Mietvorgang => $vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt',
+            $vorgang instanceof Vermietvorgang => $vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt',
+            default => $vorgang->bezeichnung ?? 'unbekannt',
+        };
 
-        $url = $vorgang instanceof Mietvorgang
-            ? route('mietvorgaenge.show', $vorgang)
-            : route('vermietvorgaenge.show', $vorgang);
+        $url = match (true) {
+            $vorgang instanceof Mietvorgang => route('mietvorgaenge.show', $vorgang),
+            $vorgang instanceof Vermietvorgang => route('vermietvorgaenge.show', $vorgang),
+            default => route('productions.show', $vorgang),
+        };
 
         $text = "✅ {$label} abgeschlossen. <{$url}|Zum Vorgang>";
 
@@ -193,10 +251,11 @@ class SlackVorgangSync
      * @param  array<int, array{label: string, value: string}>  $lines
      * @param  array<int, array{action_id: string, label: string, buttonLabel: string, done: bool, confirmedAt: mixed, confirmedByName: ?string}>  $statuses
      */
-    private function render(Mietvorgang|Vermietvorgang $vorgang, string $headline, array $lines, array $statuses, bool $complete): void
+    private function render(Mietvorgang|Vermietvorgang|Production $vorgang, string $headline, array $lines, array $statuses, bool $complete, string $channelSettingKey): void
     {
         $token = config('services.slack.bot_token');
-        $channel = $vorgang->slack_channel ?: Setting::get('slack_reminder_channel') ?: config('services.slack.reminder_channel');
+        $configKey = $channelSettingKey === 'slack_production_channel' ? 'production_channel' : 'reminder_channel';
+        $channel = $vorgang->slack_channel ?: Setting::get($channelSettingKey) ?: config("services.slack.{$configKey}");
 
         if (! $token || ! $channel) {
             return;
@@ -237,13 +296,27 @@ class SlackVorgangSync
         if (! $complete) {
             $buttons = collect($statuses)
                 ->reject(fn (array $status) => $status['done'])
-                ->map(fn (array $status) => [
-                    'type' => 'button',
-                    'text' => ['type' => 'plain_text', 'text' => $status['buttonLabel']],
-                    'action_id' => $status['action_id'],
-                    'value' => (string) $vorgang->id,
-                    'style' => 'primary',
-                ])
+                ->map(function (array $status) use ($vorgang) {
+                    $button = [
+                        'type' => 'button',
+                        'text' => ['type' => 'plain_text', 'text' => $status['buttonLabel']],
+                        'action_id' => $status['action_id'],
+                        'value' => (string) $vorgang->id,
+                        'style' => 'primary',
+                    ];
+
+                    if (! empty($status['confirmDialog'])) {
+                        $dialog = $status['confirmDialog'];
+                        $button['confirm'] = [
+                            'title' => ['type' => 'plain_text', 'text' => $dialog['title']],
+                            'text' => ['type' => 'plain_text', 'text' => $dialog['text']],
+                            'confirm' => ['type' => 'plain_text', 'text' => $dialog['confirm']],
+                            'deny' => ['type' => 'plain_text', 'text' => $dialog['deny']],
+                        ];
+                    }
+
+                    return $button;
+                })
                 ->values()
                 ->all();
 

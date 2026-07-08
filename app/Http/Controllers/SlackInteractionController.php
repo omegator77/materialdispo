@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mietvorgang;
+use App\Models\Production;
 use App\Models\User;
 use App\Models\Vermietvorgang;
 use App\Services\SlackVorgangSync;
@@ -22,6 +23,7 @@ class SlackInteractionController extends Controller
         'kontrolliert' => 'kontrolliert',
         'vollstaendig_zurueck' => 'vollstaendig_zurueck',
         'bereit_zur_rueckgabe' => 'bereit_zur_rueckgabe',
+        'packvorgang' => 'packvorgang',
     ];
 
     /**
@@ -34,6 +36,7 @@ class SlackInteractionController extends Controller
         'kontrolliert' => 'Entgegengenommen und kontrolliert',
         'vollstaendig_zurueck' => 'Vollständig zurück',
         'bereit_zur_rueckgabe' => 'Bereit zur Rückgabe',
+        'packvorgang' => 'Packvorgang abgeschlossen',
     ];
 
     /**
@@ -44,6 +47,7 @@ class SlackInteractionController extends Controller
     private const VALID_SUBTYPES = [
         'mietvorgang' => ['start', 'end', 'kontrolliert', 'bereit_zur_rueckgabe'],
         'vermietvorgang' => ['start', 'end', 'gerichtet', 'vollstaendig_zurueck'],
+        'production' => ['packvorgang'],
     ];
 
     public function __construct(private SlackVorgangSync $slack) {}
@@ -91,7 +95,11 @@ class SlackInteractionController extends Controller
         }
 
         $vorgangId = $payload['actions'][0]['value'] ?? null;
-        $vorgang = $kind === 'mietvorgang' ? Mietvorgang::find($vorgangId) : Vermietvorgang::find($vorgangId);
+        $vorgang = match ($kind) {
+            'mietvorgang' => Mietvorgang::find($vorgangId),
+            'vermietvorgang' => Vermietvorgang::find($vorgangId),
+            'production' => Production::find($vorgangId),
+        };
 
         if (! $vorgang) {
             $this->replaceMessage($responseUrl, '⚠️ Vorgang wurde nicht mehr gefunden.');
@@ -123,11 +131,11 @@ class SlackInteractionController extends Controller
             ->event('confirmed')
             ->log($description);
 
-        if ($kind === 'mietvorgang') {
-            $this->slack->syncMietvorgang($vorgang);
-        } else {
-            $this->slack->syncVermietvorgang($vorgang);
-        }
+        match ($kind) {
+            'mietvorgang' => $this->slack->syncMietvorgang($vorgang),
+            'vermietvorgang' => $this->slack->syncVermietvorgang($vorgang),
+            'production' => $this->slack->syncProduction($vorgang),
+        };
     }
 
     /**

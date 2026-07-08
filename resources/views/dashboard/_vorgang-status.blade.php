@@ -14,10 +14,10 @@
             <span class="inline-block {{ $entry['badgeClass'] }} text-xs px-2 py-0.5 rounded-full shrink-0">{{ $entry['badge'] }}</span>
             <span class="font-medium text-gray-900 truncate">{{ $entry['title'] }}</span>
             <span class="text-sm text-gray-500 truncate hidden sm:inline">
-                {{ \Carbon\Carbon::parse($entry['model']->rent_start)->format('d.m.Y') }}–{{ \Carbon\Carbon::parse($entry['model']->rent_end)->format('d.m.Y') }}
+                {{ \Carbon\Carbon::parse($entry['periodStart'])->format('d.m.Y') }}–{{ \Carbon\Carbon::parse($entry['periodEnd'])->format('d.m.Y') }}
             </span>
         </div>
-        <span class="text-xs text-gray-500 shrink-0">{{ $entry['doneCount'] }}/4</span>
+        <span class="text-xs text-gray-500 shrink-0">{{ $entry['doneCount'] }}/{{ count($entry['checks']) }}</span>
     </summary>
 
     <div class="px-3 pb-3 pt-1 space-y-2">
@@ -32,7 +32,9 @@
             @if($check['done'])
                 <form action="{{ $check['reopenRoute'] }}" method="POST">
                     @csrf
-                    @method('DELETE')
+                    @if(($check['reopenMethod'] ?? 'DELETE') !== 'POST')
+                        @method($check['reopenMethod'] ?? 'DELETE')
+                    @endif
                     <button type="submit" class="text-xs text-gray-500 hover:underline">✓ Wieder öffnen</button>
                 </form>
             @else
