@@ -16,6 +16,7 @@ class MietvorgangRequest extends FormRequest
         $requiredOnCreate = $this->isMethod('post') ? ['required'] : ['nullable'];
 
         return [
+            'bezeichnung' => ['nullable', 'string', 'max:255'],
             'suppliers_id' => [...$requiredOnCreate, 'exists:suppliers,id'],
             'rent_start' => [...$requiredOnCreate, 'date_format:d.m.Y'],
             'rent_end' => [...$requiredOnCreate, 'date_format:d.m.Y', 'after_or_equal:rent_start'],

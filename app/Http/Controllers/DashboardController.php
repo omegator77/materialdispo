@@ -170,7 +170,7 @@ class DashboardController extends Controller
                 return [
                     'kind' => 'mietvorgang',
                     'model' => $mv,
-                    'title' => $mv->supplier?->bezeichnung ?? 'Vermieter gelöscht',
+                    'title' => $mv->bezeichnung ?? $mv->supplier?->bezeichnung ?? 'Vermieter gelöscht',
                     'badge' => 'Miete',
                     'badgeClass' => 'bg-amber-50 text-amber-700',
                     'showRoute' => route('mietvorgaenge.show', $mv),
@@ -217,7 +217,7 @@ class DashboardController extends Controller
                 return [
                     'kind' => 'vermietvorgang',
                     'model' => $vv,
-                    'title' => $vv->mieter?->bezeichnung ?? 'Mieter gelöscht',
+                    'title' => $vv->bezeichnung ?? $vv->mieter?->bezeichnung ?? 'Mieter gelöscht',
                     'badge' => 'Verleih',
                     'badgeClass' => 'bg-purple-50 text-purple-700',
                     'showRoute' => route('vermietvorgaenge.show', $vv),

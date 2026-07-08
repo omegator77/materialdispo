@@ -15,6 +15,20 @@ class MietvorgangController extends Controller
 {
     public function __construct(private SlackVorgangSync $slack) {}
 
+    /**
+     * Liefert den Bezeichnungs-Vorschlag für einen Vermieter, damit das
+     * Create-Formular ihn live einblenden kann, sobald ein Vermieter gewählt
+     * wird — ohne dass der Vorgang dafür schon existieren muss.
+     */
+    public function suggestBezeichnung(Request $request)
+    {
+        $request->validate(['suppliers_id' => ['required', 'exists:suppliers,id']]);
+
+        return response()->json([
+            'bezeichnung' => Mietvorgang::suggestBezeichnung((int) $request->suppliers_id),
+        ]);
+    }
+
     public function index()
     {
         $mietvorgaenge = Mietvorgang::with('supplier')
@@ -30,15 +44,27 @@ class MietvorgangController extends Controller
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
         $defaultMailingList = MailingList::where('is_default', true)->first();
+        $assignableItems = Item::whereNotNull('suppliers_id')
+            ->whereNull('mietvorgang_id')
+            ->orderBy('bezeichnung')
+            ->get();
 
-        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList'));
+        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
 
     public function store(MietvorgangRequest $request)
     {
         $data = $this->prepareData($request);
+        $data['bezeichnung'] = $request->filled('bezeichnung')
+            ? $request->bezeichnung
+            : Mietvorgang::suggestBezeichnung($data['suppliers_id']);
 
-        Mietvorgang::create($data);
+        $mietvorgang = Mietvorgang::create($data);
+
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        if ($itemIds) {
+            $this->attachItemIds($mietvorgang, $itemIds);
+        }
 
         return redirect()->route('mietvorgaenge.index')->with('success', 'Mietvorgang angelegt.');
     }
@@ -64,6 +90,10 @@ class MietvorgangController extends Controller
     public function update(MietvorgangRequest $request, Mietvorgang $mietvorgang)
     {
         $data = $this->prepareData($request);
+
+        if ($request->filled('bezeichnung')) {
+            $data['bezeichnung'] = $request->bezeichnung;
+        }
 
         $mietvorgang->update($data);
 
@@ -93,8 +123,20 @@ class MietvorgangController extends Controller
 
     public function attachItems(Request $request, Mietvorgang $mietvorgang)
     {
-        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values();
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        $this->attachItemIds($mietvorgang, $itemIds);
 
+        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
+    }
+
+    /**
+     * Ordnet die übergebenen Geräte dem Mietvorgang zu — von attachItems()
+     * (bestehender Vorgang) und store() (direkt bei Neuanlage) genutzt.
+     *
+     * @param  array<int, int|string>  $itemIds
+     */
+    private function attachItemIds(Mietvorgang $mietvorgang, array $itemIds): void
+    {
         Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($mietvorgang) {
             $item->update([
                 'suppliers_id' => $mietvorgang->suppliers_id,
@@ -112,8 +154,6 @@ class MietvorgangController extends Controller
         });
 
         $this->slack->syncMietvorgang($mietvorgang);
-
-        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
     }
 
     public function detachItem(Mietvorgang $mietvorgang, Item $item)

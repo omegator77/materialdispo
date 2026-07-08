@@ -35,7 +35,7 @@
                             $verwaltungRoutes = array_merge($verwaltungRoutes, ['activity-log.*']);
                         }
                         if (Auth::user()->isAdmin()) {
-                            $verwaltungRoutes = array_merge($verwaltungRoutes, ['users.*']);
+                            $verwaltungRoutes = array_merge($verwaltungRoutes, ['users.*', 'settings.*']);
                         }
                         $verwaltungActive = request()->routeIs(...$verwaltungRoutes);
                     @endphp
@@ -92,6 +92,9 @@
                                     <div class="border-t border-gray-100 my-1"></div>
                                     <x-dropdown-link :href="route('users.index')">
                                         {{ __('Benutzer') }}
+                                    </x-dropdown-link>
+                                    <x-dropdown-link :href="route('settings.edit')">
+                                        {{ __('Einstellungen') }}
                                     </x-dropdown-link>
                                 @endif
                             </x-slot>
@@ -221,6 +224,9 @@
                 @if(Auth::user()->isAdmin())
                     <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                         {{ __('Benutzer') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('settings.edit')" :active="request()->routeIs('settings.*')">
+                        {{ __('Einstellungen') }}
                     </x-responsive-nav-link>
                 @endif
             </div>

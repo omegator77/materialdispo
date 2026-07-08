@@ -21,7 +21,11 @@ class SupplierController extends Controller
 
     public function store(SupplierRequest $request)
     {
-        Supplier::create($request->validated());
+        $supplier = Supplier::create($request->validated());
+
+        if ($request->wantsJson()) {
+            return response()->json($supplier);
+        }
 
         return redirect()->route('suppliers.index');
     }

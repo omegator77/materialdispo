@@ -22,6 +22,7 @@ use App\Http\Controllers\MieterController;
 use App\Http\Controllers\VermietvorgangController;
 use App\Http\Controllers\TestMailController;
 use App\Http\Controllers\SlackInteractionController;
+use App\Http\Controllers\SettingController;
 
 Route::redirect('/', '/login');
 
@@ -74,6 +75,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/mietvorgaenge', MietvorgangController::class)
         ->except(['index', 'show', 'edit'])
         ->parameters(['mietvorgaenge' => 'mietvorgang']);
+    Route::get('mietvorgaenge/suggest-bezeichnung', [MietvorgangController::class, 'suggestBezeichnung'])->name('mietvorgaenge.suggestBezeichnung');
     Route::post('mietvorgaenge/{mietvorgang}/attach-items', [MietvorgangController::class, 'attachItems'])->name('mietvorgaenge.attachItems');
     Route::delete('mietvorgaenge/{mietvorgang}/detach-item/{item}', [MietvorgangController::class, 'detachItem'])->name('mietvorgaenge.detachItem');
     Route::post('mietvorgaenge/{mietvorgang}/confirm-transport/{type}', [MietvorgangController::class, 'confirmTransport'])
@@ -90,6 +92,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/vermietvorgaenge', VermietvorgangController::class)
         ->except(['index', 'show', 'edit'])
         ->parameters(['vermietvorgaenge' => 'vermietvorgang']);
+    Route::get('vermietvorgaenge/suggest-bezeichnung', [VermietvorgangController::class, 'suggestBezeichnung'])->name('vermietvorgaenge.suggestBezeichnung');
     Route::post('vermietvorgaenge/{vermietvorgang}/attach-items', [VermietvorgangController::class, 'attachItems'])->name('vermietvorgaenge.attachItems');
     Route::delete('vermietvorgaenge/{vermietvorgang}/detach-item/{item}', [VermietvorgangController::class, 'detachItem'])->name('vermietvorgaenge.detachItem');
     Route::post('vermietvorgaenge/{vermietvorgang}/confirm-transport/{type}', [VermietvorgangController::class, 'confirmTransport'])
@@ -146,6 +149,8 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('/users', UserController::class);
     Route::post('/test-mail', [TestMailController::class, 'send'])->name('test-mail.send');
+    Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
 });
 
 require __DIR__.'/auth.php';

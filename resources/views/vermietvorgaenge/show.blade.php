@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Vermietvorgang: {{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
+                {{ $vermietvorgang->bezeichnung ?? 'Vermietvorgang: '.($vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht') }}
             </h2>
 
             <a href="{{ route('vermietvorgaenge.index') }}"
@@ -70,12 +70,19 @@
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
                 </div>
+
+                <div class="mt-4">
+                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <input type="text" name="bezeichnung" id="bezeichnung"
+                           value="{{ old('bezeichnung', $vermietvorgang->bezeichnung) }}"
+                           class="form-control w-full">
+                </div>
             </section>
 
-            <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Transport-Logistik</h3>
+            <details class="border-t pt-6" @if($errors->hasAny(['transport_type_start', 'transport_type_end', 'notify_mieter'])) open @endif>
+                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Transport-Logistik</summary>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
                             Hinweg — wie kommt das Gerät zum Mieter?
@@ -95,19 +102,19 @@
                     <input type="checkbox" name="notify_mieter" value="1" @checked(old('notify_mieter', $vermietvorgang->notify_mieter))>
                     Mieter automatisch benachrichtigen
                 </label>
-            </section>
+            </details>
 
-            <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Erinnerungen</h3>
+            <details class="border-t pt-6" @if($errors->hasAny(['reminder_days_before_start', 'reminder_days_before_end', 'mailing_list_id'])) open @endif>
+                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Erinnerungen</summary>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
                             Erinnerung vor Verleihbeginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
                                class="form-control w-full"
-                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               placeholder="Standard: {{ \App\Models\Setting::get('reminder_days_before_start', config('reminders.default_days_before')) }}"
                                value="{{ old('reminder_days_before_start', $vermietvorgang->reminder_days_before_start ?? '') }}">
                     </div>
                     <div>
@@ -116,7 +123,7 @@
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
                                class="form-control w-full"
-                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               placeholder="Standard: {{ \App\Models\Setting::get('reminder_days_before_end', config('reminders.default_days_before')) }}"
                                value="{{ old('reminder_days_before_end', $vermietvorgang->reminder_days_before_end ?? '') }}">
                     </div>
                 </div>
@@ -134,7 +141,7 @@
                         @endforeach
                     </select>
                 </div>
-            </section>
+            </details>
 
             <div class="border-t pt-6 flex justify-end">
                 <button type="submit"
@@ -143,115 +150,6 @@
                 </button>
             </div>
         </form>
-
-        {{-- Status: chronologische Reihenfolge Gerichtet -> Übergeben -> Angenommen -> Geprüft --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Status</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Gerichtet</div>
-
-                    @if($vermietvorgang->isGerichtet())
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ Gerichtet
-                            @if($vermietvorgang->gerichtetConfirmedBy) von {{ $vermietvorgang->gerichtetConfirmedBy->name }} @endif
-                            am {{ $vermietvorgang->gerichtet_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('vermietvorgaenge.reopenGerichtet', $vermietvorgang) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht gerichtet.</p>
-                        <form action="{{ route('vermietvorgaenge.confirmGerichtet', $vermietvorgang) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als gerichtet markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-
-                @php $startLabel = mb_strtolower($vermietvorgang->transportActionLabel('start')); @endphp
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Hinweg: {{ $vermietvorgang->transportActionLabel('start') }}</div>
-
-                    @if($vermietvorgang->isTransportConfirmed('start'))
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ {{ $vermietvorgang->transportActionLabel('start') }}
-                            @if($vermietvorgang->transportStartConfirmedBy) von {{ $vermietvorgang->transportStartConfirmedBy->name }} @endif
-                            am {{ $vermietvorgang->transport_start_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'start']) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $startLabel }}.</p>
-                        <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'start']) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als {{ $startLabel }} markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-
-                @php $endLabel = mb_strtolower($vermietvorgang->transportActionLabel('end')); @endphp
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Rückweg: {{ $vermietvorgang->transportActionLabel('end') }}</div>
-
-                    @if($vermietvorgang->isTransportConfirmed('end'))
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ {{ $vermietvorgang->transportActionLabel('end') }}
-                            @if($vermietvorgang->transportEndConfirmedBy) von {{ $vermietvorgang->transportEndConfirmedBy->name }} @endif
-                            am {{ $vermietvorgang->transport_end_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'end']) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $endLabel }}.</p>
-                        <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'end']) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als {{ $endLabel }} markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Geprüft</div>
-
-                    @if($vermietvorgang->isVollstaendigZurueck())
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ Geprüft
-                            @if($vermietvorgang->vollstaendigZurueckConfirmedBy) von {{ $vermietvorgang->vollstaendigZurueckConfirmedBy->name }} @endif
-                            am {{ $vermietvorgang->vollstaendig_zurueck_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('vermietvorgaenge.reopenVollstaendigZurueck', $vermietvorgang) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht geprüft.</p>
-                        <form action="{{ route('vermietvorgaenge.confirmVollstaendigZurueck', $vermietvorgang) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als geprüft markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         {{-- Zugeordnete Geräte --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -339,6 +237,115 @@
                         x-text="selected.length > 1 ? selected.length + ' Geräte hinzufügen' : 'Gerät hinzufügen'">
                 </button>
             </form>
+        </div>
+
+        {{-- Status: chronologische Reihenfolge Gerichtet -> Übergeben -> Angenommen -> Geprüft --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Status</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Gerichtet</div>
+
+                    @if($vermietvorgang->isGerichtet())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Gerichtet
+                            @if($vermietvorgang->gerichtetConfirmedBy) von {{ $vermietvorgang->gerichtetConfirmedBy->name }} @endif
+                            am {{ $vermietvorgang->gerichtet_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('vermietvorgaenge.reopenGerichtet', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht gerichtet.</p>
+                        <form action="{{ route('vermietvorgaenge.confirmGerichtet', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als gerichtet markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                @php $startLabel = mb_strtolower($vermietvorgang->transportActionLabel('start')); @endphp
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Hinweg: {{ $vermietvorgang->transportActionLabel('start') }}</div>
+
+                    @if($vermietvorgang->isTransportConfirmed('start'))
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ {{ $vermietvorgang->transportActionLabel('start') }}
+                            @if($vermietvorgang->transportStartConfirmedBy) von {{ $vermietvorgang->transportStartConfirmedBy->name }} @endif
+                            am {{ $vermietvorgang->transport_start_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'start']) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $startLabel }}.</p>
+                        <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'start']) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als {{ $startLabel }} markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                @php $endLabel = mb_strtolower($vermietvorgang->transportActionLabel('end')); @endphp
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Rückweg: {{ $vermietvorgang->transportActionLabel('end') }}</div>
+
+                    @if($vermietvorgang->isTransportConfirmed('end'))
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ {{ $vermietvorgang->transportActionLabel('end') }}
+                            @if($vermietvorgang->transportEndConfirmedBy) von {{ $vermietvorgang->transportEndConfirmedBy->name }} @endif
+                            am {{ $vermietvorgang->transport_end_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'end']) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $endLabel }}.</p>
+                        <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'end']) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als {{ $endLabel }} markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Geprüft</div>
+
+                    @if($vermietvorgang->isVollstaendigZurueck())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Geprüft
+                            @if($vermietvorgang->vollstaendigZurueckConfirmedBy) von {{ $vermietvorgang->vollstaendigZurueckConfirmedBy->name }} @endif
+                            am {{ $vermietvorgang->vollstaendig_zurueck_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('vermietvorgaenge.reopenVollstaendigZurueck', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht geprüft.</p>
+                        <form action="{{ route('vermietvorgaenge.confirmVollstaendigZurueck', $vermietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als geprüft markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 

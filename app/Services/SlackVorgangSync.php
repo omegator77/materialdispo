@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Mietvorgang;
+use App\Models\Setting;
 use App\Models\Vermietvorgang;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -39,6 +40,8 @@ class SlackVorgangSync
             $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
         }
 
+        $lines[] = ['label' => 'Link', 'value' => '<'.route('mietvorgaenge.show', $mietvorgang).'|Zum Vorgang in der App>'];
+
         $startLabel = $mietvorgang->transportActionLabel('start');
         $endLabel = $mietvorgang->transportActionLabel('end');
 
@@ -49,7 +52,7 @@ class SlackVorgangSync
             $this->statusEntry('mietvorgang', 'end', $endLabel, 'Als '.mb_strtolower($endLabel).' markieren', $mietvorgang->transport_end_confirmed_at, $mietvorgang->transportEndConfirmedBy),
         ];
 
-        $this->render($mietvorgang, '📦 Mietvorgang: '.($mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete());
+        $this->render($mietvorgang, '📦 '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete());
     }
 
     public function syncVermietvorgang(Vermietvorgang $vermietvorgang): void
@@ -73,6 +76,8 @@ class SlackVorgangSync
             $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
         }
 
+        $lines[] = ['label' => 'Link', 'value' => '<'.route('vermietvorgaenge.show', $vermietvorgang).'|Zum Vorgang in der App>'];
+
         $startLabel = $vermietvorgang->transportActionLabel('start');
         $endLabel = $vermietvorgang->transportActionLabel('end');
 
@@ -86,7 +91,7 @@ class SlackVorgangSync
             $this->statusEntry('vermietvorgang', 'vollstaendig_zurueck', 'Geprüft', 'Geprüft', $vermietvorgang->vollstaendig_zurueck_confirmed_at, $vermietvorgang->vollstaendigZurueckConfirmedBy),
         ];
 
-        $this->render($vermietvorgang, '📦 Vermietvorgang: '.($vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete());
+        $this->render($vermietvorgang, '📦 '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete());
     }
 
     /**
@@ -111,6 +116,58 @@ class SlackVorgangSync
         if (! $response->json('ok')) {
             Log::warning('Slack-Thread-Reply konnte nicht gesendet werden: '.$response->json('error'));
         }
+    }
+
+    /**
+     * Ersetzt die Nachricht 48h nach Vorgangsabschluss durch eine einzeilige
+     * Kurzfassung ("✅ {Bezeichnung} abgeschlossen.") ohne Details/Buttons —
+     * hält den Kanal aufgeräumt, ohne die Nachricht ganz zu löschen. Wird
+     * einmalig ausgeführt (slack_compacted_at markiert das danach).
+     */
+    public function compactIfDue(Mietvorgang|Vermietvorgang $vorgang): void
+    {
+        if (! $vorgang->slack_message_ts || $vorgang->slack_compacted_at) {
+            return;
+        }
+
+        $completedAt = $vorgang->completedAt();
+
+        if (! $completedAt || $completedAt->greaterThan(now()->subHours(48))) {
+            return;
+        }
+
+        $token = config('services.slack.bot_token');
+
+        if (! $token) {
+            return;
+        }
+
+        $label = $vorgang instanceof Mietvorgang
+            ? ($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt')
+            : ($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt');
+
+        $url = $vorgang instanceof Mietvorgang
+            ? route('mietvorgaenge.show', $vorgang)
+            : route('vermietvorgaenge.show', $vorgang);
+
+        $text = "✅ {$label} abgeschlossen. <{$url}|Zum Vorgang>";
+
+        $response = Http::withToken($token)->post('https://slack.com/api/chat.update', [
+            'channel' => $vorgang->slack_channel,
+            'ts' => $vorgang->slack_message_ts,
+            'text' => $text,
+            'blocks' => [
+                ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => $text]],
+            ],
+        ]);
+
+        if (! $response->json('ok')) {
+            Log::warning('Slack-Nachricht konnte nicht kompaktiert werden: '.$response->json('error'));
+
+            return;
+        }
+
+        $vorgang->forceFill(['slack_compacted_at' => now()])->saveQuietly();
     }
 
     /**
@@ -139,7 +196,7 @@ class SlackVorgangSync
     private function render(Mietvorgang|Vermietvorgang $vorgang, string $headline, array $lines, array $statuses, bool $complete): void
     {
         $token = config('services.slack.bot_token');
-        $channel = $vorgang->slack_channel ?: config('services.slack.reminder_channel');
+        $channel = $vorgang->slack_channel ?: Setting::get('slack_reminder_channel') ?: config('services.slack.reminder_channel');
 
         if (! $token || ! $channel) {
             return;
