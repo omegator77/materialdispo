@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasReadableActivityDescription;
+use App\Services\SlackVorgangSync;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -103,8 +104,14 @@ class Item extends Model
             );
 
             $this->update(['mietvorgang_id' => $mietvorgang->id]);
+            app(SlackVorgangSync::class)->syncMietvorgang($mietvorgang);
         } elseif ($this->mietvorgang_id) {
+            $oldMietvorgang = $this->mietvorgang;
             $this->update(['mietvorgang_id' => null]);
+
+            if ($oldMietvorgang) {
+                app(SlackVorgangSync::class)->syncMietvorgang($oldMietvorgang);
+            }
         }
     }
 
@@ -128,6 +135,8 @@ class Item extends Model
      */
     public function removeFromMietvorgang(): void
     {
+        $oldMietvorgang = $this->mietvorgang;
+
         $this->update([
             'suppliers_id' => null,
             'rent_start' => null,
@@ -135,6 +144,10 @@ class Item extends Model
             'mietvorgang_id' => null,
             'mietvorgang_manual' => false,
         ]);
+
+        if ($oldMietvorgang) {
+            app(SlackVorgangSync::class)->syncMietvorgang($oldMietvorgang);
+        }
     }
 
     /**
@@ -156,8 +169,14 @@ class Item extends Model
             );
 
             $this->update(['vermietvorgang_id' => $vermietvorgang->id]);
+            app(SlackVorgangSync::class)->syncVermietvorgang($vermietvorgang);
         } elseif ($this->vermietvorgang_id) {
+            $oldVermietvorgang = $this->vermietvorgang;
             $this->update(['vermietvorgang_id' => null]);
+
+            if ($oldVermietvorgang) {
+                app(SlackVorgangSync::class)->syncVermietvorgang($oldVermietvorgang);
+            }
         }
     }
 
@@ -181,6 +200,8 @@ class Item extends Model
      */
     public function removeFromVermietvorgang(): void
     {
+        $oldVermietvorgang = $this->vermietvorgang;
+
         $this->update([
             'mieter_id' => null,
             'verleih_start' => null,
@@ -188,6 +209,10 @@ class Item extends Model
             'vermietvorgang_id' => null,
             'vermietvorgang_manual' => false,
         ]);
+
+        if ($oldVermietvorgang) {
+            app(SlackVorgangSync::class)->syncVermietvorgang($oldVermietvorgang);
+        }
     }
 
     public function productions()

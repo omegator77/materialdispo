@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Mietvorgang: {{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
+                {{ $mietvorgang->bezeichnung ?? 'Mietvorgang: '.($mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht') }}
             </h2>
 
             <a href="{{ route('mietvorgaenge.index') }}"
@@ -64,12 +64,19 @@
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
                 </div>
+
+                <div class="mt-4">
+                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <input type="text" name="bezeichnung" id="bezeichnung"
+                           value="{{ old('bezeichnung', $mietvorgang->bezeichnung) }}"
+                           class="form-control w-full">
+                </div>
             </section>
 
-            <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Transport-Logistik</h3>
+            <details class="border-t pt-6" @if($errors->hasAny(['transport_type_start', 'transport_type_end', 'notify_supplier'])) open @endif>
+                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Transport-Logistik</summary>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
                             Hinweg — wie kommt das Gerät zu uns?
@@ -89,19 +96,19 @@
                     <input type="checkbox" name="notify_supplier" value="1" @checked(old('notify_supplier', $mietvorgang->notify_supplier))>
                     Lieferant automatisch benachrichtigen
                 </label>
-            </section>
+            </details>
 
-            <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Erinnerungen</h3>
+            <details class="border-t pt-6" @if($errors->hasAny(['reminder_days_before_start', 'reminder_days_before_end', 'mailing_list_id'])) open @endif>
+                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Erinnerungen</summary>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                         <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
                             Erinnerung vor Mietbeginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
                                class="form-control w-full"
-                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               placeholder="Standard: {{ \App\Models\Setting::get('reminder_days_before_start', config('reminders.default_days_before')) }}"
                                value="{{ old('reminder_days_before_start', $mietvorgang->reminder_days_before_start ?? '') }}">
                     </div>
                     <div>
@@ -110,7 +117,7 @@
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
                                class="form-control w-full"
-                               placeholder="Standard: {{ config('reminders.default_days_before') }}"
+                               placeholder="Standard: {{ \App\Models\Setting::get('reminder_days_before_end', config('reminders.default_days_before')) }}"
                                value="{{ old('reminder_days_before_end', $mietvorgang->reminder_days_before_end ?? '') }}">
                     </div>
                 </div>
@@ -128,7 +135,7 @@
                         @endforeach
                     </select>
                 </div>
-            </section>
+            </details>
 
             <div class="border-t pt-6 flex justify-end">
                 <button type="submit"
@@ -137,102 +144,6 @@
                 </button>
             </div>
         </form>
-
-        {{-- Transport-Status --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Transport-Status</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach(['start' => 'Hinweg (Mietbeginn)', 'end' => 'Rückweg (Mietende)'] as $type => $label)
-                @php
-                    $actionLabel = $mietvorgang->transportActionLabel($type);
-                    $actionLabelLower = mb_strtolower($actionLabel);
-                @endphp
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">{{ $label }}</div>
-
-                    @if($mietvorgang->isTransportConfirmed($type))
-                        @php $confirmedBy = $type === 'start' ? $mietvorgang->transportStartConfirmedBy : $mietvorgang->transportEndConfirmedBy; @endphp
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ {{ $actionLabel }}
-                            @if($confirmedBy) von {{ $confirmedBy->name }} @endif
-                            am {{ $mietvorgang->{"transport_{$type}_confirmed_at"}->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('mietvorgaenge.reopenTransport', [$mietvorgang, $type]) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $actionLabelLower }}.</p>
-                        <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, $type]) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als {{ $actionLabelLower }} markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Material-Status --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Material-Status</h3>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Entgegengenommen und kontrolliert</div>
-
-                    @if($mietvorgang->isKontrolliert())
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ Entgegengenommen und kontrolliert
-                            @if($mietvorgang->kontrolliertConfirmedBy) von {{ $mietvorgang->kontrolliertConfirmedBy->name }} @endif
-                            am {{ $mietvorgang->kontrolliert_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('mietvorgaenge.reopenKontrolliert', $mietvorgang) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht entgegengenommen/kontrolliert.</p>
-                        <form action="{{ route('mietvorgaenge.confirmKontrolliert', $mietvorgang) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als entgegengenommen und kontrolliert markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-
-                <div class="border border-gray-200 rounded p-4">
-                    <div class="text-sm font-medium text-gray-700 mb-2">Bereit zur Rückgabe</div>
-
-                    @if($mietvorgang->isBereitZurRueckgabe())
-                        <p class="text-sm text-green-700 mb-2">
-                            ✓ Bereit zur Rückgabe
-                            @if($mietvorgang->bereitZurRueckgabeConfirmedBy) von {{ $mietvorgang->bereitZurRueckgabeConfirmedBy->name }} @endif
-                            am {{ $mietvorgang->bereit_zur_rueckgabe_confirmed_at->format('d.m.Y H:i') }} Uhr
-                        </p>
-                        <form action="{{ route('mietvorgaenge.reopenBereitZurRueckgabe', $mietvorgang) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm text-gray-600 hover:underline">Wieder öffnen</button>
-                        </form>
-                    @else
-                        <p class="text-sm text-gray-500 mb-2">Noch nicht bereit zur Rückgabe.</p>
-                        <form action="{{ route('mietvorgaenge.confirmBereitZurRueckgabe', $mietvorgang) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
-                                Als bereit zur Rückgabe markieren
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         {{-- Zugeordnete Geräte --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
@@ -320,6 +231,115 @@
                         x-text="selected.length > 1 ? selected.length + ' Geräte hinzufügen' : 'Gerät hinzufügen'">
                 </button>
             </form>
+        </div>
+
+        {{-- Status: chronologische Reihenfolge Angenommen -> Geprüft -> Zur Rückgabe fertig -> Übergeben --}}
+        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Status</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                @php $startLabel = mb_strtolower($mietvorgang->transportActionLabel('start')); @endphp
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Hinweg: {{ $mietvorgang->transportActionLabel('start') }}</div>
+
+                    @if($mietvorgang->isTransportConfirmed('start'))
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ {{ $mietvorgang->transportActionLabel('start') }}
+                            @if($mietvorgang->transportStartConfirmedBy) von {{ $mietvorgang->transportStartConfirmedBy->name }} @endif
+                            am {{ $mietvorgang->transport_start_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenTransport', [$mietvorgang, 'start']) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $startLabel }}.</p>
+                        <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, 'start']) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als {{ $startLabel }} markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Geprüft</div>
+
+                    @if($mietvorgang->isKontrolliert())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Geprüft
+                            @if($mietvorgang->kontrolliertConfirmedBy) von {{ $mietvorgang->kontrolliertConfirmedBy->name }} @endif
+                            am {{ $mietvorgang->kontrolliert_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenKontrolliert', $mietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht geprüft.</p>
+                        <form action="{{ route('mietvorgaenge.confirmKontrolliert', $mietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als geprüft markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Zur Rückgabe fertig</div>
+
+                    @if($mietvorgang->isBereitZurRueckgabe())
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ Zur Rückgabe fertig
+                            @if($mietvorgang->bereitZurRueckgabeConfirmedBy) von {{ $mietvorgang->bereitZurRueckgabeConfirmedBy->name }} @endif
+                            am {{ $mietvorgang->bereit_zur_rueckgabe_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenBereitZurRueckgabe', $mietvorgang) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht zur Rückgabe fertig.</p>
+                        <form action="{{ route('mietvorgaenge.confirmBereitZurRueckgabe', $mietvorgang) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als zur Rückgabe fertig markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                @php $endLabel = mb_strtolower($mietvorgang->transportActionLabel('end')); @endphp
+                <div class="border border-gray-200 rounded p-4">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Rückweg: {{ $mietvorgang->transportActionLabel('end') }}</div>
+
+                    @if($mietvorgang->isTransportConfirmed('end'))
+                        <p class="text-sm text-green-700 mb-2">
+                            ✓ {{ $mietvorgang->transportActionLabel('end') }}
+                            @if($mietvorgang->transportEndConfirmedBy) von {{ $mietvorgang->transportEndConfirmedBy->name }} @endif
+                            am {{ $mietvorgang->transport_end_confirmed_at->format('d.m.Y H:i') }} Uhr
+                        </p>
+                        <form action="{{ route('mietvorgaenge.reopenTransport', [$mietvorgang, 'end']) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $endLabel }}.</p>
+                        <form action="{{ route('mietvorgaenge.confirmTransport', [$mietvorgang, 'end']) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                                Als {{ $endLabel }} markieren
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 

@@ -137,6 +137,9 @@ class DashboardController extends Controller
             ->whereHas('items')
             ->get()
             ->map(function (Mietvorgang $mv) {
+                // Chronologische Reihenfolge: Angenommen -> Geprüft -> Zur
+                // Rückgabe fertig -> Übergeben (unabhängig von den internen
+                // Feldnamen kontrolliert/bereit_zur_rueckgabe).
                 $checks = [
                     [
                         'label' => $mv->transportActionLabel('start'),
@@ -145,29 +148,29 @@ class DashboardController extends Controller
                         'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'start']),
                     ],
                     [
-                        'label' => $mv->transportActionLabel('end'),
-                        'done' => $mv->isTransportConfirmed('end'),
-                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'end']),
-                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'end']),
-                    ],
-                    [
-                        'label' => 'Entgegengenommen und kontrolliert',
+                        'label' => 'Geprüft',
                         'done' => $mv->isKontrolliert(),
                         'confirmRoute' => route('mietvorgaenge.confirmKontrolliert', $mv),
                         'reopenRoute' => route('mietvorgaenge.reopenKontrolliert', $mv),
                     ],
                     [
-                        'label' => 'Bereit zur Rückgabe',
+                        'label' => 'Zur Rückgabe fertig',
                         'done' => $mv->isBereitZurRueckgabe(),
                         'confirmRoute' => route('mietvorgaenge.confirmBereitZurRueckgabe', $mv),
                         'reopenRoute' => route('mietvorgaenge.reopenBereitZurRueckgabe', $mv),
+                    ],
+                    [
+                        'label' => $mv->transportActionLabel('end'),
+                        'done' => $mv->isTransportConfirmed('end'),
+                        'confirmRoute' => route('mietvorgaenge.confirmTransport', [$mv, 'end']),
+                        'reopenRoute' => route('mietvorgaenge.reopenTransport', [$mv, 'end']),
                     ],
                 ];
 
                 return [
                     'kind' => 'mietvorgang',
                     'model' => $mv,
-                    'title' => $mv->supplier?->bezeichnung ?? 'Vermieter gelöscht',
+                    'title' => $mv->bezeichnung ?? $mv->supplier?->bezeichnung ?? 'Vermieter gelöscht',
                     'badge' => 'Miete',
                     'badgeClass' => 'bg-amber-50 text-amber-700',
                     'showRoute' => route('mietvorgaenge.show', $mv),
@@ -181,7 +184,16 @@ class DashboardController extends Controller
             ->whereHas('items')
             ->get()
             ->map(function (Vermietvorgang $vv) {
+                // Chronologische Reihenfolge: Gerichtet -> Übergeben ->
+                // Angenommen -> Geprüft (unabhängig vom internen Feldnamen
+                // vollstaendig_zurueck).
                 $checks = [
+                    [
+                        'label' => 'Gerichtet',
+                        'done' => $vv->isGerichtet(),
+                        'confirmRoute' => route('vermietvorgaenge.confirmGerichtet', $vv),
+                        'reopenRoute' => route('vermietvorgaenge.reopenGerichtet', $vv),
+                    ],
                     [
                         'label' => $vv->transportActionLabel('start'),
                         'done' => $vv->isTransportConfirmed('start'),
@@ -195,13 +207,7 @@ class DashboardController extends Controller
                         'reopenRoute' => route('vermietvorgaenge.reopenTransport', [$vv, 'end']),
                     ],
                     [
-                        'label' => 'Gerichtet',
-                        'done' => $vv->isGerichtet(),
-                        'confirmRoute' => route('vermietvorgaenge.confirmGerichtet', $vv),
-                        'reopenRoute' => route('vermietvorgaenge.reopenGerichtet', $vv),
-                    ],
-                    [
-                        'label' => 'Vollständig zurück',
+                        'label' => 'Geprüft',
                         'done' => $vv->isVollstaendigZurueck(),
                         'confirmRoute' => route('vermietvorgaenge.confirmVollstaendigZurueck', $vv),
                         'reopenRoute' => route('vermietvorgaenge.reopenVollstaendigZurueck', $vv),
@@ -211,7 +217,7 @@ class DashboardController extends Controller
                 return [
                     'kind' => 'vermietvorgang',
                     'model' => $vv,
-                    'title' => $vv->mieter?->bezeichnung ?? 'Mieter gelöscht',
+                    'title' => $vv->bezeichnung ?? $vv->mieter?->bezeichnung ?? 'Mieter gelöscht',
                     'badge' => 'Verleih',
                     'badgeClass' => 'bg-purple-50 text-purple-700',
                     'showRoute' => route('vermietvorgaenge.show', $vv),

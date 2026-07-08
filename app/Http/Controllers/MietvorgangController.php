@@ -7,11 +7,28 @@ use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mietvorgang;
 use App\Models\Supplier;
+use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MietvorgangController extends Controller
 {
+    public function __construct(private SlackVorgangSync $slack) {}
+
+    /**
+     * Liefert den Bezeichnungs-Vorschlag für einen Vermieter, damit das
+     * Create-Formular ihn live einblenden kann, sobald ein Vermieter gewählt
+     * wird — ohne dass der Vorgang dafür schon existieren muss.
+     */
+    public function suggestBezeichnung(Request $request)
+    {
+        $request->validate(['suppliers_id' => ['required', 'exists:suppliers,id']]);
+
+        return response()->json([
+            'bezeichnung' => Mietvorgang::suggestBezeichnung((int) $request->suppliers_id),
+        ]);
+    }
+
     public function index()
     {
         $mietvorgaenge = Mietvorgang::with('supplier')
@@ -27,15 +44,27 @@ class MietvorgangController extends Controller
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
         $defaultMailingList = MailingList::where('is_default', true)->first();
+        $assignableItems = Item::whereNotNull('suppliers_id')
+            ->whereNull('mietvorgang_id')
+            ->orderBy('bezeichnung')
+            ->get();
 
-        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList'));
+        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
 
     public function store(MietvorgangRequest $request)
     {
         $data = $this->prepareData($request);
+        $data['bezeichnung'] = $request->filled('bezeichnung')
+            ? $request->bezeichnung
+            : Mietvorgang::suggestBezeichnung($data['suppliers_id']);
 
-        Mietvorgang::create($data);
+        $mietvorgang = Mietvorgang::create($data);
+
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        if ($itemIds) {
+            $this->attachItemIds($mietvorgang, $itemIds);
+        }
 
         return redirect()->route('mietvorgaenge.index')->with('success', 'Mietvorgang angelegt.');
     }
@@ -62,6 +91,10 @@ class MietvorgangController extends Controller
     {
         $data = $this->prepareData($request);
 
+        if ($request->filled('bezeichnung')) {
+            $data['bezeichnung'] = $request->bezeichnung;
+        }
+
         $mietvorgang->update($data);
 
         // Mietvorgang bleibt führend: zugeordnete Geräte übernehmen Vermieter/Zeitraum.
@@ -70,6 +103,8 @@ class MietvorgangController extends Controller
             'rent_start' => $mietvorgang->rent_start,
             'rent_end' => $mietvorgang->rent_end,
         ]);
+
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Mietvorgang aktualisiert.');
     }
@@ -88,8 +123,20 @@ class MietvorgangController extends Controller
 
     public function attachItems(Request $request, Mietvorgang $mietvorgang)
     {
-        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values();
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        $this->attachItemIds($mietvorgang, $itemIds);
 
+        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
+    }
+
+    /**
+     * Ordnet die übergebenen Geräte dem Mietvorgang zu — von attachItems()
+     * (bestehender Vorgang) und store() (direkt bei Neuanlage) genutzt.
+     *
+     * @param  array<int, int|string>  $itemIds
+     */
+    private function attachItemIds(Mietvorgang $mietvorgang, array $itemIds): void
+    {
         Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($mietvorgang) {
             $item->update([
                 'suppliers_id' => $mietvorgang->suppliers_id,
@@ -106,7 +153,7 @@ class MietvorgangController extends Controller
                 ->log("Gerät \"{$item->bezeichnung}\" dem Mietvorgang ({$mietvorgang->supplier->bezeichnung}) zugeordnet");
         });
 
-        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
+        $this->slack->syncMietvorgang($mietvorgang);
     }
 
     public function detachItem(Mietvorgang $mietvorgang, Item $item)
@@ -133,6 +180,7 @@ class MietvorgangController extends Controller
 
         $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
@@ -148,6 +196,7 @@ class MietvorgangController extends Controller
 
         $label = $mietvorgang->transportActionLabel($type);
         $this->logConfirmation($mietvorgang, $label, false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -160,6 +209,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als entgegengenommen und kontrolliert markiert.');
     }
@@ -172,6 +222,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Entgegengenommen und kontrolliert', false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -184,6 +235,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', true);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Als bereit zur Rückgabe markiert.');
     }
@@ -196,6 +248,7 @@ class MietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($mietvorgang, 'Bereit zur Rückgabe', false);
+        $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }

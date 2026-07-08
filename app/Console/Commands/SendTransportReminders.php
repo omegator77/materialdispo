@@ -9,7 +9,7 @@ use App\Models\Mietvorgang;
 use App\Models\MietvorgangReminderLog;
 use App\Models\Vermietvorgang;
 use App\Models\VermietvorgangReminderLog;
-use App\Services\SlackReminderNotifier;
+use App\Services\SlackVorgangSync;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -30,7 +30,7 @@ class SendTransportReminders extends Command
      */
     protected $description = 'Versendet Transport-Erinnerungsmails für Mietvorgänge und Vermietvorgänge (Beginn/Ende).';
 
-    public function __construct(private SlackReminderNotifier $slack)
+    public function __construct(private SlackVorgangSync $slack)
     {
         parent::__construct();
     }
@@ -119,32 +119,9 @@ class SendTransportReminders extends Command
     private function sendSlack(Mietvorgang $mietvorgang, string $type): void
     {
         $label = $type === 'start' ? 'Mietbeginn' : 'Mietende';
-        $period = $mietvorgang->rent_start->format('d.m.Y').' – '.$mietvorgang->rent_end->format('d.m.Y');
         $transportLabel = $type === 'start' ? ($mietvorgang->transport_type_start ?: '–') : ($mietvorgang->transport_type_end ?: '–');
-        $productions = $mietvorgang->relatedProductions();
 
-        $lines = [
-            ['label' => 'Vermieter', 'value' => $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'],
-            ['label' => 'Zeitraum', 'value' => $period],
-            ['label' => 'Transportart', 'value' => $transportLabel],
-            ['label' => 'Geräte', 'value' => $mietvorgang->items->pluck('bezeichnung')->implode(', ')],
-        ];
-
-        if ($productions->isNotEmpty()) {
-            $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
-        }
-
-        $buttons = [
-            ['action_id' => "confirm:mietvorgang:{$type}", 'label' => 'Als '.mb_strtolower($mietvorgang->transportActionLabel($type)).' markieren'],
-        ];
-
-        if ($type === 'start') {
-            $buttons[] = ['action_id' => 'confirm:mietvorgang:kontrolliert', 'label' => 'Entgegengenommen und kontrolliert'];
-        } else {
-            $buttons[] = ['action_id' => 'confirm:mietvorgang:bereit_zur_rueckgabe', 'label' => 'Bereit zur Rückgabe'];
-        }
-
-        $this->slack->send($mietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);
+        $this->slack->threadReply($mietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
     }
 
     private function maybeSendVermietung(Vermietvorgang $vermietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
@@ -204,31 +181,8 @@ class SendTransportReminders extends Command
     private function sendVermietungSlack(Vermietvorgang $vermietvorgang, string $type): void
     {
         $label = $type === 'start' ? 'Verleihbeginn' : 'Verleihende';
-        $period = $vermietvorgang->rent_start->format('d.m.Y').' – '.$vermietvorgang->rent_end->format('d.m.Y');
         $transportLabel = $type === 'start' ? ($vermietvorgang->transport_type_start ?: '–') : ($vermietvorgang->transport_type_end ?: '–');
-        $productions = $vermietvorgang->relatedProductions();
 
-        $lines = [
-            ['label' => 'Mieter', 'value' => $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'],
-            ['label' => 'Zeitraum', 'value' => $period],
-            ['label' => 'Transportart', 'value' => $transportLabel],
-            ['label' => 'Geräte', 'value' => $vermietvorgang->items->pluck('bezeichnung')->implode(', ')],
-        ];
-
-        if ($productions->isNotEmpty()) {
-            $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
-        }
-
-        $buttons = [
-            ['action_id' => "confirm:vermietvorgang:{$type}", 'label' => 'Als '.mb_strtolower($vermietvorgang->transportActionLabel($type)).' markieren'],
-        ];
-
-        if ($type === 'start') {
-            $buttons[] = ['action_id' => 'confirm:vermietvorgang:gerichtet', 'label' => 'Gerichtet'];
-        } else {
-            $buttons[] = ['action_id' => 'confirm:vermietvorgang:vollstaendig_zurueck', 'label' => 'Vollständig zurück'];
-        }
-
-        $this->slack->send($vermietvorgang->id, "🚚 Transport-Erinnerung: {$label}", $lines, $buttons);
+        $this->slack->threadReply($vermietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
     }
 }

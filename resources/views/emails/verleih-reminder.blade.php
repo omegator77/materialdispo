@@ -5,7 +5,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
     <div style="max-width: 600px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #111827;">Transport-Erinnerung: {{ $reminderLabel }}</h2>
+        <h2 style="color: #111827;">Transport-Erinnerung: {{ $reminderLabel }} — {{ $vermietvorgang->bezeichnung ?? $mieter?->bezeichnung }}</h2>
 
         <p>
             <strong>Mieter:</strong> {{ $mieter?->bezeichnung ?? 'Mieter gelöscht' }}

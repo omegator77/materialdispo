@@ -33,7 +33,7 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-100 border-b">
                     <tr>
-                        <th class="text-left px-4 py-3">Vermieter</th>
+                        <th class="text-left px-4 py-3">Bezeichnung</th>
                         <th class="text-left px-4 py-3">Zeitraum</th>
                         <th class="text-left px-4 py-3">Hinweg</th>
                         <th class="text-left px-4 py-3">Rückweg</th>
@@ -48,7 +48,7 @@
                             <td class="px-4 py-3 font-medium">
                                 <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
                                    class="text-gray-900 hover:text-orange-500">
-                                    {{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
+                                    {{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
                                 </a>
                             </td>
 

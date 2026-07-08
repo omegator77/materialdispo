@@ -18,6 +18,7 @@ class Vermietvorgang extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
+                'bezeichnung',
                 'mieter_id',
                 'rent_start',
                 'rent_end',
@@ -40,6 +41,11 @@ class Vermietvorgang extends Model
 
     protected function activityLabel(): string
     {
+        return $this->bezeichnung ?: $this->fallbackLabel();
+    }
+
+    private function fallbackLabel(): string
+    {
         $mieter = $this->mieter?->bezeichnung ?? 'unbekannter Mieter';
         $start = $this->rent_start ? \Carbon\Carbon::parse($this->rent_start)->format('d.m.Y') : '?';
         $end = $this->rent_end ? \Carbon\Carbon::parse($this->rent_end)->format('d.m.Y') : '?';
@@ -50,6 +56,7 @@ class Vermietvorgang extends Model
     protected $table = 'vermietvorgaenge';
 
     protected $fillable = [
+        'bezeichnung',
         'mieter_id',
         'rent_start',
         'rent_end',
@@ -67,6 +74,9 @@ class Vermietvorgang extends Model
         'gerichtet_confirmed_by',
         'vollstaendig_zurueck_confirmed_at',
         'vollstaendig_zurueck_confirmed_by',
+        'slack_channel',
+        'slack_message_ts',
+        'slack_compacted_at',
     ];
 
     protected $casts = [
@@ -77,6 +87,7 @@ class Vermietvorgang extends Model
         'transport_end_confirmed_at' => 'datetime',
         'gerichtet_confirmed_at' => 'datetime',
         'vollstaendig_zurueck_confirmed_at' => 'datetime',
+        'slack_compacted_at' => 'datetime',
     ];
 
     public function mieter()
@@ -143,14 +154,44 @@ class Vermietvorgang extends Model
         return $this->vollstaendig_zurueck_confirmed_at !== null;
     }
 
+    /**
+     * Vorgang gilt als abgeschlossen, wenn die Geräte vom Mieter zurück
+     * angenommen wurden UND als vollständig zurück bestätigt sind. Bestimmt,
+     * ob die Slack-Nachricht noch Buttons zeigt oder als final gerendert wird.
+     */
+    public function isComplete(): bool
+    {
+        return $this->isTransportConfirmed('end') && $this->isVollstaendigZurueck();
+    }
+
+    /**
+     * Zeitpunkt, ab dem der Vorgang tatsächlich abgeschlossen ist — der
+     * spätere der beiden für isComplete() nötigen Zeitstempel. Null, solange
+     * der Vorgang noch nicht abgeschlossen ist.
+     */
+    public function completedAt(): ?\Carbon\Carbon
+    {
+        if (! $this->isComplete()) {
+            return null;
+        }
+
+        return $this->transport_end_confirmed_at->greaterThan($this->vollstaendig_zurueck_confirmed_at)
+            ? $this->transport_end_confirmed_at
+            : $this->vollstaendig_zurueck_confirmed_at;
+    }
+
     public function effectiveReminderDaysBeforeStart(): int
     {
-        return $this->reminder_days_before_start ?? config('reminders.default_days_before');
+        return (int) ($this->reminder_days_before_start
+            ?? Setting::get('reminder_days_before_start')
+            ?? config('reminders.default_days_before'));
     }
 
     public function effectiveReminderDaysBeforeEnd(): int
     {
-        return $this->reminder_days_before_end ?? config('reminders.default_days_before');
+        return (int) ($this->reminder_days_before_end
+            ?? Setting::get('reminder_days_before_end')
+            ?? config('reminders.default_days_before'));
     }
 
     /**
@@ -160,11 +201,39 @@ class Vermietvorgang extends Model
      */
     public static function findOrCreateFor(int $mieterId, string $rentStart, string $rentEnd): self
     {
-        return static::firstOrCreate([
-            'mieter_id' => $mieterId,
-            'rent_start' => $rentStart,
-            'rent_end' => $rentEnd,
-        ]);
+        return static::firstOrCreate(
+            [
+                'mieter_id' => $mieterId,
+                'rent_start' => $rentStart,
+                'rent_end' => $rentEnd,
+            ],
+            ['bezeichnung' => static::suggestBezeichnung($mieterId)]
+        );
+    }
+
+    /**
+     * Vorgeschlagene Bezeichnung für einen neuen Vermietvorgang: Mieter-Name
+     * + Referenzcode (z. B. "Jens V-260108") — bleibt nach der Anlage frei
+     * editierbar, ist also nur ein Startwert.
+     */
+    public static function suggestBezeichnung(int $mieterId): string
+    {
+        $mieterName = Mieter::find($mieterId)?->bezeichnung ?? 'Unbekannt';
+
+        return "{$mieterName} ".static::nextReferenceCode();
+    }
+
+    /**
+     * Fortlaufender Referenzcode "V-JJMMNN" — NN zählt pro Kalendermonat der
+     * Anlage (created_at), nicht pro Mieter, damit der Code allein schon
+     * eindeutig ist.
+     */
+    private static function nextReferenceCode(): string
+    {
+        $now = now();
+        $seq = static::whereYear('created_at', $now->year)->whereMonth('created_at', $now->month)->count() + 1;
+
+        return 'V-'.$now->format('ym').sprintf('%02d', $seq);
     }
 
     /**

@@ -21,7 +21,11 @@ class MieterController extends Controller
 
     public function store(MieterRequest $request)
     {
-        Mieter::create($request->validated());
+        $mieter = Mieter::create($request->validated());
+
+        if ($request->wantsJson()) {
+            return response()->json($mieter);
+        }
 
         return redirect()->route('mieter.index');
     }

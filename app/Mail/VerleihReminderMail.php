@@ -28,8 +28,10 @@ class VerleihReminderMail extends Mailable
 
         $label = $this->reminderType === 'start' ? 'Verleihbeginn' : 'Verleihende';
 
+        $bezeichnung = $this->vermietvorgang->bezeichnung ?? $this->vermietvorgang->mieter->bezeichnung;
+
         return new Envelope(
-            subject: "Transport-Erinnerung: {$label} am {$subjectDate->format('d.m.Y')} — {$this->vermietvorgang->mieter->bezeichnung}",
+            subject: "Transport-Erinnerung: {$label} am {$subjectDate->format('d.m.Y')} — {$bezeichnung}",
         );
     }
 

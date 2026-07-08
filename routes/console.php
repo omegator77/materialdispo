@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote')->hourly();
 
 Schedule::command('reminders:send-transport')->everyMinute()->withoutOverlapping();
+Schedule::command('slack:compact-completed')->hourly()->withoutOverlapping();

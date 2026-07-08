@@ -23,7 +23,7 @@
     <a href="{{ route('mietvorgaenge.show', $model) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
         <div class="font-medium text-gray-900 flex items-center gap-2">
             <span class="inline-block bg-amber-50 text-amber-700 text-xs px-2 py-0.5 rounded-full shrink-0">Miete</span>
-            {{ $model->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
+            {{ $model->bezeichnung ?? $model->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
         </div>
         <div class="text-sm text-gray-500">
             @if($mode === 'running')
@@ -40,7 +40,7 @@
     <a href="{{ route('vermietvorgaenge.show', $model) }}" class="block border-b last:border-b-0 py-3 hover:bg-gray-50">
         <div class="font-medium text-gray-900 flex items-center gap-2">
             <span class="inline-block bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded-full shrink-0">Verleih</span>
-            {{ $model->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
+            {{ $model->bezeichnung ?? $model->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
         </div>
         <div class="text-sm text-gray-500">
             @if($mode === 'running')

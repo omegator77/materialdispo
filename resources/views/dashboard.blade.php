@@ -53,6 +53,7 @@
             </div>
 
             {{-- Kurzanleitung --}}
+            {{--
             <details class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
                     📖 Kurzanleitung: Vom Anlegen bis zum Abfahren
@@ -85,6 +86,7 @@
                     </p>
                 </div>
             </details>
+            --}}
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

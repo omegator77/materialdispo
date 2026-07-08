@@ -8,12 +8,27 @@ use App\Models\MailingList;
 use App\Models\Mieter;
 use App\Models\Vermietvorgang;
 use App\Services\ItemAvailabilityService;
+use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class VermietvorgangController extends Controller
 {
-    public function __construct(private ItemAvailabilityService $availability) {}
+    public function __construct(private ItemAvailabilityService $availability, private SlackVorgangSync $slack) {}
+
+    /**
+     * Liefert den Bezeichnungs-Vorschlag für einen Mieter, damit das
+     * Create-Formular ihn live einblenden kann, sobald ein Mieter gewählt
+     * wird — ohne dass der Vorgang dafür schon existieren muss.
+     */
+    public function suggestBezeichnung(Request $request)
+    {
+        $request->validate(['mieter_id' => ['required', 'exists:mieter,id']]);
+
+        return response()->json([
+            'bezeichnung' => Vermietvorgang::suggestBezeichnung((int) $request->mieter_id),
+        ]);
+    }
 
     public function index()
     {
@@ -31,14 +46,29 @@ class VermietvorgangController extends Controller
         $mailingLists = MailingList::orderBy('name')->get();
         $defaultMailingList = MailingList::where('is_default', true)->first();
 
-        return view('vermietvorgaenge.create', compact('mieter', 'mailingLists', 'defaultMailingList'));
+        // Ohne feststehenden Verleihzeitraum kann hier noch nicht auf
+        // Verfügbarkeit gefiltert werden — das passiert beim Zuordnen selbst
+        // (attachItemIds), nicht schon bei der Auswahl-Liste.
+        $assignableItems = Item::orderBy('bezeichnung')->get();
+
+        return view('vermietvorgaenge.create', compact('mieter', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
 
     public function store(VermietvorgangRequest $request)
     {
         $data = $this->prepareData($request);
+        $data['bezeichnung'] = $request->filled('bezeichnung')
+            ? $request->bezeichnung
+            : Vermietvorgang::suggestBezeichnung($data['mieter_id']);
 
-        Vermietvorgang::create($data);
+        $vermietvorgang = Vermietvorgang::create($data);
+
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        if ($itemIds) {
+            [, $message] = $this->attachItemIds($vermietvorgang, $itemIds);
+
+            return redirect()->route('vermietvorgaenge.index')->with('success', 'Vermietvorgang angelegt. '.$message);
+        }
 
         return redirect()->route('vermietvorgaenge.index')->with('success', 'Vermietvorgang angelegt.');
     }
@@ -77,6 +107,10 @@ class VermietvorgangController extends Controller
     {
         $data = $this->prepareData($request);
 
+        if ($request->filled('bezeichnung')) {
+            $data['bezeichnung'] = $request->bezeichnung;
+        }
+
         $vermietvorgang->update($data);
 
         // Vermietvorgang bleibt führend: zugeordnete Geräte übernehmen Mieter/Zeitraum.
@@ -85,6 +119,8 @@ class VermietvorgangController extends Controller
             'verleih_start' => $vermietvorgang->rent_start,
             'verleih_end' => $vermietvorgang->rent_end,
         ]);
+
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with('success', 'Vermietvorgang aktualisiert.');
     }
@@ -103,8 +139,25 @@ class VermietvorgangController extends Controller
 
     public function attachItems(Request $request, Vermietvorgang $vermietvorgang)
     {
-        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values();
+        $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
+        [$added, $message] = $this->attachItemIds($vermietvorgang, $itemIds);
 
+        $messageType = $added ? 'success' : 'error';
+
+        return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with($messageType, $message);
+    }
+
+    /**
+     * Ordnet die übergebenen Geräte dem Vermietvorgang zu (unter
+     * Berücksichtigung der Verfügbarkeit im Verleihzeitraum) — von
+     * attachItems() (bestehender Vorgang) und store() (direkt bei Neuanlage)
+     * genutzt. Gibt [Anzahl zugeordneter Geräte, Zusammenfassungstext] zurück.
+     *
+     * @param  array<int, int|string>  $itemIds
+     * @return array{0: int, 1: string}
+     */
+    private function attachItemIds(Vermietvorgang $vermietvorgang, array $itemIds): array
+    {
         $added = [];
         $skipped = [];
 
@@ -146,10 +199,11 @@ class VermietvorgangController extends Controller
             $messageParts[] = 'Übersprungen: '.implode(', ', $skipped);
         }
 
-        $messageType = count($added) ? 'success' : 'error';
-        $message = $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.';
+        if (count($added)) {
+            $this->slack->syncVermietvorgang($vermietvorgang);
+        }
 
-        return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with($messageType, $message);
+        return [count($added), $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.'];
     }
 
     public function detachItem(Vermietvorgang $vermietvorgang, Item $item)
@@ -176,6 +230,7 @@ class VermietvorgangController extends Controller
 
         $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als '.mb_strtolower($label).' markiert.');
     }
@@ -191,6 +246,7 @@ class VermietvorgangController extends Controller
 
         $label = $vermietvorgang->transportActionLabel($type);
         $this->logConfirmation($vermietvorgang, $label, false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -203,6 +259,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Gerichtet', true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als gerichtet markiert.');
     }
@@ -215,6 +272,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Gerichtet', false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
@@ -227,6 +285,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Vollständig zurück', true);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Als vollständig zurück markiert.');
     }
@@ -239,6 +298,7 @@ class VermietvorgangController extends Controller
         ]);
 
         $this->logConfirmation($vermietvorgang, 'Vollständig zurück', false);
+        $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->back()->with('success', 'Wieder geöffnet.');
     }
