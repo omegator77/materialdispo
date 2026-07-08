@@ -9,6 +9,7 @@ use App\Models\Production;
 use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
 use App\Services\ProductionImportService;
+use App\Services\SlackVorgangSync;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class ProductionController extends Controller
     public function __construct(
         private ItemAvailabilityService $availability,
         private ProductionImportService $imports,
+        private SlackVorgangSync $slack,
     ) {}
 
     public function index(Request $request)
@@ -75,6 +77,8 @@ class ProductionController extends Controller
             'booking_end' => $bookingEnd,
             'packlist_notes' => $request->packlist_notes,
         ]);
+
+        $this->slack->syncProduction($production);
 
         if ($request->filled('from_production_id')) {
             $source = Production::find($request->from_production_id);
@@ -140,6 +144,8 @@ class ProductionController extends Controller
             'booking_end' => $bookingEnd,
             'packlist_notes' => $request->packlist_notes,
         ]);
+
+        $this->slack->syncProduction($production);
 
         return redirect('/productions')->with('success', 'Produktion erfolgreich aktualisiert.');
     }
@@ -215,6 +221,8 @@ class ProductionController extends Controller
                 }
             });
 
+            $this->slack->syncProduction($production);
+
             $messageParts = [];
             if (count($added)) {
                 $messageParts[] = count($added).' Gerät(e) hinzugefügt: '.implode(', ', $added);
@@ -245,6 +253,8 @@ class ProductionController extends Controller
         $production = Production::findOrFail($id);
         $item = Item::find($itemId);
         $production->items()->detach($itemId);
+
+        $this->slack->syncProduction($production);
 
         if ($item) {
             activity('item')

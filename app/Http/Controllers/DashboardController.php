@@ -174,11 +174,13 @@ class DashboardController extends Controller
                     'badge' => 'Miete',
                     'badgeClass' => 'bg-amber-50 text-amber-700',
                     'showRoute' => route('mietvorgaenge.show', $mv),
+                    'periodStart' => $mv->rent_start,
+                    'periodEnd' => $mv->rent_end,
                     'checks' => $checks,
                     'doneCount' => collect($checks)->where('done', true)->count(),
                 ];
             })
-            ->filter(fn (array $e) => $e['doneCount'] < 4);
+            ->filter(fn (array $e) => $e['doneCount'] < count($e['checks']));
 
         $vermietvorgaenge = Vermietvorgang::with(['mieter', 'items'])
             ->whereHas('items')
@@ -221,14 +223,45 @@ class DashboardController extends Controller
                     'badge' => 'Verleih',
                     'badgeClass' => 'bg-purple-50 text-purple-700',
                     'showRoute' => route('vermietvorgaenge.show', $vv),
+                    'periodStart' => $vv->rent_start,
+                    'periodEnd' => $vv->rent_end,
                     'checks' => $checks,
                     'doneCount' => collect($checks)->where('done', true)->count(),
                 ];
             })
-            ->filter(fn (array $e) => $e['doneCount'] < 4);
+            ->filter(fn (array $e) => $e['doneCount'] < count($e['checks']));
 
-        return $mietvorgaenge->concat($vermietvorgaenge)
-            ->sortBy(fn (array $e) => $e['model']->rent_start)
+        $productions = Production::with(array_merge($this->packStatusRelations(), ['vbProtokoll']))
+            ->get()
+            ->filter(fn (Production $p) => $p->packlistEntries()->isNotEmpty())
+            ->map(function (Production $p) {
+                $checks = [
+                    [
+                        'label' => 'Packvorgang abgeschlossen',
+                        'done' => $p->packvorgang_confirmed_at !== null,
+                        'confirmRoute' => route('packvorgang.complete', $p),
+                        'reopenRoute' => route('packvorgang.reopen', $p),
+                        'reopenMethod' => 'POST',
+                    ],
+                ];
+
+                return [
+                    'kind' => 'production',
+                    'model' => $p,
+                    'title' => $p->bezeichnung,
+                    'badge' => 'Produktion',
+                    'badgeClass' => 'bg-blue-50 text-blue-700',
+                    'showRoute' => route('productions.show', $p),
+                    'periodStart' => $p->booking_start,
+                    'periodEnd' => $p->booking_end,
+                    'checks' => $checks,
+                    'doneCount' => collect($checks)->where('done', true)->count(),
+                ];
+            })
+            ->filter(fn (array $e) => $e['doneCount'] < count($e['checks']));
+
+        return $mietvorgaenge->concat($vermietvorgaenge)->concat($productions)
+            ->sortBy(fn (array $e) => $e['periodStart'])
             ->take($limit)
             ->values();
     }

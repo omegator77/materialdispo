@@ -32,11 +32,23 @@
 
                 <div>
                     <label for="slack_reminder_channel" class="block text-sm font-medium text-gray-700">
-                        Ziel-Kanal für Vorgangs-Nachrichten
+                        Ziel-Kanal für Miet-/Vermietvorgangs-Nachrichten
                     </label>
                     <input type="text" name="slack_reminder_channel" id="slack_reminder_channel"
                            value="{{ old('slack_reminder_channel', $settings['slack_reminder_channel']) }}"
                            class="form-control w-full" placeholder="z. B. #material-dispo">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Leer lassen, um den in der Server-Konfiguration hinterlegten Standardkanal zu verwenden.
+                    </p>
+                </div>
+
+                <div class="mt-4">
+                    <label for="slack_production_channel" class="block text-sm font-medium text-gray-700">
+                        Ziel-Kanal für Produktions-Nachrichten
+                    </label>
+                    <input type="text" name="slack_production_channel" id="slack_production_channel"
+                           value="{{ old('slack_production_channel', $settings['slack_production_channel']) }}"
+                           class="form-control w-full" placeholder="z. B. #produktionen">
                     <p class="text-xs text-gray-500 mt-1">
                         Leer lassen, um den in der Server-Konfiguration hinterlegten Standardkanal zu verwenden.
                     </p>

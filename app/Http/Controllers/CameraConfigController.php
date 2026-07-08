@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Production;
 use App\Services\CameraConfigService;
 use App\Services\ItemAvailabilityService;
+use App\Services\SlackVorgangSync;
 use Illuminate\Http\Request;
 
 class CameraConfigController extends Controller
@@ -15,6 +16,7 @@ class CameraConfigController extends Controller
     public function __construct(
         private CameraConfigService $cameraConfigs,
         private ItemAvailabilityService $availability,
+        private SlackVorgangSync $slack,
     ) {}
 
     public function create(Production $production, Request $request)
@@ -58,6 +60,8 @@ class CameraConfigController extends Controller
             return redirect()->back()->withInput()->with('error', $result['error']);
         }
 
+        $this->slack->syncProduction($production);
+
         return redirect()
             ->route('productions.show', $production)
             ->with('success', 'Kamera-Konfiguration gespeichert.');
@@ -89,6 +93,8 @@ class CameraConfigController extends Controller
             return redirect()->back()->withInput()->with('error', $result['error']);
         }
 
+        $this->slack->syncProduction($config->production);
+
         return redirect()
             ->route('productions.show', $config->production_id)
             ->with('success', 'Kamera-Konfiguration aktualisiert.');
@@ -96,7 +102,11 @@ class CameraConfigController extends Controller
 
     public function destroy(CameraConfig $config)
     {
+        $production = $config->production;
+
         $config->delete();
+
+        $this->slack->syncProduction($production);
 
         return redirect()
             ->back()

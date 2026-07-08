@@ -35,11 +35,15 @@ class Production extends Model
         'packlist_notes',
         'packvorgang_confirmed_at',
         'packvorgang_confirmed_by',
+        'slack_channel',
+        'slack_message_ts',
+        'slack_compacted_at',
         // Weitere Spalten, falls benötigt
     ];
 
     protected $casts = [
         'packvorgang_confirmed_at' => 'datetime',
+        'slack_compacted_at' => 'datetime',
     ];
 
     public function items()
@@ -73,6 +77,39 @@ class Production extends Model
     public function packedItemIds(): \Illuminate\Support\Collection
     {
         return $this->itemPacks->pluck('item_id');
+    }
+
+    public function isComplete(): bool
+    {
+        return $this->packvorgang_confirmed_at !== null;
+    }
+
+    /**
+     * Zeitpunkt, ab dem der Packvorgang abgeschlossen ist — Basis für die
+     * 48h-Kompaktierung der Slack-Nachricht, analog zu Mietvorgang::completedAt().
+     */
+    public function completedAt(): ?\Carbon\Carbon
+    {
+        return $this->packvorgang_confirmed_at;
+    }
+
+    /**
+     * Zweistufiger Zuordnungsstatus für die Slack-Ampel: ohne VB-Protokoll
+     * gibt es noch nichts abzugleichen (grau); mit VB-Protokoll entscheidet
+     * VbProtokoll::abgleich(), ob alle Anforderungen durch zugeordnete Geräte
+     * gedeckt sind (rot = offene Positionen, grün = vollständig).
+     */
+    public function assignmentStatus(): array
+    {
+        if (! $this->vbProtokoll) {
+            return ['level' => 'grau', 'label' => 'Kein VB-Protokoll angelegt'];
+        }
+
+        $offen = $this->vbProtokoll->abgleich()->where('erfuellt', false)->count();
+
+        return $offen > 0
+            ? ['level' => 'rot', 'label' => "Zuordnung unvollständig ({$offen} offen)"]
+            : ['level' => 'gruen', 'label' => 'Zuordnung vollständig'];
     }
 
     /**

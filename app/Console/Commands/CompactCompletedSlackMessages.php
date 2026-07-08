@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Mietvorgang;
+use App\Models\Production;
 use App\Models\Vermietvorgang;
 use App\Services\SlackVorgangSync;
 use Illuminate\Console\Command;
@@ -21,7 +22,7 @@ class CompactCompletedSlackMessages extends Command
      *
      * @var string
      */
-    protected $description = 'Ersetzt Slack-Nachrichten abgeschlossener Miet-/Vermietvorgänge 48h nach Abschluss durch eine einzeilige Kurzfassung.';
+    protected $description = 'Ersetzt Slack-Nachrichten abgeschlossener Miet-/Vermietvorgänge und Produktionen 48h nach Abschluss durch eine einzeilige Kurzfassung.';
 
     public function __construct(private SlackVorgangSync $slack)
     {
@@ -41,6 +42,11 @@ class CompactCompletedSlackMessages extends Command
             ->with('mieter')
             ->get()
             ->each(fn (Vermietvorgang $vermietvorgang) => $this->slack->compactIfDue($vermietvorgang));
+
+        Production::whereNotNull('slack_message_ts')
+            ->whereNull('slack_compacted_at')
+            ->get()
+            ->each(fn (Production $production) => $this->slack->compactIfDue($production));
 
         return self::SUCCESS;
     }
