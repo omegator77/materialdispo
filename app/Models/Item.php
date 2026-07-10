@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasReadableActivityDescription;
-use App\Services\SlackVorgangSync;
+use App\Services\ItemAssignmentService;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -17,7 +17,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['bezeichnung', 'nummer', 'units_id', 'suppliers_id', 'rent_start', 'rent_end', 'mieter_id', 'verleih_start', 'verleih_end'])
+            ->logOnly(['bezeichnung', 'nummer', 'units_id', 'suppliers_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('item');
@@ -35,24 +35,6 @@ class Item extends Model
         'units_id',
         'geraetetyp_id',
         'suppliers_id',
-        'rent_start',
-        'rent_end',
-        'mietvorgang_id',
-        'mietvorgang_manual',
-        'mieter_id',
-        'verleih_start',
-        'verleih_end',
-        'vermietvorgang_id',
-        'vermietvorgang_manual',
-    ];
-
-    protected $casts = [
-        'rent_start' => 'date',
-        'rent_end' => 'date',
-        'mietvorgang_manual' => 'boolean',
-        'verleih_start' => 'date',
-        'verleih_end' => 'date',
-        'vermietvorgang_manual' => 'boolean',
     ];
 
     public function unit()
@@ -70,149 +52,51 @@ class Item extends Model
         return $this->belongsTo(Supplier::class, 'suppliers_id');
     }
 
-    public function mietvorgang()
+    public function mietvorgaenge()
     {
-        return $this->belongsTo(Mietvorgang::class);
+        return $this->belongsToMany(Mietvorgang::class, 'item_mietvorgang')
+            ->withPivot('manual')
+            ->withTimestamps();
     }
 
-    public function mieter()
+    public function vermietvorgaenge()
     {
-        return $this->belongsTo(Mieter::class, 'mieter_id');
-    }
-
-    public function vermietvorgang()
-    {
-        return $this->belongsTo(Vermietvorgang::class);
-    }
-
-    /**
-     * Ordnet das Gerät automatisch einem Mietvorgang zu (gleicher Vermieter +
-     * Zeitraum teilen sich einen Vorgang). Greift nicht, wenn das Gerät manuell
-     * einem Mietvorgang zugeordnet wurde (sticky) — dort führt der Mietvorgang.
-     */
-    public function syncMietvorgang(): void
-    {
-        if ($this->mietvorgang_manual) {
-            return;
-        }
-
-        if ($this->suppliers_id && $this->rent_start && $this->rent_end) {
-            $mietvorgang = Mietvorgang::findOrCreateFor(
-                $this->suppliers_id,
-                $this->rent_start->format('Y-m-d'),
-                $this->rent_end->format('Y-m-d')
-            );
-
-            $this->update(['mietvorgang_id' => $mietvorgang->id]);
-            app(SlackVorgangSync::class)->syncMietvorgang($mietvorgang);
-        } elseif ($this->mietvorgang_id) {
-            $oldMietvorgang = $this->mietvorgang;
-            $this->update(['mietvorgang_id' => null]);
-
-            if ($oldMietvorgang) {
-                app(SlackVorgangSync::class)->syncMietvorgang($oldMietvorgang);
-            }
-        }
+        return $this->belongsToMany(Vermietvorgang::class, 'item_vermietvorgang')
+            ->withPivot('manual')
+            ->withTimestamps();
     }
 
     /**
-     * Hebt eine manuelle Mietvorgang-Zuordnung auf und lässt das Gerät wieder
-     * in die automatische Vermieter+Zeitraum-Gruppierung zurückfallen.
+     * Findet-oder-legt-an den passenden Mietvorgang für (Vermieter, Zeitraum)
+     * und fügt eine ZUSÄTZLICHE Zuordnung hinzu (ersetzt keine bestehende) —
+     * genutzt von der Geräte-Bearbeitungsseite als Schnellzuordnung. Läuft
+     * über dieselbe Konfliktprüfung wie der Mietvorgang-eigene Picker.
+     *
+     * @return array{added: bool, alreadyAttached: bool, reason: ?string}
      */
-    public function resetMietvorgangAssignment(): void
+    public function syncMietvorgang(string $rentStart, string $rentEnd): array
     {
-        $this->update(['mietvorgang_id' => null, 'mietvorgang_manual' => false]);
-        $this->syncMietvorgang();
+        if (! $this->suppliers_id) {
+            return ['added' => false, 'alreadyAttached' => false, 'reason' => 'Kein Vermieter hinterlegt.'];
+        }
+
+        $mietvorgang = Mietvorgang::findOrCreateFor($this->suppliers_id, $rentStart, $rentEnd);
+
+        return app(ItemAssignmentService::class)->attachToMietvorgang($this, $mietvorgang, manual: false);
     }
 
     /**
-     * Entfernt das Gerät vollständig aus der Mietverwaltung (Vermieter,
-     * Mietbeginn/-ende und Mietvorgang-Zuordnung werden geleert). Anders als
-     * resetMietvorgangAssignment() fällt das Gerät danach NICHT automatisch in
-     * eine Gruppe zurück, da es keine eigenen Mietdaten mehr hat — nötig, damit
-     * "Entfernen" auf der Mietvorgang-Seite tatsächlich wirkt und ein Mietvorgang
-     * ohne Geräte gelöscht werden kann.
+     * Findet-oder-legt-an den passenden Vermietvorgang für (Mieter, Zeitraum)
+     * und fügt eine ZUSÄTZLICHE Zuordnung hinzu (ersetzt keine bestehende) —
+     * genutzt von der Geräte-Bearbeitungsseite als Schnellzuordnung.
+     *
+     * @return array{added: bool, alreadyAttached: bool, reason: ?string}
      */
-    public function removeFromMietvorgang(): void
+    public function syncVermietvorgang(int $mieterId, string $verleihStart, string $verleihEnd): array
     {
-        $oldMietvorgang = $this->mietvorgang;
+        $vermietvorgang = Vermietvorgang::findOrCreateFor($mieterId, $verleihStart, $verleihEnd);
 
-        $this->update([
-            'suppliers_id' => null,
-            'rent_start' => null,
-            'rent_end' => null,
-            'mietvorgang_id' => null,
-            'mietvorgang_manual' => false,
-        ]);
-
-        if ($oldMietvorgang) {
-            app(SlackVorgangSync::class)->syncMietvorgang($oldMietvorgang);
-        }
-    }
-
-    /**
-     * Ordnet das Gerät automatisch einem Vermietvorgang zu (gleicher Mieter +
-     * Zeitraum teilen sich einen Vorgang). Greift nicht, wenn das Gerät manuell
-     * einem Vermietvorgang zugeordnet wurde (sticky) — dort führt der Vermietvorgang.
-     */
-    public function syncVermietvorgang(): void
-    {
-        if ($this->vermietvorgang_manual) {
-            return;
-        }
-
-        if ($this->mieter_id && $this->verleih_start && $this->verleih_end) {
-            $vermietvorgang = Vermietvorgang::findOrCreateFor(
-                $this->mieter_id,
-                $this->verleih_start->format('Y-m-d'),
-                $this->verleih_end->format('Y-m-d')
-            );
-
-            $this->update(['vermietvorgang_id' => $vermietvorgang->id]);
-            app(SlackVorgangSync::class)->syncVermietvorgang($vermietvorgang);
-        } elseif ($this->vermietvorgang_id) {
-            $oldVermietvorgang = $this->vermietvorgang;
-            $this->update(['vermietvorgang_id' => null]);
-
-            if ($oldVermietvorgang) {
-                app(SlackVorgangSync::class)->syncVermietvorgang($oldVermietvorgang);
-            }
-        }
-    }
-
-    /**
-     * Hebt eine manuelle Vermietvorgang-Zuordnung auf und lässt das Gerät wieder
-     * in die automatische Mieter+Zeitraum-Gruppierung zurückfallen.
-     */
-    public function resetVermietvorgangAssignment(): void
-    {
-        $this->update(['vermietvorgang_id' => null, 'vermietvorgang_manual' => false]);
-        $this->syncVermietvorgang();
-    }
-
-    /**
-     * Entfernt das Gerät vollständig aus der Vermietverwaltung (Mieter,
-     * Verleih-Beginn/-Ende und Vermietvorgang-Zuordnung werden geleert). Anders
-     * als resetVermietvorgangAssignment() fällt das Gerät danach NICHT
-     * automatisch in eine Gruppe zurück, da es keine eigenen Verleihdaten mehr
-     * hat — nötig, damit "Entfernen" auf der Vermietvorgang-Seite tatsächlich
-     * wirkt und ein Vermietvorgang ohne Geräte gelöscht werden kann.
-     */
-    public function removeFromVermietvorgang(): void
-    {
-        $oldVermietvorgang = $this->vermietvorgang;
-
-        $this->update([
-            'mieter_id' => null,
-            'verleih_start' => null,
-            'verleih_end' => null,
-            'vermietvorgang_id' => null,
-            'vermietvorgang_manual' => false,
-        ]);
-
-        if ($oldVermietvorgang) {
-            app(SlackVorgangSync::class)->syncVermietvorgang($oldVermietvorgang);
-        }
+        return app(ItemAssignmentService::class)->attachToVermietvorgang($this, $vermietvorgang, manual: false);
     }
 
     public function productions()

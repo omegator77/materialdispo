@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\CameraConfig;
 use App\Models\Item;
+use App\Models\Mietvorgang;
 use App\Models\Production;
+use App\Models\Vermietvorgang;
 
 class ItemAvailabilityService
 {
@@ -18,33 +20,55 @@ class ItemAvailabilityService
      */
     public function check(Item $item, Production $production, ?CameraConfig $ignoreConfig = null): array
     {
-        // 1. Mietfenster: Mietzeitraum muss Produktionszeitraum abdecken
+        // 1. Mietfenster: mindestens einer der Mietvorgänge des Geräts muss
+        //    den Produktionszeitraum vollständig abdecken. Bei mehreren
+        //    Zuordnungen, von denen keine passt, ist "zu spät"/"zu früh" eine
+        //    Annäherung — echte Mehrfachzuordnungen sind mit dieser Prüfung
+        //    noch nicht ausführlich getestet (aktuell 0 Mietvorgänge im System).
         if ($item->suppliers_id) {
-            if ($item->rent_start && $item->rent_start > $production->booking_start) {
-                return [
-                    'available' => false,
-                    'reason' => 'Mietbeginn zu spät',
-                ];
-            }
+            $mietvorgaenge = $item->mietvorgaenge;
 
-            if ($item->rent_end && $item->rent_end < $production->booking_end) {
-                return [
-                    'available' => false,
-                    'reason' => 'Mietende zu früh',
-                ];
+            if ($mietvorgaenge->isNotEmpty()) {
+                // Wichtig: beide Seiten vor dem Vergleich auf reine 'Y-m-d'-Strings
+                // normalisieren. $mv->rent_start ist ein Carbon-Objekt (cast 'date'),
+                // $production->booking_start eine reine DB-Zeichenkette (Production
+                // castet booking_start/booking_end nicht). Ein direkter Vergleich
+                // Carbon <=> String vergleicht über __toString() lexikographisch
+                // ("2026-07-20 00:00:00" vs. "2026-07-20") — bei exakt gleichem
+                // Datum verliert der Carbon-Wert durch den Zeit-Suffix, obwohl die
+                // Daten identisch sind. Nur an der exakten Grenze sichtbar, deshalb
+                // lange unbemerkt.
+                $covered = $mietvorgaenge->contains(
+                    fn (Mietvorgang $mv) => $mv->rent_start->format('Y-m-d') <= $production->booking_start
+                        && $mv->rent_end->format('Y-m-d') >= $production->booking_end
+                );
+
+                if (! $covered) {
+                    $tooLate = $mietvorgaenge->contains(fn (Mietvorgang $mv) => $mv->rent_start->format('Y-m-d') > $production->booking_start);
+
+                    return [
+                        'available' => false,
+                        'reason' => $tooLate ? 'Mietbeginn zu spät' : 'Mietende zu früh',
+                    ];
+                }
             }
         }
 
         // 2. Verleihfenster: Gerät ist während eines Verleihzeitraums (Vermietung an
         //    einen Kunden) für Produktionen nicht verfügbar, sofern sich der
-        //    Zeitraum mit der Produktion überschneidet.
-        if ($item->mieter_id && $item->verleih_start && $item->verleih_end) {
-            if ($item->verleih_start <= $production->booking_end && $item->verleih_end >= $production->booking_start) {
-                return [
-                    'available' => false,
-                    'reason' => 'Vermietet an '.($item->mieter->bezeichnung ?? 'Mieter gelöscht'),
-                ];
-            }
+        //    Zeitraum mit der Produktion überschneidet. Bewusst ohne
+        //    isComplete()-Filter — ein abgeschlossener Vermietvorgang blockiert
+        //    hier weiterhin bei Datumsüberlappung, exakt wie vor dem Umbau.
+        $verleihConflict = $item->vermietvorgaenge()
+            ->where('rent_start', '<=', $production->booking_end)
+            ->where('rent_end', '>=', $production->booking_start)
+            ->first();
+
+        if ($verleihConflict) {
+            return [
+                'available' => false,
+                'reason' => 'Vermietet an '.($verleihConflict->mieter->bezeichnung ?? 'Mieter gelöscht'),
+            ];
         }
 
         // 3. Produktionskonflikt: Gerät bereits in überlappender Produktion gebucht
@@ -91,16 +115,104 @@ class ItemAvailabilityService
     }
 
     /**
-     * Prüft ob ein Gerät für einen Verleihzeitraum (Vermietung an einen Kunden)
-     * verfügbar ist — d.h. nicht bereits während dieses Zeitraums einer
-     * Produktion oder Kamerakonfiguration zugeordnet ist.
+     * Prüft ob ein Gerät einem Mietvorgang (Wareneingang) zugeordnet werden
+     * darf: weder anderweitig geclaimt (siehe claimConflict()) noch in einer
+     * überlappenden Produktion/Kamerakonfiguration verplant.
      * Gibt ['available' => bool, 'reason' => string|null] zurück.
      */
-    public function checkForVerleih(Item $item, string $verleihStart, string $verleihEnd): array
+    public function checkForMiete(Item $item, Mietvorgang $mietvorgang): array
+    {
+        $periodStart = $mietvorgang->rent_start->format('Y-m-d');
+        $periodEnd = $mietvorgang->rent_end->format('Y-m-d');
+
+        $claim = $this->claimConflict($item, $periodStart, $periodEnd, excludeMietvorgangId: $mietvorgang->id);
+
+        if ($claim) {
+            return ['available' => false, 'reason' => $claim];
+        }
+
+        return $this->productionConflict($item, $periodStart, $periodEnd);
+    }
+
+    /**
+     * Prüft ob ein Gerät einem Vermietvorgang (Warenausgang) zugeordnet
+     * werden darf: weder anderweitig geclaimt (siehe claimConflict()) noch
+     * in einer überlappenden Produktion/Kamerakonfiguration verplant.
+     * Gibt ['available' => bool, 'reason' => string|null] zurück.
+     */
+    public function checkForVerleih(Item $item, Vermietvorgang $vermietvorgang): array
+    {
+        $periodStart = $vermietvorgang->rent_start->format('Y-m-d');
+        $periodEnd = $vermietvorgang->rent_end->format('Y-m-d');
+
+        $claim = $this->claimConflict($item, $periodStart, $periodEnd, excludeVermietvorgangId: $vermietvorgang->id);
+
+        if ($claim) {
+            return ['available' => false, 'reason' => $claim];
+        }
+
+        return $this->productionConflict($item, $periodStart, $periodEnd);
+    }
+
+    /**
+     * Ein Gerät kann über item_mietvorgang/item_vermietvorgang gleichzeitig an
+     * mehreren, zeitlich getrennten Vorgängen hängen — das ist gewünscht
+     * (z. B. drei nicht überlappende Vermietungen desselben Geräts im Voraus).
+     * Blockiert wird nur, wenn sich der angefragte Zeitraum tatsächlich mit
+     * dem Zeitraum eines ANDEREN Vorgangs überschneidet UND dieser noch nicht
+     * abgeschlossen ist (isComplete()) — ist der andere Vorgang bereits
+     * abgeschlossen, gilt das Gerät als zurück/frei, unabhängig vom Datum.
+     */
+    private function claimConflict(Item $item, string $periodStart, string $periodEnd, ?int $excludeMietvorgangId = null, ?int $excludeVermietvorgangId = null): ?string
+    {
+        $conflictingMiete = $this->overlappingVorgaenge($item->mietvorgaenge(), $periodStart, $periodEnd, $excludeMietvorgangId, 'mietvorgaenge')
+            ->first(fn (Mietvorgang $mv) => ! $mv->isComplete());
+
+        if ($conflictingMiete) {
+            return 'Bereits in überlappendem Mietvorgang: '.($conflictingMiete->bezeichnung ?? $conflictingMiete->supplier?->bezeichnung ?? 'unbekannt');
+        }
+
+        $conflictingVermiete = $this->overlappingVorgaenge($item->vermietvorgaenge(), $periodStart, $periodEnd, $excludeVermietvorgangId, 'vermietvorgaenge')
+            ->first(fn (Vermietvorgang $vv) => ! $vv->isComplete());
+
+        if ($conflictingVermiete) {
+            return 'Bereits in überlappendem Vermietvorgang: '.($conflictingVermiete->bezeichnung ?? $conflictingVermiete->mieter?->bezeichnung ?? 'unbekannt');
+        }
+
+        return null;
+    }
+
+    /**
+     * Alle Zuordnungen des Items über die angegebene Pivot-Relation, deren
+     * VORGANG-eigener Zeitraum sich mit [$periodStart, $periodEnd]
+     * überschneidet — optional eine ID ausgeschlossen (der aktuell geprüfte
+     * Vorgang selbst darf sich nie mit sich selbst überschneiden). Reiner
+     * Overlap-Scan ohne isComplete()-Filterung, die Aufrufer filtern bei
+     * Bedarf selbst (claimConflict() blendet Abgeschlossene aus, check()
+     * Fall 2 bewusst nicht).
+     *
+     * @param  \Illuminate\Database\Eloquent\Relations\BelongsToMany  $relation
+     */
+    private function overlappingVorgaenge($relation, string $periodStart, string $periodEnd, ?int $excludeId, string $relatedTable): \Illuminate\Support\Collection
+    {
+        return $relation
+            ->when($excludeId, fn ($q) => $q->where("{$relatedTable}.id", '!=', $excludeId))
+            ->where('rent_start', '<=', $periodEnd)
+            ->where('rent_end', '>=', $periodStart)
+            ->get();
+    }
+
+    /**
+     * Prüft ob ein Gerät während eines beliebigen Zeitraums frei von
+     * Produktions-/Kamerakonfigurations-Konflikten ist. Zeitraum-agnostischer
+     * Baustein für checkForMiete()/checkForVerleih().
+     * Gibt ['available' => bool, 'reason' => string|null] zurück.
+     */
+    private function productionConflict(Item $item, string $periodStart, string $periodEnd): array
     {
         $conflict = $item->productions()
-            ->where('booking_start', '<=', $verleihEnd)
-            ->where('booking_end', '>=', $verleihStart)
+            ->where('booking_start', '<=', $periodEnd)
+            ->where('booking_end', '>=', $periodStart)
             ->first();
 
         if ($conflict) {
@@ -111,9 +223,9 @@ class ItemAvailabilityService
         }
 
         $configConflict = CameraConfig::query()
-            ->whereHas('production', function ($q) use ($verleihStart, $verleihEnd) {
-                $q->where('booking_start', '<=', $verleihEnd)
-                    ->where('booking_end', '>=', $verleihStart);
+            ->whereHas('production', function ($q) use ($periodStart, $periodEnd) {
+                $q->where('booking_start', '<=', $periodEnd)
+                    ->where('booking_end', '>=', $periodStart);
             });
 
         $this->applyItemInConfigFilter($configConflict, $item->id);
@@ -181,6 +293,7 @@ class ItemAvailabilityService
         }
 
         $items = $itemsQuery
+            ->with(['mietvorgaenge', 'vermietvorgaenge'])
             ->orderBy('bezeichnung')
             ->get()
             ->map(function ($item) use ($production) {

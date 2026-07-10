@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Item;
+use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Supplier;
 use App\Models\Unit;
@@ -26,8 +27,20 @@ function makeItem(Unit $unit, array $overrides = []): Item
     return Item::create(array_merge([
         'units_id' => $unit->id,
         'bezeichnung' => 'Testgerät',
-        'is_rented' => false,
     ], $overrides));
+}
+
+function attachMietvorgang(Item $item, Supplier $supplier, string $start, string $end): Mietvorgang
+{
+    $mietvorgang = Mietvorgang::create([
+        'suppliers_id' => $supplier->id,
+        'rent_start' => $start,
+        'rent_end' => $end,
+    ]);
+
+    $mietvorgang->items()->attach($item->id);
+
+    return $mietvorgang;
 }
 
 test('item is available when no other booking exists', function () {
@@ -77,12 +90,8 @@ test('rented item is unavailable when rental starts after production start', fun
         'phone' => '0123456789',
     ]);
 
-    $item = makeItem($unit, [
-        'suppliers_id' => $supplier->id,
-        'is_rented' => true,
-        'rent_start' => '2026-07-03',
-        'rent_end' => '2026-07-20',
-    ]);
+    $item = makeItem($unit, ['suppliers_id' => $supplier->id]);
+    attachMietvorgang($item, $supplier, '2026-07-03', '2026-07-20');
 
     $production = makeProduction('2026-07-01', '2026-07-10');
 
@@ -100,12 +109,8 @@ test('rented item is unavailable when rental ends before production end', functi
         'phone' => '0123456789',
     ]);
 
-    $item = makeItem($unit, [
-        'suppliers_id' => $supplier->id,
-        'is_rented' => true,
-        'rent_start' => '2026-06-25',
-        'rent_end' => '2026-07-08',
-    ]);
+    $item = makeItem($unit, ['suppliers_id' => $supplier->id]);
+    attachMietvorgang($item, $supplier, '2026-06-25', '2026-07-08');
 
     $production = makeProduction('2026-07-01', '2026-07-10');
 
@@ -123,12 +128,8 @@ test('rented item is available when rental window fully covers the production', 
         'phone' => '0123456789',
     ]);
 
-    $item = makeItem($unit, [
-        'suppliers_id' => $supplier->id,
-        'is_rented' => true,
-        'rent_start' => '2026-06-25',
-        'rent_end' => '2026-07-20',
-    ]);
+    $item = makeItem($unit, ['suppliers_id' => $supplier->id]);
+    attachMietvorgang($item, $supplier, '2026-06-25', '2026-07-20');
 
     $production = makeProduction('2026-07-01', '2026-07-10');
 

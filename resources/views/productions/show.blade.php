@@ -83,7 +83,7 @@
                         <strong class="text-gray-900">{{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}</strong>
                         &middot; {{ \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y') }}
                         – {{ \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y') }}
-                        &middot; {{ $production->items->where('mietvorgang_id', $mietvorgang->id)->pluck('bezeichnung')->implode(', ') }}
+                        &middot; {{ $production->items->filter(fn ($item) => $item->mietvorgaenge->contains('id', $mietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
@@ -122,7 +122,7 @@
                         <strong class="text-gray-900">{{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}</strong>
                         &middot; {{ \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y') }}
                         – {{ \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y') }}
-                        &middot; {{ $production->items->where('vermietvorgang_id', $vermietvorgang->id)->pluck('bezeichnung')->implode(', ') }}
+                        &middot; {{ $production->items->filter(fn ($item) => $item->vermietvorgaenge->contains('id', $vermietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
                             <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
@@ -519,8 +519,7 @@
                 selected: [],
                 get filteredItems() {
                     const needle = this.query.trim().toLowerCase();
-                    if (needle === '') return this.items;
-                    return this.items.filter(item => item.label.toLowerCase().includes(needle));
+                    return this.items.filter(item => !this.isSelected(item) && (needle === '' || item.label.toLowerCase().includes(needle)));
                 },
                 isSelected(item) {
                     return this.selected.some(i => i.id === item.id);

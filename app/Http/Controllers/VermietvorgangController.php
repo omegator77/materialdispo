@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mieter;
 use App\Models\Vermietvorgang;
+use App\Services\ItemAssignmentService;
 use App\Services\ItemAvailabilityService;
 use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
@@ -14,7 +15,11 @@ use Illuminate\Http\Request;
 
 class VermietvorgangController extends Controller
 {
-    public function __construct(private ItemAvailabilityService $availability, private SlackVorgangSync $slack) {}
+    public function __construct(
+        private ItemAvailabilityService $availability,
+        private ItemAssignmentService $assign,
+        private SlackVorgangSync $slack,
+    ) {}
 
     /**
      * Liefert den Bezeichnungs-Vorschlag für einen Mieter, damit das
@@ -86,18 +91,11 @@ class VermietvorgangController extends Controller
         // gar keinem Mieter zugeordnet sein muss — daher stehen alle Geräte zur
         // Wahl, die nicht bereits diesem Vermietvorgang zugeordnet sind, gefiltert
         // auf tatsächliche Verfügbarkeit im Verleihzeitraum.
-        $assignableItems = Item::where(function ($q) use ($vermietvorgang) {
-                $q->whereNull('vermietvorgang_id')->orWhere('vermietvorgang_id', '!=', $vermietvorgang->id);
-            })
+        $assignableItems = Item::whereDoesntHave('vermietvorgaenge', fn ($q) => $q->where('vermietvorgaenge.id', $vermietvorgang->id))
+            ->with(['mietvorgaenge', 'vermietvorgaenge'])
             ->orderBy('bezeichnung')
             ->get()
-            ->filter(function (Item $item) use ($vermietvorgang) {
-                return $this->availability->checkForVerleih(
-                    $item,
-                    $vermietvorgang->rent_start->format('Y-m-d'),
-                    $vermietvorgang->rent_end->format('Y-m-d')
-                )['available'];
-            })
+            ->filter(fn (Item $item) => $this->availability->checkForVerleih($item, $vermietvorgang)['available'])
             ->values();
 
         return view('vermietvorgaenge.show', compact('vermietvorgang', 'mieter', 'mailingLists', 'defaultMailingList', 'assignableItems'));
@@ -113,23 +111,28 @@ class VermietvorgangController extends Controller
 
         $vermietvorgang->update($data);
 
-        // Vermietvorgang bleibt führend: zugeordnete Geräte übernehmen Mieter/Zeitraum.
-        $vermietvorgang->items()->update([
-            'mieter_id' => $vermietvorgang->mieter_id,
-            'verleih_start' => $vermietvorgang->rent_start,
-            'verleih_end' => $vermietvorgang->rent_end,
-        ]);
-
         $this->slack->syncVermietvorgang($vermietvorgang);
 
         return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with('success', 'Vermietvorgang aktualisiert.');
     }
 
-    public function destroy(Vermietvorgang $vermietvorgang)
+    public function destroy(Request $request, Vermietvorgang $vermietvorgang)
     {
         if ($vermietvorgang->items()->exists()) {
-            return redirect()->route('vermietvorgaenge.index')
-                ->with('error', 'Diesem Vermietvorgang sind noch Geräte zugeordnet. Bitte zuerst alle Geräte zurücksetzen (auf der Vermietvorgang-Detailseite).');
+            if (! $request->boolean('force')) {
+                return redirect()->route('vermietvorgaenge.index')
+                    ->with('error', 'Diesem Vermietvorgang sind noch Geräte zugeordnet. Bitte zuerst alle Geräte zurücksetzen (auf der Vermietvorgang-Detailseite).');
+            }
+
+            $vermietvorgang->items->each(function (Item $item) use ($vermietvorgang) {
+                activity('item')
+                    ->performedOn($item)
+                    ->event('detached')
+                    ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
+                    ->log("Gerät \"{$item->bezeichnung}\" aus Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) entfernt (Vorgang gelöscht)");
+
+                $this->assign->detachFromVermietvorgang($item, $vermietvorgang, notifySlack: false);
+            });
         }
 
         $vermietvorgang->delete();
@@ -162,33 +165,15 @@ class VermietvorgangController extends Controller
         $skipped = [];
 
         Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($vermietvorgang, &$added, &$skipped) {
-            $check = $this->availability->checkForVerleih(
-                $item,
-                $vermietvorgang->rent_start->format('Y-m-d'),
-                $vermietvorgang->rent_end->format('Y-m-d')
-            );
+            $result = $this->assign->attachToVermietvorgang($item, $vermietvorgang, manual: true, notifySlack: false);
 
-            if (! $check['available']) {
-                $skipped[] = "{$item->bezeichnung} ({$check['reason']})";
-
-                return;
+            if ($result['alreadyAttached']) {
+                $skipped[] = "{$item->bezeichnung} (bereits zugeordnet)";
+            } elseif (! $result['added']) {
+                $skipped[] = "{$item->bezeichnung} ({$result['reason']})";
+            } else {
+                $added[] = $item->bezeichnung;
             }
-
-            $item->update([
-                'mieter_id' => $vermietvorgang->mieter_id,
-                'verleih_start' => $vermietvorgang->rent_start,
-                'verleih_end' => $vermietvorgang->rent_end,
-                'vermietvorgang_id' => $vermietvorgang->id,
-                'vermietvorgang_manual' => true,
-            ]);
-
-            activity('item')
-                ->performedOn($item)
-                ->event('attached')
-                ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
-                ->log("Gerät \"{$item->bezeichnung}\" dem Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) zugeordnet");
-
-            $added[] = $item->bezeichnung;
         });
 
         $messageParts = [];
@@ -214,7 +199,7 @@ class VermietvorgangController extends Controller
             ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
             ->log("Gerät \"{$item->bezeichnung}\" aus Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) entfernt");
 
-        $item->removeFromVermietvorgang();
+        $this->assign->detachFromVermietvorgang($item, $vermietvorgang);
 
         return redirect()->route('vermietvorgaenge.show', $vermietvorgang)->with('success', 'Gerät entfernt.');
     }

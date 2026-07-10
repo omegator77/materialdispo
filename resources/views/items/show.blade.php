@@ -82,14 +82,65 @@
                     </div>
 
                     <div>
-                        <dt class="text-sm font-medium text-gray-500">Mietzeitraum</dt>
+                        <dt class="text-sm font-medium text-gray-500">Mietzeiträume</dt>
                         <dd class="text-gray-900">
-                            @if($item->suppliers_id)
-                            {{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '—' }}
-                            –
-                            {{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '—' }}
-                            @else
+                            @if($item->mietvorgaenge->isEmpty())
                             —
+                            @else
+                            <details class="group">
+                                <summary class="cursor-pointer select-none list-none flex items-center gap-1">
+                                    {{ $item->mietvorgaenge->count() }} Mietvorgang/-vorgänge
+                                    <svg class="h-3.5 w-3.5 text-gray-400 group-open:rotate-180 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.172l3.71-3.94a.75.75 0 011.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                    </svg>
+                                </summary>
+                                <ul class="mt-1 space-y-0.5">
+                                    @foreach($item->mietvorgaenge as $mietvorgang)
+                                        <li>
+                                            <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="text-orange-600 hover:underline">
+                                                {{ $mietvorgang->rent_start->format('d.m.Y') }} – {{ $mietvorgang->rent_end->format('d.m.Y') }}
+                                                ({{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }})
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="border-t pt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                    Verleihstatus
+                </h4>
+
+                <dl class="grid grid-cols-1 gap-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Vermietvorgänge</dt>
+                        <dd class="text-gray-900">
+                            @if($item->vermietvorgaenge->isEmpty())
+                            —
+                            @else
+                            <details class="group">
+                                <summary class="cursor-pointer select-none list-none flex items-center gap-1">
+                                    {{ $item->vermietvorgaenge->count() }} Vermietvorgang/-vorgänge
+                                    <svg class="h-3.5 w-3.5 text-gray-400 group-open:rotate-180 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.172l3.71-3.94a.75.75 0 011.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                    </svg>
+                                </summary>
+                                <ul class="mt-1 space-y-0.5">
+                                    @foreach($item->vermietvorgaenge as $vermietvorgang)
+                                        <li>
+                                            <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="text-orange-600 hover:underline">
+                                                {{ $vermietvorgang->rent_start->format('d.m.Y') }} – {{ $vermietvorgang->rent_end->format('d.m.Y') }}
+                                                ({{ $vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }})
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
                             @endif
                         </dd>
                     </div>

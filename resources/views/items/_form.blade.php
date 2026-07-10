@@ -103,26 +103,10 @@
             Mietmaterial
         </h3>
 
-        @if($item->mietvorgang_manual ?? false)
-        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex flex-col sm:flex-row sm:items-center gap-2">
-            <span>
-                Dieses Gerät ist manuell einem
-                <a href="{{ route('mietvorgaenge.show', $item->mietvorgang_id) }}" class="underline hover:text-blue-900" target="_blank">Mietvorgang</a>
-                zugeordnet — Vermieter und Zeitraum werden dort verwaltet.
-            </span>
-            <form action="{{ route('items.resetMietvorgang', $item->id) }}" method="POST" class="sm:ml-auto">
-                @csrf
-                <button type="submit" class="text-blue-700 hover:underline font-medium whitespace-nowrap">
-                    Zurücksetzen
-                </button>
-            </form>
-        </div>
-        @endif
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="suppliers_id" class="block text-sm font-medium text-gray-700">Vermieter</label>
-                <select name="suppliers_id" id="suppliers_id" class="form-control w-full" @disabled($item->mietvorgang_manual ?? false)>
+                <select name="suppliers_id" id="suppliers_id" class="form-control w-full">
                     <option value="">Eigentum / kein Vermieter</option>
                     @foreach($suppliers as $supplier)
                     <option value="{{ $supplier->id }}"
@@ -131,39 +115,59 @@
                     </option>
                     @endforeach
                 </select>
-                @if($item->mietvorgang_manual ?? false)
-                <input type="hidden" name="suppliers_id" value="{{ $item->suppliers_id }}">
-                @endif
             </div>
 
             <div id="rental-fields" class="md:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Mietbeginn</label>
+                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Neuen Mietzeitraum eintragen — Beginn</label>
                         <input
                             type="text"
                             name="rent_start"
                             id="rent_start"
-                            value="{{ old('rent_start', $item->rent_start ?? '') }}"
+                            value="{{ old('rent_start') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ"
-                            @readonly($item->mietvorgang_manual ?? false)>
+                            placeholder="TT.MM.JJJJ">
                     </div>
 
                     <div>
-                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Mietende</label>
+                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Ende</label>
                         <input
                             type="text"
                             name="rent_end"
                             id="rent_end"
-                            value="{{ old('rent_end', $item->rent_end ?? '') }}"
+                            value="{{ old('rent_end') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ"
-                            @readonly($item->mietvorgang_manual ?? false)>
+                            placeholder="TT.MM.JJJJ">
                     </div>
                 </div>
+                <p class="text-xs text-gray-400 mt-1">
+                    Eintragen legt eine zusätzliche Zuordnung an, ohne bestehende zu ersetzen.
+                </p>
             </div>
         </div>
+
+        @if($item->exists)
+        <div class="mt-4 space-y-1.5">
+            <p class="text-sm font-medium text-gray-700">Aktuelle Mietvorgänge</p>
+            @forelse($item->mietvorgaenge as $mietvorgang)
+                <div class="flex items-center justify-between border border-gray-200 rounded px-3 py-1.5 text-sm">
+                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="text-orange-600 hover:underline" target="_blank">
+                        {{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
+                        ({{ $mietvorgang->rent_start->format('d.m.Y') }} – {{ $mietvorgang->rent_end->format('d.m.Y') }})
+                    </a>
+                    <form action="{{ route('mietvorgaenge.detachItem', [$mietvorgang, $item]) }}" method="POST"
+                          onsubmit="return confirm('Gerät wirklich aus diesem Mietvorgang entfernen?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-red-600 hover:underline text-xs">Entfernen</button>
+                    </form>
+                </div>
+            @empty
+                <p class="text-sm text-gray-400 italic">Keine.</p>
+            @endforelse
+        </div>
+        @endif
     </section>
 
     {{-- Verleih --}}
@@ -172,67 +176,70 @@
             Verleih
         </h3>
 
-        @if($item->vermietvorgang_manual ?? false)
-        <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800 flex flex-col sm:flex-row sm:items-center gap-2">
-            <span>
-                Dieses Gerät ist manuell einem
-                <a href="{{ route('vermietvorgaenge.show', $item->vermietvorgang_id) }}" class="underline hover:text-blue-900" target="_blank">Vermietvorgang</a>
-                zugeordnet — Mieter und Zeitraum werden dort verwaltet.
-            </span>
-            <form action="{{ route('items.resetVermietvorgang', $item->id) }}" method="POST" class="sm:ml-auto">
-                @csrf
-                <button type="submit" class="text-blue-700 hover:underline font-medium whitespace-nowrap">
-                    Zurücksetzen
-                </button>
-            </form>
-        </div>
-        @endif
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label for="mieter_id" class="block text-sm font-medium text-gray-700">Mieter</label>
-                <select name="mieter_id" id="mieter_id" class="form-control w-full" @disabled($item->vermietvorgang_manual ?? false)>
-                    <option value="">Kein Mieter</option>
+                <label for="mieter_id" class="block text-sm font-medium text-gray-700">Neue Vermietung — Mieter</label>
+                <select name="mieter_id" id="mieter_id" class="form-control w-full">
+                    <option value="">Keine neue Vermietung</option>
                     @foreach($mieter as $m)
-                    <option value="{{ $m->id }}"
-                        {{ old('mieter_id', $item->mieter_id ?? '') == $m->id ? 'selected' : '' }}>
+                    <option value="{{ $m->id }}" {{ old('mieter_id') == $m->id ? 'selected' : '' }}>
                         {{ $m->bezeichnung }}
                     </option>
                     @endforeach
                 </select>
-                @if($item->vermietvorgang_manual ?? false)
-                <input type="hidden" name="mieter_id" value="{{ $item->mieter_id }}">
-                @endif
             </div>
 
             <div id="verleih-fields" class="md:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="verleih_start" class="block text-sm font-medium text-gray-700">Verleihbeginn</label>
+                        <label for="verleih_start" class="block text-sm font-medium text-gray-700">Beginn</label>
                         <input
                             type="text"
                             name="verleih_start"
                             id="verleih_start"
-                            value="{{ old('verleih_start', $item->verleih_start ?? '') }}"
+                            value="{{ old('verleih_start') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ"
-                            @readonly($item->vermietvorgang_manual ?? false)>
+                            placeholder="TT.MM.JJJJ">
                     </div>
 
                     <div>
-                        <label for="verleih_end" class="block text-sm font-medium text-gray-700">Verleihende</label>
+                        <label for="verleih_end" class="block text-sm font-medium text-gray-700">Ende</label>
                         <input
                             type="text"
                             name="verleih_end"
                             id="verleih_end"
-                            value="{{ old('verleih_end', $item->verleih_end ?? '') }}"
+                            value="{{ old('verleih_end') }}"
                             class="form-control datepicker w-full"
-                            placeholder="TT.MM.JJJJ"
-                            @readonly($item->vermietvorgang_manual ?? false)>
+                            placeholder="TT.MM.JJJJ">
                     </div>
                 </div>
+                <p class="text-xs text-gray-400 mt-1">
+                    Eintragen legt eine zusätzliche Vermietung an, ohne bestehende zu ersetzen.
+                </p>
             </div>
         </div>
+
+        @if($item->exists)
+        <div class="mt-4 space-y-1.5">
+            <p class="text-sm font-medium text-gray-700">Aktuelle Vermietvorgänge</p>
+            @forelse($item->vermietvorgaenge as $vermietvorgang)
+                <div class="flex items-center justify-between border border-gray-200 rounded px-3 py-1.5 text-sm">
+                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="text-orange-600 hover:underline" target="_blank">
+                        {{ $vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
+                        ({{ $vermietvorgang->rent_start->format('d.m.Y') }} – {{ $vermietvorgang->rent_end->format('d.m.Y') }})
+                    </a>
+                    <form action="{{ route('vermietvorgaenge.detachItem', [$vermietvorgang, $item]) }}" method="POST"
+                          onsubmit="return confirm('Gerät wirklich aus diesem Vermietvorgang entfernen?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-red-600 hover:underline text-xs">Entfernen</button>
+                    </form>
+                </div>
+            @empty
+                <p class="text-sm text-gray-400 italic">Keine.</p>
+            @endforelse
+        </div>
+        @endif
     </section>
 
     @if((int) ($item->units_id ?? 0) === 1)

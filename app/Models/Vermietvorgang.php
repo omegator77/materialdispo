@@ -97,7 +97,9 @@ class Vermietvorgang extends Model
 
     public function items()
     {
-        return $this->hasMany(Item::class);
+        return $this->belongsToMany(Item::class, 'item_vermietvorgang')
+            ->withPivot('manual')
+            ->withTimestamps();
     }
 
     public function reminderLogs()

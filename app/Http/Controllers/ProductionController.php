@@ -94,8 +94,8 @@ class ProductionController extends Controller
     {
         $production = Production::with([
             'items.unit',
-            'items.mietvorgang.supplier',
-            'items.vermietvorgang.mieter',
+            'items.mietvorgaenge.supplier',
+            'items.vermietvorgaenge.mieter',
             'cameraConfigs.item.unit',
             'cameraConfigs.lensItem',
             'cameraConfigs.tripodItem',
@@ -113,8 +113,8 @@ class ProductionController extends Controller
 
         $allUnits = Unit::orderBy('bezeichnung')->get();
 
-        $mietvorgaenge = $production->items->pluck('mietvorgang')->filter()->unique('id')->values();
-        $vermietvorgaenge = $production->items->pluck('vermietvorgang')->filter()->unique('id')->values();
+        $mietvorgaenge = $production->items->pluck('mietvorgaenge')->flatten()->unique('id')->values();
+        $vermietvorgaenge = $production->items->pluck('vermietvorgaenge')->flatten()->unique('id')->values();
 
         return view('productions.show', compact(
             'production',

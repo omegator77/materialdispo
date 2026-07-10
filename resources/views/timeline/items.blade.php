@@ -182,12 +182,12 @@
                                                     </div>
                                                 @endforeach
 
-                                                {{-- Gemietet (eingehend) — Hintergrundbalken, damit Produktions-/Vermietet-Balken darüber liegen --}}
+                                                {{-- Gemietet (eingehend) — Hintergrundbalken, damit Produktions-/Vermietet-Balken darüber liegen. Ein Balken pro Mietvorgang, ein Gerät kann mehrere gleichzeitig gültige, nicht überlappende Mietvorgänge haben. --}}
                                                 <div class="absolute inset-0 flex items-center pointer-events-none px-0">
-                                                    @if($item->suppliers_id && $item->rent_start && $item->rent_end)
+                                                    @foreach($item->mietvorgaenge as $mietvorgang)
                                                         @php
-                                                            $rentStart = \Carbon\Carbon::parse($item->rent_start)->startOfDay();
-                                                            $rentEnd   = \Carbon\Carbon::parse($item->rent_end)->startOfDay();
+                                                            $rentStart = $mietvorgang->rent_start->copy()->startOfDay();
+                                                            $rentEnd   = $mietvorgang->rent_end->copy()->startOfDay();
                                                         @endphp
                                                         @if($rentEnd->gte($timelineStart) && $rentStart->lte($timelineEnd))
                                                             @php
@@ -197,20 +197,20 @@
                                                                 $length   = $visStart->diffInDays($visEnd) + 1;
                                                             @endphp
                                                             <div class="rent-bar timeline-range-bar absolute pointer-events-auto h-full bg-amber-200/70 border-x border-amber-400/60 z-0"
-                                                                title="Gemietet von {{ $item->supplier->bezeichnung ?? 'Vermieter gelöscht' }} ({{ $rentStart->format('d.m.Y') }} – {{ $rentEnd->format('d.m.Y') }})"
+                                                                title="Gemietet von {{ $mietvorgang->supplier->bezeichnung ?? 'Vermieter gelöscht' }} ({{ $rentStart->format('d.m.Y') }} – {{ $rentEnd->format('d.m.Y') }})"
                                                                 data-offset="{{ $offset }}"
                                                                 data-length="{{ $length }}"
                                                             ></div>
                                                         @endif
-                                                    @endif
+                                                    @endforeach
                                                 </div>
 
-                                                {{-- Produktionsbalken + Vermietet (ausgehend) — klickbare Balken oberhalb --}}
+                                                {{-- Produktionsbalken + Vermietet (ausgehend) — klickbare Balken oberhalb. Ein Balken pro Vermietvorgang. --}}
                                                 <div class="absolute inset-0 flex items-center pointer-events-none px-0">
-                                                    @if($item->mieter_id && $item->verleih_start && $item->verleih_end)
+                                                    @foreach($item->vermietvorgaenge as $vermietvorgang)
                                                         @php
-                                                            $verleihStart = \Carbon\Carbon::parse($item->verleih_start)->startOfDay();
-                                                            $verleihEnd   = \Carbon\Carbon::parse($item->verleih_end)->startOfDay();
+                                                            $verleihStart = $vermietvorgang->rent_start->copy()->startOfDay();
+                                                            $verleihEnd   = $vermietvorgang->rent_end->copy()->startOfDay();
                                                         @endphp
                                                         @if($verleihEnd->gte($timelineStart) && $verleihStart->lte($timelineEnd))
                                                             @php
@@ -219,22 +219,22 @@
                                                                 $offset   = $timelineStart->diffInDays($visStart);
                                                                 $length   = $visStart->diffInDays($visEnd) + 1;
                                                             @endphp
-                                                            <a href="{{ route('vermietvorgaenge.show', $item->vermietvorgang_id) }}"
+                                                            <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}"
                                                                 class="verleih-bar timeline-range-bar absolute pointer-events-auto flex items-center h-6 rounded px-1.5
                                                                        bg-purple-600 hover:bg-purple-700 active:bg-purple-800
                                                                        text-white text-[11px] font-medium
                                                                        overflow-hidden whitespace-nowrap
                                                                        shadow-sm transition-colors z-10
                                                                        focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
-                                                                title="Vermietet an {{ $item->mieter->bezeichnung ?? 'Mieter gelöscht' }} ({{ $verleihStart->format('d.m.Y') }} – {{ $verleihEnd->format('d.m.Y') }})"
+                                                                title="Vermietet an {{ $vermietvorgang->mieter->bezeichnung ?? 'Mieter gelöscht' }} ({{ $verleihStart->format('d.m.Y') }} – {{ $verleihEnd->format('d.m.Y') }})"
                                                                 data-offset="{{ $offset }}"
                                                                 data-length="{{ $length }}"
                                                                 style="top: 50%; transform: translateY(-50%);"
                                                             >
-                                                                <span class="bar-label">Vermietet: {{ $item->mieter->bezeichnung ?? 'Mieter gelöscht' }}</span>
+                                                                <span class="bar-label">Vermietet: {{ $vermietvorgang->mieter->bezeichnung ?? 'Mieter gelöscht' }}</span>
                                                             </a>
                                                         @endif
-                                                    @endif
+                                                    @endforeach
 
                                                     @foreach($item->productions as $production)
                                                         @php

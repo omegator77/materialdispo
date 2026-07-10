@@ -9,7 +9,6 @@ use App\Models\Mieter;
 use App\Models\Production;
 use App\Models\Supplier;
 use App\Models\Unit;
-use App\Services\ItemAvailabilityService;
 use App\Services\ItemDetailSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,7 +17,6 @@ class ItemController extends Controller
 {
     public function __construct(
         private ItemDetailSyncService $detailSync,
-        private ItemAvailabilityService $availability,
     ) {}
 
     public function index(Request $request)
@@ -30,7 +28,7 @@ class ItemController extends Controller
             default => ['monitorDetail'],
         };
 
-        $query = Item::with(array_merge(['unit', 'supplier'], $detailRelations));
+        $query = Item::with(array_merge(['unit', 'supplier', 'mietvorgaenge', 'vermietvorgaenge'], $detailRelations));
 
         if ($request->filled('unit_id')) {
             $query->where('units_id', $request->unit_id);
@@ -38,7 +36,7 @@ class ItemController extends Controller
 
         if (
             $request->filled('sort_by') &&
-            in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id', 'rent_start', 'rent_end'])
+            in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id'])
         ) {
             $secondary = $request->sort_by === 'bezeichnung' ? 'nummer' : 'bezeichnung';
 
@@ -67,25 +65,15 @@ class ItemController extends Controller
 
         $item = new Item;
 
-        // Wird für die eingebundene items._table benötigt.
-        // Sonst wirft /items/create: Undefined variable $items.
-        $items = Item::with(['unit', 'supplier', 'monitorDetail', 'cameraDetail', 'lensDetail'])
-            ->orderBy('units_id', 'asc')
-            ->orderBy('nummer', 'asc')
-            ->get();
-
-        return view('items.create', compact('units', 'suppliers', 'mieter', 'item', 'items', 'geraetetypen'));
+        return view('items.create', compact('units', 'suppliers', 'mieter', 'item', 'geraetetypen'));
     }
 
     public function store(ItemRequest $request)
     {
-        $rentData = $this->prepareRentData($request);
-        $verleihData = $this->prepareVerleihData($request);
+        $item = Item::create($request->validated());
 
-        $item = Item::create(array_merge($request->validated(), $rentData, $verleihData));
-
-        $item->syncMietvorgang();
-        $item->syncVermietvorgang();
+        $this->maybeAttachMiete($request, $item);
+        $this->maybeAttachVerleih($request, $item);
 
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
@@ -102,6 +90,8 @@ class ItemController extends Controller
             'cameraDetail',
             'monitorDetail',
             'lensDetail',
+            'mietvorgaenge.supplier',
+            'vermietvorgaenge.mieter',
         ])->findOrFail($id);
 
         return view('items.show', compact('item'));
@@ -114,23 +104,7 @@ class ItemController extends Controller
         $mieter = Mieter::all();
         $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
 
-        $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail'])->findOrFail($id);
-
-        $item->rent_start = $item->rent_start
-            ? Carbon::parse($item->rent_start)->format('d.m.Y')
-            : null;
-
-        $item->rent_end = $item->rent_end
-            ? Carbon::parse($item->rent_end)->format('d.m.Y')
-            : null;
-
-        $item->verleih_start = $item->verleih_start
-            ? Carbon::parse($item->verleih_start)->format('d.m.Y')
-            : null;
-
-        $item->verleih_end = $item->verleih_end
-            ? Carbon::parse($item->verleih_end)->format('d.m.Y')
-            : null;
+        $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail', 'mietvorgaenge.supplier', 'vermietvorgaenge.mieter'])->findOrFail($id);
 
         return view('items.edit', compact('units', 'suppliers', 'mieter', 'item', 'geraetetypen'));
     }
@@ -138,23 +112,19 @@ class ItemController extends Controller
     public function update(ItemRequest $request, string $id)
     {
         $item = Item::findOrFail($id);
+        $item->update($request->validated());
 
-        $rentData = $this->prepareRentData($request);
-        $verleihData = $this->prepareVerleihData($request);
-
-        if ($verleihData['mieter_id'] && $verleihData['verleih_start'] && $verleihData['verleih_end']) {
-            $check = $this->availability->checkForVerleih($item, $verleihData['verleih_start'], $verleihData['verleih_end']);
-
-            if (! $check['available']) {
-                return redirect()->back()->withInput()
-                    ->withErrors(['verleih_start' => "Gerät kann nicht vermietet werden: {$check['reason']}"]);
-            }
+        [, $mieteReason] = $this->maybeAttachMiete($request, $item);
+        if ($mieteReason) {
+            return redirect()->back()->withInput()
+                ->withErrors(['rent_start' => "Gerät kann nicht gemietet werden: {$mieteReason}"]);
         }
 
-        $item->update(array_merge($request->validated(), $rentData, $verleihData));
-
-        $item->syncMietvorgang();
-        $item->syncVermietvorgang();
+        [, $verleihReason] = $this->maybeAttachVerleih($request, $item);
+        if ($verleihReason) {
+            return redirect()->back()->withInput()
+                ->withErrors(['verleih_start' => "Gerät kann nicht vermietet werden: {$verleihReason}"]);
+        }
 
         $this->detailSync->syncCameraDetails($request, $item);
         $this->detailSync->syncMonitorDetails($request, $item);
@@ -170,51 +140,44 @@ class ItemController extends Controller
         return redirect()->route('items.index');
     }
 
-    public function resetMietvorgang(Item $item)
+    /**
+     * Trägt der Vermieter+Zeitraum-Block im Item-Formular einen Zeitraum ein,
+     * wird eine ZUSÄTZLICHE Mietvorgang-Zuordnung angelegt (findet-oder-legt
+     * den passenden Mietvorgang an) — ersetzt keine bestehende Zuordnung.
+     *
+     * @return array{0: bool, 1: ?string} [wurde zugeordnet, Fehlergrund]
+     */
+    private function maybeAttachMiete(Request $request, Item $item): array
     {
-        $item->resetMietvorgangAssignment();
+        if (! $item->suppliers_id || ! $request->filled('rent_start') || ! $request->filled('rent_end')) {
+            return [false, null];
+        }
 
-        return redirect()->route('items.edit', $item->id)->with('success', 'Mietvorgang-Zuordnung zurückgesetzt.');
+        $rentStart = Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d');
+        $rentEnd = Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d');
+
+        $result = $item->syncMietvorgang($rentStart, $rentEnd);
+
+        return [$result['added'], ($result['added'] || $result['alreadyAttached']) ? null : $result['reason']];
     }
 
-    public function resetVermietvorgang(Item $item)
+    /**
+     * Trägt der Mieter+Zeitraum-Block im Item-Formular Mieter und Zeitraum
+     * ein, wird eine ZUSÄTZLICHE Vermietvorgang-Zuordnung angelegt.
+     *
+     * @return array{0: bool, 1: ?string} [wurde zugeordnet, Fehlergrund]
+     */
+    private function maybeAttachVerleih(Request $request, Item $item): array
     {
-        $item->resetVermietvorgangAssignment();
+        if (! $request->filled('mieter_id') || ! $request->filled('verleih_start') || ! $request->filled('verleih_end')) {
+            return [false, null];
+        }
 
-        return redirect()->route('items.edit', $item->id)->with('success', 'Vermietvorgang-Zuordnung zurückgesetzt.');
-    }
+        $verleihStart = Carbon::createFromFormat('d.m.Y', $request->verleih_start)->format('Y-m-d');
+        $verleihEnd = Carbon::createFromFormat('d.m.Y', $request->verleih_end)->format('Y-m-d');
 
-    private function prepareRentData(Request $request): array
-    {
-        $supplierId = $request->suppliers_id ?: null;
+        $result = $item->syncVermietvorgang((int) $request->mieter_id, $verleihStart, $verleihEnd);
 
-        return [
-            'suppliers_id' => $supplierId,
-
-            'rent_start' => $supplierId && $request->rent_start
-                ? Carbon::createFromFormat('d.m.Y', $request->rent_start)->format('Y-m-d')
-                : null,
-
-            'rent_end' => $supplierId && $request->rent_end
-                ? Carbon::createFromFormat('d.m.Y', $request->rent_end)->format('Y-m-d')
-                : null,
-        ];
-    }
-
-    private function prepareVerleihData(Request $request): array
-    {
-        $mieterId = $request->mieter_id ?: null;
-
-        return [
-            'mieter_id' => $mieterId,
-
-            'verleih_start' => $mieterId && $request->verleih_start
-                ? Carbon::createFromFormat('d.m.Y', $request->verleih_start)->format('Y-m-d')
-                : null,
-
-            'verleih_end' => $mieterId && $request->verleih_end
-                ? Carbon::createFromFormat('d.m.Y', $request->verleih_end)->format('Y-m-d')
-                : null,
-        ];
+        return [$result['added'], ($result['added'] || $result['alreadyAttached']) ? null : $result['reason']];
     }
 }
