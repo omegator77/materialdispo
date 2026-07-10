@@ -91,48 +91,54 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {{-- Laufende Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
+                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
                         Laufende Vorgänge
                     </h3>
 
-                    @forelse($runningEntries as $entry)
-                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'running'])
-                    @empty
-                        <div class="text-sm text-gray-500">
-                            Heute läuft nichts.
-                        </div>
-                    @endforelse
+                    <div class="overflow-y-auto">
+                        @forelse($runningEntries as $entry)
+                            @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'running'])
+                        @empty
+                            <div class="text-sm text-gray-500">
+                                Heute läuft nichts.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
 
                 {{-- Kommende Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
+                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
                         Nächste Vorgänge
                     </h3>
 
-                    @forelse($upcomingEntries as $entry)
-                        @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'upcoming'])
-                    @empty
-                        <div class="text-sm text-gray-500">
-                            Nichts Anstehendes gefunden.
-                        </div>
-                    @endforelse
+                    <div class="overflow-y-auto">
+                        @forelse($upcomingEntries as $entry)
+                            @include('dashboard._production-entry', ['entry' => $entry, 'mode' => 'upcoming'])
+                        @empty
+                            <div class="text-sm text-gray-500">
+                                Nichts Anstehendes gefunden.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
 
                 {{-- Offene Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5">
-                    <h3 class="font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
+                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
                         Offene Vorgänge
                     </h3>
 
-                    @forelse($openVorgaenge as $entry)
-                        @include('dashboard._vorgang-status', ['entry' => $entry])
-                    @empty
-                        <div class="text-sm text-gray-500">
-                            Alle Miet-/Vermietvorgänge sind vollständig abgehakt.
-                        </div>
-                    @endforelse
+                    <div class="overflow-y-auto">
+                        @forelse($openVorgaenge as $entry)
+                            @include('dashboard._vorgang-status', ['entry' => $entry])
+                        @empty
+                            <div class="text-sm text-gray-500">
+                                Alle Miet-/Vermietvorgänge sind vollständig abgehakt.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
 
