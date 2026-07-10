@@ -14,9 +14,18 @@ class SettingController extends Controller
         'reminder_days_before_end',
     ];
 
+    private const BOOLEAN_KEYS = [
+        'slack_reminder_enabled',
+        'slack_production_enabled',
+    ];
+
     public function edit()
     {
         $settings = collect(self::KEYS)->mapWithKeys(fn (string $key) => [$key => Setting::get($key)]);
+
+        foreach (self::BOOLEAN_KEYS as $key) {
+            $settings[$key] = Setting::get($key, '1') === '1';
+        }
 
         return view('settings.edit', compact('settings'));
     }
@@ -31,7 +40,11 @@ class SettingController extends Controller
         ]);
 
         foreach (self::KEYS as $key) {
-            Setting::set($key, $validated[$key] !== null ? (string) $validated[$key] : null);
+            Setting::set($key, isset($validated[$key]) ? (string) $validated[$key] : null);
+        }
+
+        foreach (self::BOOLEAN_KEYS as $key) {
+            Setting::set($key, $request->boolean($key) ? '1' : '0');
         }
 
         return redirect()->route('settings.edit')->with('success', 'Einstellungen gespeichert.');
