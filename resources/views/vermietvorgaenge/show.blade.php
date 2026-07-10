@@ -160,13 +160,13 @@
                 <div class="flex items-center justify-between border border-gray-200 rounded px-4 py-2 text-sm">
                     <div>
                         {{ $item->bezeichnung }} @if($item->nummer)<span class="text-gray-400">({{ $item->nummer }})</span>@endif
-                        @if($item->vermietvorgang_manual)
+                        @if($item->pivot->manual)
                         <span class="ml-2 inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">Manuell</span>
                         @endif
                     </div>
 
                     <form action="{{ route('vermietvorgaenge.detachItem', [$vermietvorgang, $item]) }}" method="POST"
-                          onsubmit="return confirm('Gerät wirklich entfernen? Mieter und Verleihzeitraum werden am Gerät gelöscht.');">
+                          onsubmit="return confirm('Gerät wirklich aus diesem Vermietvorgang entfernen?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline">
@@ -358,8 +358,7 @@
                 selected: [],
                 get filteredItems() {
                     const needle = this.query.trim().toLowerCase();
-                    if (needle === '') return this.items;
-                    return this.items.filter(item => item.label.toLowerCase().includes(needle));
+                    return this.items.filter(item => !this.isSelected(item) && (needle === '' || item.label.toLowerCase().includes(needle)));
                 },
                 isSelected(item) {
                     return this.selected.some(i => i.id === item.id);

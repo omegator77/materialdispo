@@ -7,13 +7,19 @@ use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mietvorgang;
 use App\Models\Supplier;
+use App\Services\ItemAssignmentService;
+use App\Services\ItemAvailabilityService;
 use App\Services\SlackVorgangSync;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MietvorgangController extends Controller
 {
-    public function __construct(private SlackVorgangSync $slack) {}
+    public function __construct(
+        private ItemAvailabilityService $availability,
+        private ItemAssignmentService $assign,
+        private SlackVorgangSync $slack,
+    ) {}
 
     /**
      * Liefert den Bezeichnungs-Vorschlag für einen Vermieter, damit das
@@ -45,7 +51,6 @@ class MietvorgangController extends Controller
         $mailingLists = MailingList::orderBy('name')->get();
         $defaultMailingList = MailingList::where('is_default', true)->first();
         $assignableItems = Item::whereNotNull('suppliers_id')
-            ->whereNull('mietvorgang_id')
             ->orderBy('bezeichnung')
             ->get();
 
@@ -63,7 +68,9 @@ class MietvorgangController extends Controller
 
         $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
         if ($itemIds) {
-            $this->attachItemIds($mietvorgang, $itemIds);
+            [, $message] = $this->attachItemIds($mietvorgang, $itemIds);
+
+            return redirect()->route('mietvorgaenge.index')->with('success', 'Mietvorgang angelegt. '.$message);
         }
 
         return redirect()->route('mietvorgaenge.index')->with('success', 'Mietvorgang angelegt.');
@@ -78,11 +85,12 @@ class MietvorgangController extends Controller
         $defaultMailingList = MailingList::where('is_default', true)->first();
 
         $assignableItems = Item::whereNotNull('suppliers_id')
-            ->where(function ($q) use ($mietvorgang) {
-                $q->whereNull('mietvorgang_id')->orWhere('mietvorgang_id', '!=', $mietvorgang->id);
-            })
+            ->whereDoesntHave('mietvorgaenge', fn ($q) => $q->where('mietvorgaenge.id', $mietvorgang->id))
+            ->with(['mietvorgaenge', 'vermietvorgaenge'])
             ->orderBy('bezeichnung')
-            ->get();
+            ->get()
+            ->filter(fn (Item $item) => $this->availability->checkForMiete($item, $mietvorgang)['available'])
+            ->values();
 
         return view('mietvorgaenge.show', compact('mietvorgang', 'suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
     }
@@ -97,23 +105,28 @@ class MietvorgangController extends Controller
 
         $mietvorgang->update($data);
 
-        // Mietvorgang bleibt führend: zugeordnete Geräte übernehmen Vermieter/Zeitraum.
-        $mietvorgang->items()->update([
-            'suppliers_id' => $mietvorgang->suppliers_id,
-            'rent_start' => $mietvorgang->rent_start,
-            'rent_end' => $mietvorgang->rent_end,
-        ]);
-
         $this->slack->syncMietvorgang($mietvorgang);
 
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Mietvorgang aktualisiert.');
     }
 
-    public function destroy(Mietvorgang $mietvorgang)
+    public function destroy(Request $request, Mietvorgang $mietvorgang)
     {
         if ($mietvorgang->items()->exists()) {
-            return redirect()->route('mietvorgaenge.index')
-                ->with('error', 'Diesem Mietvorgang sind noch Geräte zugeordnet. Bitte zuerst alle Geräte zurücksetzen (auf der Mietvorgang-Detailseite).');
+            if (! $request->boolean('force')) {
+                return redirect()->route('mietvorgaenge.index')
+                    ->with('error', 'Diesem Mietvorgang sind noch Geräte zugeordnet. Bitte zuerst alle Geräte zurücksetzen (auf der Mietvorgang-Detailseite).');
+            }
+
+            $mietvorgang->items->each(function (Item $item) use ($mietvorgang) {
+                activity('item')
+                    ->performedOn($item)
+                    ->event('detached')
+                    ->withProperties(['mietvorgang_id' => $mietvorgang->id])
+                    ->log("Gerät \"{$item->bezeichnung}\" aus Mietvorgang ({$mietvorgang->supplier->bezeichnung}) entfernt (Vorgang gelöscht)");
+
+                $this->assign->detachFromMietvorgang($item, $mietvorgang, notifySlack: false);
+            });
         }
 
         $mietvorgang->delete();
@@ -124,36 +137,52 @@ class MietvorgangController extends Controller
     public function attachItems(Request $request, Mietvorgang $mietvorgang)
     {
         $itemIds = collect((array) $request->input('item_id'))->filter()->unique()->values()->all();
-        $this->attachItemIds($mietvorgang, $itemIds);
+        [$added, $message] = $this->attachItemIds($mietvorgang, $itemIds);
 
-        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Geräte zugeordnet.');
+        $messageType = $added ? 'success' : 'error';
+
+        return redirect()->route('mietvorgaenge.show', $mietvorgang)->with($messageType, $message);
     }
 
     /**
-     * Ordnet die übergebenen Geräte dem Mietvorgang zu — von attachItems()
-     * (bestehender Vorgang) und store() (direkt bei Neuanlage) genutzt.
+     * Ordnet die übergebenen Geräte dem Mietvorgang zu (unter Berücksichtigung
+     * der Verfügbarkeit im Mietzeitraum) — von attachItems() (bestehender
+     * Vorgang) und store() (direkt bei Neuanlage) genutzt. Gibt [Anzahl
+     * zugeordneter Geräte, Zusammenfassungstext] zurück.
      *
      * @param  array<int, int|string>  $itemIds
+     * @return array{0: int, 1: string}
      */
-    private function attachItemIds(Mietvorgang $mietvorgang, array $itemIds): void
+    private function attachItemIds(Mietvorgang $mietvorgang, array $itemIds): array
     {
-        Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($mietvorgang) {
-            $item->update([
-                'suppliers_id' => $mietvorgang->suppliers_id,
-                'rent_start' => $mietvorgang->rent_start,
-                'rent_end' => $mietvorgang->rent_end,
-                'mietvorgang_id' => $mietvorgang->id,
-                'mietvorgang_manual' => true,
-            ]);
+        $added = [];
+        $skipped = [];
 
-            activity('item')
-                ->performedOn($item)
-                ->event('attached')
-                ->withProperties(['mietvorgang_id' => $mietvorgang->id])
-                ->log("Gerät \"{$item->bezeichnung}\" dem Mietvorgang ({$mietvorgang->supplier->bezeichnung}) zugeordnet");
+        Item::whereIn('id', $itemIds)->get()->each(function (Item $item) use ($mietvorgang, &$added, &$skipped) {
+            $result = $this->assign->attachToMietvorgang($item, $mietvorgang, manual: true, notifySlack: false);
+
+            if ($result['alreadyAttached']) {
+                $skipped[] = "{$item->bezeichnung} (bereits zugeordnet)";
+            } elseif (! $result['added']) {
+                $skipped[] = "{$item->bezeichnung} ({$result['reason']})";
+            } else {
+                $added[] = $item->bezeichnung;
+            }
         });
 
-        $this->slack->syncMietvorgang($mietvorgang);
+        $messageParts = [];
+        if (count($added)) {
+            $messageParts[] = count($added).' Gerät(e) zugeordnet: '.implode(', ', $added);
+        }
+        if (count($skipped)) {
+            $messageParts[] = 'Übersprungen: '.implode(', ', $skipped);
+        }
+
+        if (count($added)) {
+            $this->slack->syncMietvorgang($mietvorgang);
+        }
+
+        return [count($added), $messageParts ? implode(' — ', $messageParts) : 'Keine Geräte ausgewählt.'];
     }
 
     public function detachItem(Mietvorgang $mietvorgang, Item $item)
@@ -164,7 +193,7 @@ class MietvorgangController extends Controller
             ->withProperties(['mietvorgang_id' => $mietvorgang->id])
             ->log("Gerät \"{$item->bezeichnung}\" aus Mietvorgang ({$mietvorgang->supplier->bezeichnung}) entfernt");
 
-        $item->removeFromMietvorgang();
+        $this->assign->detachFromMietvorgang($item, $mietvorgang);
 
         return redirect()->route('mietvorgaenge.show', $mietvorgang)->with('success', 'Gerät entfernt.');
     }

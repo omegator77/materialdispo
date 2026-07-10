@@ -20,6 +20,12 @@
         </div>
         @endif
 
+        @if(session('error'))
+        <div class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
+            {{ session('error') }}
+        </div>
+        @endif
+
         <form action="{{ route('mietvorgaenge.update', $mietvorgang) }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
             @csrf
             @method('PUT')
@@ -154,13 +160,13 @@
                 <div class="flex items-center justify-between border border-gray-200 rounded px-4 py-2 text-sm">
                     <div>
                         {{ $item->bezeichnung }} @if($item->nummer)<span class="text-gray-400">({{ $item->nummer }})</span>@endif
-                        @if($item->mietvorgang_manual)
+                        @if($item->pivot->manual)
                         <span class="ml-2 inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">Manuell</span>
                         @endif
                     </div>
 
                     <form action="{{ route('mietvorgaenge.detachItem', [$mietvorgang, $item]) }}" method="POST"
-                          onsubmit="return confirm('Gerät wirklich entfernen? Vermieter und Mietzeitraum werden am Gerät gelöscht.');">
+                          onsubmit="return confirm('Gerät wirklich aus diesem Mietvorgang entfernen?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline">
@@ -352,8 +358,7 @@
                 selected: [],
                 get filteredItems() {
                     const needle = this.query.trim().toLowerCase();
-                    if (needle === '') return this.items;
-                    return this.items.filter(item => item.label.toLowerCase().includes(needle));
+                    return this.items.filter(item => !this.isSelected(item) && (needle === '' || item.label.toLowerCase().includes(needle)));
                 },
                 isSelected(item) {
                     return this.selected.some(i => i.id === item.id);

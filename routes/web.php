@@ -41,8 +41,6 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::put('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'update'])->name('geraetetypen.update');
     Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
-    Route::post('items/{item}/reset-mietvorgang', [ItemController::class, 'resetMietvorgang'])->name('items.resetMietvorgang');
-    Route::post('items/{item}/reset-vermietvorgang', [ItemController::class, 'resetVermietvorgang'])->name('items.resetVermietvorgang');
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
     Route::resource('/mieter', MieterController::class)->except(['index', 'show']);
 

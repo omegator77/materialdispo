@@ -17,10 +17,19 @@ class TimelineController extends Controller
         $items = Item::with([
             'unit',
             'supplier',
-            'mieter',
             'productions' => function ($query) use ($start, $end) {
                 $query->whereDate('booking_start', '<=', $end)
                     ->whereDate('booking_end', '>=', $start);
+            },
+            'mietvorgaenge' => function ($query) use ($start, $end) {
+                $query->whereDate('rent_start', '<=', $end)
+                    ->whereDate('rent_end', '>=', $start)
+                    ->with('supplier');
+            },
+            'vermietvorgaenge' => function ($query) use ($start, $end) {
+                $query->whereDate('rent_start', '<=', $end)
+                    ->whereDate('rent_end', '>=', $start)
+                    ->with('mieter');
             },
         ])
             ->when($unitId, fn ($query) => $query->where('units_id', $unitId))

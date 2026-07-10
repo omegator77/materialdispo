@@ -31,7 +31,12 @@
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Slack</h3>
 
                 <div>
-                    <label for="slack_reminder_channel" class="block text-sm font-medium text-gray-700">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="slack_reminder_enabled" value="1" @checked(old('slack_reminder_enabled', $settings['slack_reminder_enabled']))>
+                        Slack-Nachrichten für Miet-/Vermietvorgänge senden
+                    </label>
+
+                    <label for="slack_reminder_channel" class="block text-sm font-medium text-gray-700 mt-3">
                         Ziel-Kanal für Miet-/Vermietvorgangs-Nachrichten
                     </label>
                     <input type="text" name="slack_reminder_channel" id="slack_reminder_channel"
@@ -42,8 +47,13 @@
                     </p>
                 </div>
 
-                <div class="mt-4">
-                    <label for="slack_production_channel" class="block text-sm font-medium text-gray-700">
+                <div class="mt-6 pt-4 border-t border-gray-100">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="slack_production_enabled" value="1" @checked(old('slack_production_enabled', $settings['slack_production_enabled']))>
+                        Slack-Nachrichten für Produktionen senden
+                    </label>
+
+                    <label for="slack_production_channel" class="block text-sm font-medium text-gray-700 mt-3">
                         Ziel-Kanal für Produktions-Nachrichten
                     </label>
                     <input type="text" name="slack_production_channel" id="slack_production_channel"

@@ -296,8 +296,7 @@
                 selected: [],
                 get filteredItems() {
                     const needle = this.query.trim().toLowerCase();
-                    if (needle === '') return this.items;
-                    return this.items.filter(item => item.label.toLowerCase().includes(needle));
+                    return this.items.filter(item => !this.isSelected(item) && (needle === '' || item.label.toLowerCase().includes(needle)));
                 },
                 isSelected(item) {
                     return this.selected.some(i => i.id === item.id);

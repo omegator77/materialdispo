@@ -157,7 +157,7 @@ class SlackVorgangSync
     {
         $token = config('services.slack.bot_token');
 
-        if (! $token || ! $vorgang->slack_channel || ! $vorgang->slack_message_ts) {
+        if (! $token || ! $vorgang->slack_channel || ! $vorgang->slack_message_ts || ! $this->slackEnabledFor($vorgang)) {
             return;
         }
 
@@ -192,7 +192,7 @@ class SlackVorgangSync
 
         $token = config('services.slack.bot_token');
 
-        if (! $token) {
+        if (! $token || ! $this->slackEnabledFor($vorgang)) {
             return;
         }
 
@@ -229,6 +229,19 @@ class SlackVorgangSync
     }
 
     /**
+     * Globaler Ein-/Ausschalter je Vorgangsart (Settings-Seite), unabhängig
+     * vom hinterlegten Ziel-Kanal. Ohne gespeicherte Einstellung gilt "an",
+     * damit bestehende Installationen ohne Konfiguration unverändert weiter
+     * senden.
+     */
+    private function slackEnabledFor(Mietvorgang|Vermietvorgang|Production $vorgang): bool
+    {
+        $key = $vorgang instanceof Production ? 'slack_production_enabled' : 'slack_reminder_enabled';
+
+        return Setting::get($key, '1') === '1';
+    }
+
+    /**
      * @return array{action_id: string, label: string, buttonLabel: string, done: bool, confirmedAt: mixed, confirmedByName: ?string}
      */
     private function statusEntry(string $kind, string $subtype, string $label, string $buttonLabel, mixed $confirmedAt, mixed $confirmedBy): array
@@ -257,7 +270,7 @@ class SlackVorgangSync
         $configKey = $channelSettingKey === 'slack_production_channel' ? 'production_channel' : 'reminder_channel';
         $channel = $vorgang->slack_channel ?: Setting::get($channelSettingKey) ?: config("services.slack.{$configKey}");
 
-        if (! $token || ! $channel) {
+        if (! $token || ! $channel || ! $this->slackEnabledFor($vorgang)) {
             return;
         }
 

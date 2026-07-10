@@ -56,10 +56,21 @@
                 <p><span class="font-medium">Nummer:</span> {{ $item->nummer ?: '—' }}</p>
                 <p><span class="font-medium">Beschreibung:</span> {{ $item->description ?: '—' }}</p>
                 <p><span class="font-medium">Vermieter:</span> {{ $item->supplier->bezeichnung ?? 'Eigentum' }}</p>
-                @if($item->suppliers_id)
-                <p><span class="font-medium">Mietzeitraum:</span>
-                    {{ $item->rent_start ? \Carbon\Carbon::parse($item->rent_start)->format('d.m.Y') : '—' }}
-                    – {{ $item->rent_end ? \Carbon\Carbon::parse($item->rent_end)->format('d.m.Y') : '—' }}
+                @if($item->mietvorgaenge->isNotEmpty())
+                <p>
+                    <span class="font-medium">Mietzeitraum:</span>
+                    {{ $item->mietvorgaenge->first()->rent_start->format('d.m.Y') }}
+                    – {{ $item->mietvorgaenge->first()->rent_end->format('d.m.Y') }}
+                    @if($item->mietvorgaenge->count() > 1)
+                        <details class="inline">
+                            <summary class="inline cursor-pointer text-orange-600 hover:underline text-xs">+{{ $item->mietvorgaenge->count() - 1 }} weitere</summary>
+                            <span class="block mt-0.5">
+                                @foreach($item->mietvorgaenge->slice(1) as $mv)
+                                    {{ $mv->rent_start->format('d.m.Y') }} – {{ $mv->rent_end->format('d.m.Y') }}@if(!$loop->last), @endif
+                                @endforeach
+                            </span>
+                        </details>
+                    @endif
                 </p>
                 @endif
             </div>

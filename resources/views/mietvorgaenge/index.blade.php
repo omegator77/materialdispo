@@ -78,9 +78,10 @@
 
                                     @if(Auth::user()->isUser())
                                     <form action="{{ route('mietvorgaenge.destroy', $mietvorgang) }}" method="POST"
-                                          onsubmit="return confirm('Mietvorgang wirklich löschen? Das geht nur, wenn keine Geräte mehr zugeordnet sind.');">
+                                          onsubmit="return confirmDeleteVorgang(this, {{ $mietvorgang->items_count }});">
                                         @csrf
                                         @method('DELETE')
+                                        <input type="hidden" name="force" value="0">
                                         <button type="submit"
                                                 class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
                                             Löschen
@@ -132,9 +133,10 @@
 
                         @if(Auth::user()->isUser())
                         <form action="{{ route('mietvorgaenge.destroy', $mietvorgang) }}" method="POST"
-                              class="flex-1" onsubmit="return confirm('Mietvorgang wirklich löschen? Das geht nur, wenn keine Geräte mehr zugeordnet sind.');">
+                              class="flex-1" onsubmit="return confirmDeleteVorgang(this, {{ $mietvorgang->items_count }});">
                             @csrf
                             @method('DELETE')
+                            <input type="hidden" name="force" value="0">
                             <button type="submit"
                                     class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
                                 Löschen
@@ -156,4 +158,18 @@
         </div>
 
     </div>
+
+    <script>
+        function confirmDeleteVorgang(form, itemsCount) {
+            if (itemsCount > 0) {
+                if (!confirm(`Diesem Mietvorgang sind noch ${itemsCount} Gerät(e) zugeordnet. Sollen alle Geräte entfernt und der Vorgang anschließend gelöscht werden?`)) {
+                    return false;
+                }
+                form.querySelector('input[name="force"]').value = '1';
+                return true;
+            }
+
+            return confirm('Mietvorgang wirklich löschen?');
+        }
+    </script>
 </x-app-layout>

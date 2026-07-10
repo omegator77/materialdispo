@@ -39,15 +39,13 @@ class DashboardController extends Controller
                     $q->whereDate('booking_start', '<=', $today)
                         ->whereDate('booking_end', '>=', $today);
                 })
-                ->orWhere(function ($q) use ($today) {
-                    $q->whereNotNull('mietvorgang_id')
-                        ->whereDate('rent_start', '<=', $today)
+                ->orWhereHas('mietvorgaenge', function ($q) use ($today) {
+                    $q->whereDate('rent_start', '<=', $today)
                         ->whereDate('rent_end', '>=', $today);
                 })
-                ->orWhere(function ($q) use ($today) {
-                    $q->whereNotNull('vermietvorgang_id')
-                        ->whereDate('verleih_start', '<=', $today)
-                        ->whereDate('verleih_end', '>=', $today);
+                ->orWhereHas('vermietvorgaenge', function ($q) use ($today) {
+                    $q->whereDate('rent_start', '<=', $today)
+                        ->whereDate('rent_end', '>=', $today);
                 });
             })->count(),
 
