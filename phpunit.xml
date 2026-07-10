@@ -29,5 +29,11 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="SLACK_BOT_TOKEN" value=""/>
+        <env name="SLACK_BOT_USER_OAUTH_TOKEN" value=""/>
+        <env name="SLACK_SIGNING_SECRET" value=""/>
+        <env name="SLACK_REMINDER_CHANNEL" value=""/>
+        <env name="SLACK_PRODUCTION_CHANNEL" value=""/>
+        <env name="SLACK_BOT_USER_DEFAULT_CHANNEL" value=""/>
     </php>
 </phpunit>
