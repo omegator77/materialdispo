@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UnitRequest;
 use App\Models\Item;
 use App\Models\Unit;
+use Illuminate\Http\Request;
 
 class UnitController extends Controller
 {
@@ -13,7 +14,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = Unit::orderBy('bezeichnung')->get();
+        $units = Unit::orderBy('sort_order')->orderBy('bezeichnung')->get();
 
         return view('units.index', ['units' => $units]);
     }
@@ -75,5 +76,34 @@ class UnitController extends Controller
         $unit->delete();
 
         return redirect()->route('units.index');
+    }
+
+    /**
+     * Verschiebt eine Gruppe in der Sortierreihenfolge um eine Position nach
+     * oben oder unten, indem ihr sort_order mit dem der Nachbargruppe
+     * getauscht wird. Am Rand (schon erste/letzte Gruppe) ein No-op.
+     */
+    public function reorder(Request $request, Unit $unit)
+    {
+        $request->validate(['direction' => 'required|in:up,down']);
+
+        $units = Unit::orderBy('sort_order')->orderBy('bezeichnung')->get();
+        $position = $units->search(fn (Unit $candidate) => $candidate->id === $unit->id);
+
+        $neighborPosition = $request->input('direction') === 'up' ? $position - 1 : $position + 1;
+
+        if ($neighborPosition < 0 || $neighborPosition >= $units->count()) {
+            return redirect()->route('units.index')->with('success', 'Gruppe bereits an dieser Position.');
+        }
+
+        $neighbor = $units->get($neighborPosition);
+
+        $unitSortOrder = $unit->sort_order;
+        $neighborSortOrder = $neighbor->sort_order;
+
+        $unit->update(['sort_order' => $neighborSortOrder]);
+        $neighbor->update(['sort_order' => $unitSortOrder]);
+
+        return redirect()->route('units.index')->with('success', 'Reihenfolge aktualisiert.');
     }
 }

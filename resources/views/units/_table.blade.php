@@ -43,6 +43,30 @@
 
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-2">
+                                @if(Auth::user()->isUser())
+                                <form method="POST" action="{{ route('units.reorder', $unit) }}">
+                                    @csrf
+                                    <input type="hidden" name="direction" value="up">
+                                    <button type="submit"
+                                            title="Nach oben verschieben"
+                                            @disabled($loop->first)
+                                            class="bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 font-semibold py-1 px-2 rounded">
+                                        &#9650;
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('units.reorder', $unit) }}">
+                                    @csrf
+                                    <input type="hidden" name="direction" value="down">
+                                    <button type="submit"
+                                            title="Nach unten verschieben"
+                                            @disabled($loop->last)
+                                            class="bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 font-semibold py-1 px-2 rounded">
+                                        &#9660;
+                                    </button>
+                                </form>
+                                @endif
+
                                 <a href="{{ route('units.show', $unit->id) }}"
                                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
                                     Details
@@ -86,6 +110,32 @@
                         {{ $unit->description ?: 'Keine Beschreibung hinterlegt' }}
                     </p>
                 </div>
+
+                @if(Auth::user()->isUser())
+                <div class="mt-3 flex gap-2">
+                    <form method="POST" action="{{ route('units.reorder', $unit) }}" class="flex-1">
+                        @csrf
+                        <input type="hidden" name="direction" value="up">
+                        <button type="submit"
+                                title="Nach oben verschieben"
+                                @disabled($loop->first)
+                                class="w-full text-center bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 font-semibold py-2 px-3 rounded">
+                            &#9650; Nach oben
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{{ route('units.reorder', $unit) }}" class="flex-1">
+                        @csrf
+                        <input type="hidden" name="direction" value="down">
+                        <button type="submit"
+                                title="Nach unten verschieben"
+                                @disabled($loop->last)
+                                class="w-full text-center bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed text-gray-700 font-semibold py-2 px-3 rounded">
+                            &#9660; Nach unten
+                        </button>
+                    </form>
+                </div>
+                @endif
 
                 <div class="mt-4 flex gap-2">
                     <a href="{{ route('units.show', $unit->id) }}"

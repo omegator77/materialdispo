@@ -50,6 +50,14 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Buchungsstatus</label>
+                        <select name="booking_status" class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
+                            <option value="all" @selected((string)$bookingStatus === 'all')>Alle</option>
+                            <option value="booked" @selected((string)$bookingStatus === 'booked')>Nur gebucht</option>
+                            <option value="free" @selected((string)$bookingStatus === 'free')>Nur frei</option>
+                        </select>
+                    </div>
+                    <div>
                         <button type="submit"
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
                             Anzeigen
@@ -125,8 +133,8 @@
                         </div>
 
                         {{-- Gruppen & Geräte --}}
-                        @forelse($items->groupBy(fn($item) => $item->unit?->bezeichnung ?? 'Ohne Gruppe') as $unitName => $groupedItems)
-                            @php $gi = $loop->index; @endphp
+                        @forelse($groupedItems as $group)
+                            @php $gi = $loop->index; $unitName = $group['unit']->bezeichnung ?? 'Ohne Gruppe'; $groupItems = $group['items']; @endphp
 
                                 {{-- Gruppenheader --}}
                                 <div class="flex border-y border-gray-200" style="min-height: 28px;">
@@ -136,7 +144,7 @@
                                     >
                                         <span x-text="(groups[{{ $gi }}] ?? true) ? '▼' : '▶'" class="text-[10px]"></span>
                                         <span>{{ $unitName }}</span>
-                                        <span class="text-gray-400 font-normal">({{ $groupedItems->count() }})</span>
+                                        <span class="text-gray-400 font-normal">({{ $groupItems->count() }})</span>
                                     </button>
                                     <div class="flex">
                                         @foreach($days as $day)
@@ -151,7 +159,7 @@
                                     x-transition:enter="transition-opacity duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                                     x-transition:leave="transition-opacity duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-                                    @foreach($groupedItems as $item)
+                                    @foreach($groupItems as $item)
                                         <div class="flex border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                                             style="min-height: 36px;">
 

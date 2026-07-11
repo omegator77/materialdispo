@@ -35,6 +35,7 @@ Route::post('/slack/interactions', [SlackInteractionController::class, 'handle']
 // nicht von "units/{unit}" (show) abgefangen wird.
 Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/units', UnitController::class)->except(['index', 'show']);
+    Route::post('/units/{unit}/reorder', [UnitController::class, 'reorder'])->name('units.reorder');
     Route::get('/geraetetypen/create', [GeraetetypController::class, 'create'])->name('geraetetypen.create');
     Route::post('/geraetetypen', [GeraetetypController::class, 'store'])->name('geraetetypen.store');
     Route::get('/geraetetypen/{geraetetyp}/edit', [GeraetetypController::class, 'edit'])->name('geraetetypen.edit');
