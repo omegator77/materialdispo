@@ -10,6 +10,7 @@ use App\Models\Vermietvorgang;
 use App\Services\ItemAssignmentService;
 use App\Services\ItemAvailabilityService;
 use App\Services\SlackVorgangSync;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -99,6 +100,17 @@ class VermietvorgangController extends Controller
             ->values();
 
         return view('vermietvorgaenge.show', compact('vermietvorgang', 'mieter', 'mailingLists', 'defaultMailingList', 'assignableItems'));
+    }
+
+    public function pdf(Vermietvorgang $vermietvorgang)
+    {
+        $vermietvorgang->load(['items.unit', 'mieter']);
+
+        $itemsByUnit = $vermietvorgang->items->groupBy(fn (Item $item) => $item->unit->bezeichnung ?? 'Ohne Gruppe');
+
+        $pdf = Pdf::loadView('pdf.vermietvorgang_materialliste', compact('vermietvorgang', 'itemsByUnit'));
+
+        return $pdf->download("Materialliste {$vermietvorgang->bezeichnung}.pdf");
     }
 
     public function update(VermietvorgangRequest $request, Vermietvorgang $vermietvorgang)
