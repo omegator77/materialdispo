@@ -64,7 +64,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 @php
                 $crewFields = [
-                    'crew_ul' => 'ÜL', 'crew_bt_sng' => 'BT/SNG', 'crew_ti' => 'TI',
+                    'crew_ul' => 'ÜL', 'crew_bt_sng' => 'BT', 'crew_ti' => 'TI',
                     'crew_sng' => 'SNG', 'crew_bt_dl' => 'BT DL', 'crew_tt' => 'TT',
                     'crew_tl' => 'TL', 'crew_ba' => 'BA', 'crew_ta' => 'TA',
                     'crew_kabelhilfen' => 'Kabelhilfen', 'crew_kamera' => 'Kamera', 'crew_evs' => 'EVS',

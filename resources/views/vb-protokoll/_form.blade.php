@@ -86,7 +86,7 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
             @php
             $crewFields = [
                 'crew_ul' => 'ÜL',
-                'crew_bt_sng' => 'BT/SNG',
+                'crew_bt_sng' => 'BT',
                 'crew_ti' => 'TI',
                 'crew_sng' => 'SNG',
                 'crew_bt_dl' => 'BT DL',
