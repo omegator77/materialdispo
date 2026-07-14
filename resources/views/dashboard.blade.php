@@ -1,8 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Dashboard
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Dashboard
+            </h2>
+            <a href="{{ route('anleitung') }}" class="text-sm font-medium text-orange-600 hover:underline">
+                📖 Anleitung
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-6">
@@ -187,31 +192,6 @@
                     </table>
                 </div>
             </div>
-
-            {{-- Roadmap --}}
-            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
-                    Roadmap
-                </summary>
-
-                <ul class="space-y-2 text-sm text-gray-700 px-5 pb-5 pt-1">
-                    <li>✅ Registrierung deaktiviert</li>
-                    <li>✅ Mailversand eingerichtet</li>
-                    <li>✅ Timeline Grundversion</li>
-                    <li>✅ Benutzer-/Rollensystem (Admin/Benutzer/Betrachter)</li>
-                    <li>✅ Aktivitätsprotokoll</li>
-                    <li>✅ Archiv für alte Produktionen (Packliste)</li>
-                    <li>✅ Echtzeit-Suche (Geräte, Vorlagen, Packen)</li>
-                    <li>✅ VB-Protokoll mit Soll/Ist-Abgleich</li>
-                    <li>✅ Gerätetypen & typbasierte Kamerakonfiguration im VB-Protokoll</li>
-                    <li>✅ PDF-Export für VB-Protokoll & Abgleich-Report</li>
-                    <li>✅ Packvorgang: Checkliste je Gerät, Kamerazüge gruppiert, Sperre nach Abschluss</li>
-                    <li>✅ Transport-Erinnerungen für Mietgeräte (Mietvorgänge, Mailinglisten)</li>
-                    <li>⬜ Globale Suche über alle Bereiche</li>
-                    <li>⬜ Packlisten per Mail</li>
-                    <li>⬜ QR-Code je Gerät zum Abhaken per Handykamera im Packvorgang</li>
-                </ul>
-            </details>
 
         </div>
     </div>

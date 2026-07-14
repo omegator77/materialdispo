@@ -23,6 +23,7 @@ use App\Http\Controllers\VermietvorgangController;
 use App\Http\Controllers\TestMailController;
 use App\Http\Controllers\SlackInteractionController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\DocumentationController;
 
 Route::redirect('/', '/login');
 
@@ -111,6 +112,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/anleitung', [DocumentationController::class, 'show'])->name('anleitung');
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);
     Route::get('/geraetetypen', [GeraetetypController::class, 'index'])->name('geraetetypen.index');
