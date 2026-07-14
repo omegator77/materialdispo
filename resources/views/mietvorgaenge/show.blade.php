@@ -5,10 +5,17 @@
                 {{ $mietvorgang->bezeichnung ?? 'Mietvorgang: '.($mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht') }}
             </h2>
 
-            <a href="{{ route('mietvorgaenge.index') }}"
-               class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
-                Zurück
-            </a>
+            <div class="flex gap-2">
+                <a href="{{ route('mietvorgaenge.pdf', $mietvorgang) }}"
+                   class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                    Materialliste (PDF)
+                </a>
+
+                <a href="{{ route('mietvorgaenge.index') }}"
+                   class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    Zurück
+                </a>
+            </div>
         </div>
     </x-slot>
 
