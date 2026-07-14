@@ -42,7 +42,6 @@ class ReassignSlackChannel extends Command
         }
 
         $matches = $modelClass::query()
-            ->whereNotNull('slack_message_ts')
             ->where('bezeichnung', 'like', "%{$search}%")
             ->get();
 
