@@ -1,5 +1,41 @@
 @include('items.tables._filter')
 
+@php
+    // Aktive Sortierung bestimmen. Ohne Auswahl: nach Gruppen-Reihenfolge
+    // gruppiert (group/custom) – identisch zur Controller-Vorgabe.
+    $sortBy = in_array(request('sort_by'), ['group', 'nummer', 'bezeichnung'], true)
+        ? request('sort_by')
+        : 'group';
+
+    if ($sortBy === 'group') {
+        $sortDir = in_array(request('sort_direction'), ['custom', 'asc', 'desc'], true)
+            ? request('sort_direction')
+            : 'custom';
+    } else {
+        $sortDir = request('sort_direction') === 'desc' ? 'desc' : 'asc';
+    }
+
+    $baseParams = request()->all();
+
+    // Gruppe zyklisch: wie in Gruppenansicht → A–Z → Z–A → …
+    $nextGroupDir = $sortBy === 'group'
+        ? ['custom' => 'asc', 'asc' => 'desc', 'desc' => 'custom'][$sortDir]
+        : 'custom';
+    $groupIndicator = $sortBy !== 'group'
+        ? '↕'
+        : ['custom' => '↕', 'asc' => '↑', 'desc' => '↓'][$sortDir];
+    $groupModeLabel = $sortBy === 'group'
+        ? ['custom' => 'Gruppen-Reihenfolge', 'asc' => 'A–Z', 'desc' => 'Z–A'][$sortDir]
+        : null;
+
+    $colLink = fn (string $col, string $dir) => route('items.index', array_merge($baseParams, [
+        'sort_by' => $col,
+        'sort_direction' => $dir,
+    ]));
+    $colToggle = fn (string $col) => ($sortBy === $col && $sortDir === 'asc') ? 'desc' : 'asc';
+    $colIndicator = fn (string $col) => $sortBy === $col ? ($sortDir === 'desc' ? '↓' : '↑') : '';
+@endphp
+
 <div class="max-w-7xl w-11/12 mx-auto mt-6">
 
     {{-- Desktop --}}
@@ -8,13 +44,26 @@
             <thead class="bg-gray-100 border-b">
                 <tr>
                     <th class="text-left px-4 py-3">
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'units_id', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Gruppe</a>
+                        <a href="{{ $colLink('group', $nextGroupDir) }}"
+                           class="hover:text-orange-500 {{ $sortBy === 'group' ? 'text-orange-500' : '' }}"
+                           title="Sortierung wechseln: Gruppen-Reihenfolge → A–Z → Z–A">
+                            Gruppe <span class="text-xs">{{ $groupIndicator }}</span>
+                        </a>
+                        @if($groupModeLabel)
+                            <span class="block text-[11px] font-normal text-gray-400">{{ $groupModeLabel }}</span>
+                        @endif
                     </th>
                     <th class="text-left px-4 py-3">
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
+                        <a href="{{ $colLink('nummer', $colToggle('nummer')) }}"
+                           class="hover:text-orange-500 {{ $sortBy === 'nummer' ? 'text-orange-500' : '' }}">
+                            Nr. <span class="text-xs">{{ $colIndicator('nummer') }}</span>
+                        </a>
                     </th>
                     <th class="text-left px-4 py-3">
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Bezeichnung</a>
+                        <a href="{{ $colLink('bezeichnung', $colToggle('bezeichnung')) }}"
+                           class="hover:text-orange-500 {{ $sortBy === 'bezeichnung' ? 'text-orange-500' : '' }}">
+                            Bezeichnung <span class="text-xs">{{ $colIndicator('bezeichnung') }}</span>
+                        </a>
                     </th>
                     <th class="text-left px-4 py-3">Beschreibung</th>
                     <th class="text-left px-4 py-3">Vermieter</th>

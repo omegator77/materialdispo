@@ -19,6 +19,17 @@ class Unit extends Model
         });
     }
 
+    /**
+     * Einheitliche Anzeige-Reihenfolge für Gruppen: erst die auf der
+     * Gruppenseite konfigurierte sort_order, dann alphabetisch als Fallback.
+     * Diese eine Definition gilt appweit (Dropdowns, Listen, Timeline), damit
+     * die Reihenfolge nicht in jedem Controller neu erfunden wird.
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('bezeichnung');
+    }
+
     public function items()
     {
         return $this->hasMany(Item::class, 'units_id');

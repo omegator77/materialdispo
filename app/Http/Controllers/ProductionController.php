@@ -111,7 +111,7 @@ class ProductionController extends Controller
             $request->boolean('show_unavailable')
         );
 
-        $allUnits = Unit::orderBy('bezeichnung')->get();
+        $allUnits = Unit::ordered()->get();
 
         $mietvorgaenge = $production->items->pluck('mietvorgaenge')->flatten()->unique('id')->values();
         $vermietvorgaenge = $production->items->pluck('vermietvorgaenge')->flatten()->unique('id')->values();

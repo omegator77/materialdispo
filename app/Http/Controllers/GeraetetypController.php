@@ -11,15 +11,15 @@ class GeraetetypController extends Controller
 {
     public function index()
     {
-        $geraetetypen = Geraetetyp::with('unit')->withCount('items')->orderBy('units_id')->orderBy('bezeichnung')->get();
-        $units = Unit::orderBy('bezeichnung')->get();
+        $geraetetypen = Geraetetyp::with('unit')->withCount('items')->orderedByUnit()->get();
+        $units = Unit::ordered()->get();
 
         return view('geraetetypen.index', compact('geraetetypen', 'units'));
     }
 
     public function create()
     {
-        $units = Unit::orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
 
         return view('geraetetypen.create', compact('units'));
     }
@@ -33,7 +33,7 @@ class GeraetetypController extends Controller
 
     public function edit(Geraetetyp $geraetetyp)
     {
-        $units = Unit::orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
 
         return view('geraetetypen.edit', compact('geraetetyp', 'units'));
     }

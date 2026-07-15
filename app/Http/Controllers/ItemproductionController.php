@@ -57,7 +57,7 @@ class ItemproductionController extends Controller
             'itemPacks',
             'vbProtokoll',
         ])->orderBy('booking_start')->get();
-        $allUnits = Unit::orderBy('bezeichnung')->get();
+        $allUnits = Unit::ordered()->get();
         $allItems = Item::orderBy('bezeichnung')->get();
 
         // View mit Daten zurückgeben
