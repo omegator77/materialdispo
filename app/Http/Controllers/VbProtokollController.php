@@ -27,8 +27,8 @@ class VbProtokollController extends Controller
             return redirect()->route('vb-protokoll.edit', $production->id);
         }
 
-        $units = Unit::orderBy('bezeichnung')->get();
-        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
+        $geraetetypen = Geraetetyp::orderedByUnit()->get();
 
         return view('vb-protokoll.create', compact('production', 'units', 'geraetetypen'));
     }
@@ -64,8 +64,8 @@ class VbProtokollController extends Controller
     public function edit(Production $production)
     {
         $vbProtokoll = $production->vbProtokoll()->with(['anforderungen', 'fotos'])->firstOrFail();
-        $units = Unit::orderBy('bezeichnung')->get();
-        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
+        $geraetetypen = Geraetetyp::orderedByUnit()->get();
 
         return view('vb-protokoll.edit', compact('production', 'vbProtokoll', 'units', 'geraetetypen'));
     }

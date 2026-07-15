@@ -14,7 +14,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = Unit::orderBy('sort_order')->orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
 
         return view('units.index', ['units' => $units]);
     }
@@ -95,7 +95,7 @@ class UnitController extends Controller
     {
         $request->validate(['direction' => 'required|in:up,down']);
 
-        $units = Unit::orderBy('sort_order')->orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
         $position = $units->search(fn (Unit $candidate) => $candidate->id === $unit->id);
 
         $neighborPosition = $request->input('direction') === 'up' ? $position - 1 : $position + 1;

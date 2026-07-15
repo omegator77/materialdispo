@@ -48,7 +48,7 @@ class TimelineController extends Controller
             })->values();
         }
 
-        $units = Unit::orderBy('sort_order')->orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
 
         // Eine Gruppe pro konfigurierter Unit (in sort_order-Reihenfolge) plus
         // eine abschließende "ohne Gruppe"-Gruppe für Items mit units_id ===

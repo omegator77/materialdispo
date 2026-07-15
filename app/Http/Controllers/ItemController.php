@@ -34,21 +34,42 @@ class ItemController extends Controller
             $query->where('units_id', $request->unit_id);
         }
 
-        if (
-            $request->filled('sort_by') &&
-            in_array($request->sort_by, ['bezeichnung', 'nummer', 'units_id'])
-        ) {
-            $secondary = $request->sort_by === 'bezeichnung' ? 'nummer' : 'bezeichnung';
+        // Standard ohne Auswahl: nach Gruppen-Reihenfolge gruppiert (wie
+        // Timeline/Gruppenseite). "group" nutzt die drei Modi custom/asc/desc,
+        // die Sachspalten (nummer, bezeichnung) nur auf-/absteigend.
+        $sortBy = in_array($request->get('sort_by'), ['group', 'nummer', 'bezeichnung'], true)
+            ? $request->get('sort_by')
+            : 'group';
 
-            $query->orderBy($request->sort_by, $request->get('sort_direction', 'asc'))
-                ->orderBy($secondary, 'asc');
-        } else {
-            $query->orderBy('bezeichnung', 'asc')
+        if ($sortBy === 'group') {
+            $direction = in_array($request->get('sort_direction'), ['custom', 'asc', 'desc'], true)
+                ? $request->get('sort_direction')
+                : 'custom';
+
+            if ($direction === 'custom') {
+                // Wie in der Gruppenansicht festgelegt: nach Unit::sort_order.
+                $groupOrder = Unit::select('sort_order')
+                    ->whereColumn('units.id', 'items.units_id');
+            } else {
+                // Auf-/absteigend nach Gruppenname.
+                $groupOrder = Unit::select('bezeichnung')
+                    ->whereColumn('units.id', 'items.units_id');
+            }
+
+            $query->orderByRaw('('.$groupOrder->toSql().') is null') // "Ohne Gruppe" ans Ende
+                ->orderBy($groupOrder, $direction === 'desc' ? 'desc' : 'asc')
+                ->orderBy('bezeichnung', 'asc')
                 ->orderBy('nummer', 'asc');
+        } else {
+            $direction = $request->get('sort_direction') === 'desc' ? 'desc' : 'asc';
+            $secondary = $sortBy === 'bezeichnung' ? 'nummer' : 'bezeichnung';
+
+            $query->orderBy($sortBy, $direction)
+                ->orderBy($secondary, 'asc');
         }
 
         $items = $query->get();
-        $units = Unit::orderBy('bezeichnung')->get();
+        $units = Unit::ordered()->get();
         $productions = Production::where('booking_end', '>=', today()->toDateString())
             ->orderBy('booking_start')
             ->get();
@@ -58,10 +79,10 @@ class ItemController extends Controller
 
     public function create()
     {
-        $units = Unit::all();
+        $units = Unit::ordered()->get();
         $suppliers = Supplier::all();
         $mieter = Mieter::all();
-        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
+        $geraetetypen = Geraetetyp::orderedByUnit()->get();
 
         $item = new Item;
 
@@ -99,10 +120,10 @@ class ItemController extends Controller
 
     public function edit(string $id)
     {
-        $units = Unit::all();
+        $units = Unit::ordered()->get();
         $suppliers = Supplier::all();
         $mieter = Mieter::all();
-        $geraetetypen = Geraetetyp::orderBy('units_id')->orderBy('bezeichnung')->get();
+        $geraetetypen = Geraetetyp::orderedByUnit()->get();
 
         $item = Item::with(['cameraDetail', 'monitorDetail', 'lensDetail', 'mietvorgaenge.supplier', 'vermietvorgaenge.mieter'])->findOrFail($id);
 

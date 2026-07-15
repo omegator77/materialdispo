@@ -27,6 +27,25 @@ test('admin can create, list and delete a geraetetyp', function () {
     expect(Geraetetyp::find($geraetetyp->id))->toBeNull();
 });
 
+test('geraetetyp-Liste folgt der Gruppen-Reihenfolge (sort_order), nicht der Anlagereihenfolge', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    // Gruppe B via sort_order vor Gruppe A, obwohl später/alphabetisch hinten.
+    $groupB = Unit::create(['bezeichnung' => 'Zebra-Gruppe', 'sort_order' => 1]);
+    $groupA = Unit::create(['bezeichnung' => 'Alpha-Gruppe', 'sort_order' => 2]);
+
+    Geraetetyp::create(['units_id' => $groupA->id, 'bezeichnung' => 'Typ in Alpha']);
+    Geraetetyp::create(['units_id' => $groupB->id, 'bezeichnung' => 'Typ in Zebra']);
+
+    $content = $this->actingAs($admin)->get(route('geraetetypen.index'))->getContent();
+
+    $posZebra = strpos($content, 'Typ in Zebra');
+    $posAlpha = strpos($content, 'Typ in Alpha');
+
+    expect($posZebra)->not->toBeFalse();
+    expect($posZebra)->toBeLessThan($posAlpha);
+});
+
 test('deleting a geraetetyp that is still referenced by items is blocked', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $unit = Unit::create(['bezeichnung' => 'Kameras']);
