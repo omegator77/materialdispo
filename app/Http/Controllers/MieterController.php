@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MieterRequest;
 use App\Models\Mieter;
+use Illuminate\Database\QueryException;
 
 class MieterController extends Controller
 {
@@ -49,8 +50,17 @@ class MieterController extends Controller
 
     public function destroy(Mieter $mieter)
     {
-        $mieter->delete();
+        // vermietvorgaenge.mieter_id ist RESTRICT: ein Mieter mit noch
+        // vorhandenen Vermietvorgängen lässt sich nicht löschen. Vorher wurden
+        // dessen Vermietvorgänge lautlos mitgelöscht.
+        try {
+            $mieter->delete();
+        } catch (QueryException $e) {
+            return redirect()
+                ->route('mieter.index')
+                ->with('error', 'Diesem Mieter sind noch Vermietvorgänge zugeordnet — er kann nicht gelöscht werden.');
+        }
 
-        return redirect()->route('mieter.index');
+        return redirect()->route('mieter.index')->with('success', 'Mieter gelöscht.');
     }
 }
