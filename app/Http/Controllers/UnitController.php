@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UnitRequest;
-use App\Models\Item;
 use App\Models\Unit;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class UnitController extends Controller
@@ -73,16 +73,17 @@ class UnitController extends Controller
      */
     public function destroy(Unit $unit)
     {
-        // units_id ist RESTRICT: eine Gruppe mit Geräten lässt sich auf DB-Ebene
-        // nicht löschen. Vorher abfangen und freundlich melden statt 500.
-        if (Item::where('units_id', $unit->id)->exists()) {
-            return redirect()->route('units.index')
-                ->withErrors(['unit' => 'Diese Gruppe hat noch zugeordnete Geräte und kann nicht gelöscht werden.']);
+        // items.units_id ist RESTRICT: eine Gruppe mit zugeordneten Geräten lässt
+        // sich auf DB-Ebene nicht löschen. Sauber abfangen statt 500.
+        try {
+            $unit->delete();
+        } catch (QueryException $e) {
+            return redirect()
+                ->route('units.index')
+                ->with('error', 'Dieser Gruppe sind noch Geräte zugeordnet — sie kann nicht gelöscht werden.');
         }
 
-        $unit->delete();
-
-        return redirect()->route('units.index');
+        return redirect()->route('units.index')->with('success', 'Gruppe gelöscht.');
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SupplierRequest;
 use App\Models\Supplier;
+use Illuminate\Database\QueryException;
 
 class SupplierController extends Controller
 {
@@ -49,8 +50,18 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier)
     {
-        $supplier->delete();
+        // items.suppliers_id und mietvorgaenge.suppliers_id sind RESTRICT: ein
+        // Vermieter mit zugeordneten Geräten oder Mietvorgängen lässt sich nicht
+        // löschen. Vorher machte das gelöschte Geräte zu „Eigentum" bzw. löschte
+        // Mietvorgänge lautlos mit.
+        try {
+            $supplier->delete();
+        } catch (QueryException $e) {
+            return redirect()
+                ->route('suppliers.index')
+                ->with('error', 'Diesem Vermieter sind noch Geräte oder Mietvorgänge zugeordnet — er kann nicht gelöscht werden.');
+        }
 
-        return redirect()->route('suppliers.index');
+        return redirect()->route('suppliers.index')->with('success', 'Vermieter gelöscht.');
     }
 }

@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Item;
 use App\Models\Supplier;
+use App\Models\Unit;
 use App\Models\User;
 
 test('admin can create, view, list, update and delete a supplier', function () {
@@ -31,6 +33,19 @@ test('admin can create, view, list, update and delete a supplier', function () {
         ->assertRedirect(route('suppliers.index'));
 
     expect(Supplier::find($supplier->id))->toBeNull();
+});
+
+test('deleting a supplier that still has assigned items is blocked', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $unit = Unit::create(['bezeichnung' => 'Kameras']);
+    $supplier = Supplier::create(['bezeichnung' => 'Mietpartner', 'phone' => '0123456789']);
+    Item::create(['units_id' => $unit->id, 'suppliers_id' => $supplier->id, 'bezeichnung' => 'Gemietete Kamera']);
+
+    $response = $this->actingAs($admin)->delete(route('suppliers.destroy', $supplier));
+
+    $response->assertRedirect(route('suppliers.index'));
+    $response->assertSessionHas('error');
+    expect(Supplier::find($supplier->id))->not->toBeNull();
 });
 
 test('creating a supplier without bezeichnung or with an invalid email fails validation', function () {
