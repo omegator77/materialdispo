@@ -5,8 +5,11 @@
 # with a timestamped filename, and prunes dumps older than RETENTION_DAYS.
 #
 # Intended to run on the host (outside Docker) via crontab, independent of
-# the app container, so backups keep working even if the app itself breaks:
-#   15 3 * * * /home/noicebard/docker-projects/laravel-app/app/scripts/backup-db.sh >> /home/noicebard/docker-projects/laravel-app/backups/backup.log 2>&1
+# the app container, so backups keep working even if the app itself breaks.
+# Explicitly invoked via `bash` so a missing executable bit (e.g. lost on a
+# checkout from a Windows dev machine, where git filemode is off) can't stop
+# the nightly backup — that outage silently killed backups for ~8 days once:
+#   15 3 * * * /bin/bash /home/noicebard/docker-projects/laravel-app/app/scripts/backup-db.sh >> /home/noicebard/docker-projects/laravel-app/backups/backup.log 2>&1
 #
 # This script lives inside the app/ git checkout (app/scripts/backup-db.sh),
 # but writes backups one level up, next to docker-compose.yml — never inside
