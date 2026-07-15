@@ -152,7 +152,12 @@ class ProductionController extends Controller
 
     public function destroy(string $id)
     {
-        Production::where('id', $id)->delete();
+        // Model-Delete (nicht Query-Builder), damit Eloquent-Events feuern und
+        // die Löschung im Activity-Log landet — eine Produktion zu löschen ist
+        // ein weitreichender Schritt (DB-Cascade räumt Packliste, Kamerazüge,
+        // VB-Protokoll, Packstatus, Fahrzeuge, Buchungen mit auf).
+        $production = Production::findOrFail($id);
+        $production->delete();
 
         return redirect('/productions');
     }
