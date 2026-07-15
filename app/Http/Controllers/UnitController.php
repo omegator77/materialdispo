@@ -73,6 +73,13 @@ class UnitController extends Controller
      */
     public function destroy(Unit $unit)
     {
+        // units_id ist RESTRICT: eine Gruppe mit Geräten lässt sich auf DB-Ebene
+        // nicht löschen. Vorher abfangen und freundlich melden statt 500.
+        if (Item::where('units_id', $unit->id)->exists()) {
+            return redirect()->route('units.index')
+                ->withErrors(['unit' => 'Diese Gruppe hat noch zugeordnete Geräte und kann nicht gelöscht werden.']);
+        }
+
         $unit->delete();
 
         return redirect()->route('units.index');

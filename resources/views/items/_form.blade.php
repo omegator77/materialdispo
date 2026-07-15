@@ -156,12 +156,12 @@
                         {{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
                         ({{ $mietvorgang->rent_start->format('d.m.Y') }} – {{ $mietvorgang->rent_end->format('d.m.Y') }})
                     </a>
-                    <form action="{{ route('mietvorgaenge.detachItem', [$mietvorgang, $item]) }}" method="POST"
-                          onsubmit="return confirm('Gerät wirklich aus diesem Mietvorgang entfernen?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:underline text-xs">Entfernen</button>
-                    </form>
+                    {{-- Kein verschachteltes <form>: Button verweist per form-Attribut auf ein
+                         top-level Formular unten in edit.blade.php (sonst „leckt" dessen
+                         _method=DELETE ins Haupt-Formular und Speichern löscht das Gerät). --}}
+                    <button type="submit" form="detach-miet-{{ $mietvorgang->id }}"
+                            onclick="return confirm('Gerät wirklich aus diesem Mietvorgang entfernen?');"
+                            class="text-red-600 hover:underline text-xs">Entfernen</button>
                 </div>
             @empty
                 <p class="text-sm text-gray-400 italic">Keine.</p>
@@ -228,12 +228,10 @@
                         {{ $vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
                         ({{ $vermietvorgang->rent_start->format('d.m.Y') }} – {{ $vermietvorgang->rent_end->format('d.m.Y') }})
                     </a>
-                    <form action="{{ route('vermietvorgaenge.detachItem', [$vermietvorgang, $item]) }}" method="POST"
-                          onsubmit="return confirm('Gerät wirklich aus diesem Vermietvorgang entfernen?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:underline text-xs">Entfernen</button>
-                    </form>
+                    {{-- Kein verschachteltes <form>: siehe Kommentar bei Mietvorgang oben. --}}
+                    <button type="submit" form="detach-vermiet-{{ $vermietvorgang->id }}"
+                            onclick="return confirm('Gerät wirklich aus diesem Vermietvorgang entfernen?');"
+                            class="text-red-600 hover:underline text-xs">Entfernen</button>
                 </div>
             @empty
                 <p class="text-sm text-gray-400 italic">Keine.</p>

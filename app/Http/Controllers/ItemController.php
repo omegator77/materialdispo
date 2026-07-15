@@ -135,7 +135,10 @@ class ItemController extends Controller
 
     public function destroy(string $id)
     {
-        Item::where('id', $id)->delete();
+        // Model-Delete (nicht Query-Builder), damit Eloquent-Events feuern und die
+        // Löschung im Activity-Log landet — sonst verschwindet ein Gerät spurlos.
+        $item = Item::findOrFail($id);
+        $item->delete();
 
         return redirect()->route('items.index');
     }
