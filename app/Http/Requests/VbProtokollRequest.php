@@ -30,22 +30,10 @@ class VbProtokollRequest extends FormRequest
             'crew_kamera' => ['nullable', 'string', 'max:255'],
             'crew_evs' => ['nullable', 'string', 'max:255'],
 
-            'besonderheiten' => ['nullable', 'string'],
-            'kabelwege' => ['nullable', 'string'],
-            'audio_mic' => ['nullable', 'string'],
-            'audio_inear' => ['nullable', 'string'],
-            'audio_kommplatz' => ['nullable', 'string'],
-            'isdn_funk' => ['nullable', 'string'],
-            'maz_evs_usb' => ['nullable', 'string'],
-            'monitore' => ['nullable', 'string'],
-            'sonstiges' => ['nullable', 'string'],
-            'zeitplan' => ['nullable', 'string'],
-
             'anforderungen' => ['nullable', 'array'],
-            'anforderungen.*.mode' => ['nullable', 'string', 'in:typ,frei,kamera'],
+            'anforderungen.*.mode' => ['nullable', 'string', 'in:typ,kamera'],
             'anforderungen.*.unit_id' => ['nullable', 'exists:units,id'],
             'anforderungen.*.geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
-            'anforderungen.*.freitext' => ['nullable', 'string', 'max:255'],
             'anforderungen.*.anzahl' => ['nullable', 'integer', 'min:1'],
             'anforderungen.*.notiz' => ['nullable', 'string', 'max:255'],
             'anforderungen.*.cam_number' => ['nullable', 'string', 'max:255'],
@@ -54,21 +42,30 @@ class VbProtokollRequest extends FormRequest
             'anforderungen.*.tripod_head_geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
             'anforderungen.*.adapter_geraetetyp_id' => ['nullable', 'exists:geraetetypen,id'],
 
+            'freitext_bloecke' => ['nullable', 'array'],
+            'freitext_bloecke.*.ueberschrift' => ['nullable', 'string', 'max:255'],
+            'freitext_bloecke.*.text' => ['nullable', 'string'],
+
             'fotos' => ['nullable', 'array'],
             'fotos.*' => ['nullable', 'image', 'max:8192'],
         ];
     }
 
     /**
-     * Felder ohne 'anforderungen' und 'fotos' — direkt für VbProtokoll::create/update.
+     * Felder ohne 'anforderungen', 'freitext_bloecke' und 'fotos' — direkt für VbProtokoll::create/update.
      */
     public function fields(): array
     {
-        return collect($this->validated())->except(['anforderungen', 'fotos'])->all();
+        return collect($this->validated())->except(['anforderungen', 'freitext_bloecke', 'fotos'])->all();
     }
 
     public function anforderungenInput(): array
     {
         return $this->validated('anforderungen') ?? [];
+    }
+
+    public function freitextBloeckeInput(): array
+    {
+        return $this->validated('freitext_bloecke') ?? [];
     }
 }

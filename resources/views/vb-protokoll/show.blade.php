@@ -100,8 +100,8 @@
                         <tr class="border-b last:border-b-0">
                             <td class="py-2 font-medium text-gray-900">
                                 {{ $row['label'] }}
-                                <span class="ml-1 text-xs font-normal px-1.5 py-0.5 rounded {{ $row['kind'] === 'typ' ? 'bg-blue-100 text-blue-700' : ($row['kind'] === 'frei' ? 'bg-purple-100 text-purple-700' : ($row['kind'] === 'kamera' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600')) }}">
-                                    {{ ['typ' => 'Typ', 'gruppe' => 'Gruppe', 'frei' => 'Freitext', 'kamera' => 'Kamerakonfig'][$row['kind']] }}
+                                <span class="ml-1 text-xs font-normal px-1.5 py-0.5 rounded {{ $row['kind'] === 'typ' ? 'bg-blue-100 text-blue-700' : ($row['kind'] === 'kamera' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600') }}">
+                                    {{ ['typ' => 'Typ', 'gruppe' => 'Gruppe', 'kamera' => 'Kamerakonfig'][$row['kind']] }}
                                 </span>
                             </td>
                             <td class="py-2">{{ $row['benoetigt'] ?? '—' }}</td>
@@ -124,45 +124,13 @@
         </div>
         @endif
 
-        {{-- Besonderheiten / Kabelwege --}}
-        @if($vbProtokoll->besonderheiten || $vbProtokoll->kabelwege)
+        {{-- Freitext-Blöcke --}}
+        @if($vbProtokoll->freitextBloecke->count())
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4 text-sm">
-            @if($vbProtokoll->besonderheiten)
+            @foreach($vbProtokoll->freitextBloecke as $block)
             <div>
-                <span class="block text-gray-500 mb-1">Besonderheiten</span>
-                <span class="whitespace-pre-line">{{ $vbProtokoll->besonderheiten }}</span>
-            </div>
-            @endif
-            @if($vbProtokoll->kabelwege)
-            <div>
-                <span class="block text-gray-500 mb-1">Kabelwege, Länge, Überbauten, Besonderheiten</span>
-                <span class="whitespace-pre-line">{{ $vbProtokoll->kabelwege }}</span>
-            </div>
-            @endif
-        </div>
-        @endif
-
-        {{-- Audio / Technik --}}
-        @php
-        $textBlocks = [
-            'audio_mic' => 'Mic Anzahl und Art',
-            'audio_inear' => 'In Ear Sender/Empfänger',
-            'audio_kommplatz' => 'Kommplatz/Sprechstellen/4-Draht',
-            'isdn_funk' => 'ISDN/SIP/Funk',
-            'maz_evs_usb' => 'MAZ/EVS/USB',
-            'monitore' => 'Monitore',
-            'sonstiges' => 'Sonstiges',
-            'zeitplan' => 'Zeitplan',
-        ];
-        $filledBlocks = collect($textBlocks)->filter(fn ($label, $field) => !empty($vbProtokoll->{$field}));
-        @endphp
-
-        @if($filledBlocks->count())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4 text-sm">
-            @foreach($filledBlocks as $field => $label)
-            <div>
-                <span class="block text-gray-500 mb-1">{{ $label }}</span>
-                <span class="whitespace-pre-line">{{ $vbProtokoll->{$field} }}</span>
+                <span class="block text-gray-500 mb-1">{{ $block->ueberschrift ?: '—' }}</span>
+                <span class="whitespace-pre-line">{{ $block->text }}</span>
             </div>
             @endforeach
         </div>

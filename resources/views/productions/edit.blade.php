@@ -58,6 +58,22 @@
                     </div>
                 </div>
             </form>
+
+            @if(Auth::user()->isUser())
+            <div class="mt-6 pt-6 border-t border-gray-200 flex justify-end">
+                <form action="{{ route('productions.destroy', $production->id) }}"
+                      method="POST"
+                      onsubmit="return confirm('Diese Produktion wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
+                    @csrf
+                    @method('DELETE')
+
+                    <button type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded focus:outline-none focus:ring">
+                        Produktion löschen
+                    </button>
+                </form>
+            </div>
+            @endif
         </div>
     </div>
 

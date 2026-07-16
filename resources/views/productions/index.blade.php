@@ -13,7 +13,7 @@
     </div>
     </x-slot>
 
-@include('productions._table', ['ShowDelete' => true])
+@include('productions._table')
 
 
 

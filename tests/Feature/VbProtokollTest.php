@@ -35,7 +35,7 @@ test('admin can create a vb-protokoll with anforderungen', function () {
         ->and($vbProtokoll->anforderungen)->toHaveCount(1);
 });
 
-test('admin can create a vb-protokoll requirement targeting a specific geraetetyp or freitext', function () {
+test('admin can create a vb-protokoll requirement targeting a specific geraetetyp', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $production = makeVbProduction();
     $unit = Unit::create(['bezeichnung' => 'Stative']);
@@ -47,23 +47,17 @@ test('admin can create a vb-protokoll requirement targeting a specific geraetety
         'anforderungen' => [
             ['mode' => 'typ', 'unit_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'anzahl' => 2],
             ['mode' => 'typ', 'unit_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'anzahl' => 1],
-            ['mode' => 'frei', 'freitext' => 'Sandsäcke', 'anzahl' => 5],
         ],
     ]);
 
     $response->assertRedirect(route('vb-protokoll.show', $production->id));
 
     $vbProtokoll = VbProtokoll::where('production_id', $production->id)->firstOrFail();
-    expect($vbProtokoll->anforderungen)->toHaveCount(3);
+    expect($vbProtokoll->anforderungen)->toHaveCount(2);
 
     $engAnforderung = $vbProtokoll->anforderungen->firstWhere('geraetetyp_id', $eng->id);
     expect($engAnforderung->unit_id)->toBe($unit->id)
         ->and($engAnforderung->anzahl)->toBe(2);
-
-    $freitextAnforderung = $vbProtokoll->anforderungen->firstWhere('freitext', 'Sandsäcke');
-    expect($freitextAnforderung)->not->toBeNull()
-        ->and($freitextAnforderung->unit_id)->toBeNull()
-        ->and($freitextAnforderung->anzahl)->toBe(5);
 
     $item1 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'bezeichnung' => 'ENG 1', 'is_rented' => false]);
     $item2 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'bezeichnung' => 'Quattro 1', 'is_rented' => false]);
@@ -73,9 +67,31 @@ test('admin can create a vb-protokoll requirement targeting a specific geraetety
     $engRow = $abgleich->firstWhere('label', 'ENG');
     expect($engRow['gepackt'])->toBe(1)
         ->and($engRow['erfuellt'])->toBeFalse();
+});
 
-    $freitextRow = $abgleich->firstWhere('kind', 'frei');
-    expect($freitextRow['gepackt'])->toBeNull();
+test('admin can create arbitrary freitext-bloecke with a custom heading', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $production = makeVbProduction();
+
+    $response = $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
+        'kunde' => 'Testkunde',
+        'freitext_bloecke' => [
+            ['ueberschrift' => 'Audio', 'text' => '5 Mikrofone, 3 In Ears'],
+            ['ueberschrift' => 'Kabelweg', 'text' => 'blablub bla'],
+            ['ueberschrift' => '', 'text' => ''],
+        ],
+    ]);
+
+    $response->assertRedirect(route('vb-protokoll.show', $production->id));
+
+    $vbProtokoll = VbProtokoll::where('production_id', $production->id)->firstOrFail();
+    expect($vbProtokoll->freitextBloecke)->toHaveCount(2);
+
+    $audioBlock = $vbProtokoll->freitextBloecke->firstWhere('ueberschrift', 'Audio');
+    expect($audioBlock->text)->toBe('5 Mikrofone, 3 In Ears');
+
+    $this->actingAs($admin)->get(route('vb-protokoll.show', $production->id))
+        ->assertOk()->assertSee('Audio')->assertSee('Kabelweg')->assertSee('blablub bla');
 });
 
 test('admin can define a typ-based kamerakonfiguration as an anforderung', function () {
@@ -165,6 +181,16 @@ test('viewer cannot create or edit a vb-protokoll but can view it', function () 
 
     $this->actingAs($viewer)->get(route('vb-protokoll.show', $production->id))->assertOk();
     $this->actingAs($viewer)->get(route('vb-protokoll.edit', $production->id))->assertForbidden();
+});
+
+test('assignment status is grau (not gruen) when the vb-protokoll has no anforderungen yet', function () {
+    $production = makeVbProduction();
+    $production->vbProtokoll()->create(['kunde' => 'X']);
+
+    $status = $production->fresh()->assignmentStatus();
+
+    expect($status['level'])->toBe('grau')
+        ->and($status['label'])->toBe('Keine Anforderungen im VB-Protokoll');
 });
 
 test('deleting a vb-protokoll removes its anforderungen', function () {

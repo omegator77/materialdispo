@@ -12,7 +12,6 @@ class VbProtokollAnforderung extends Model
         'vb_protokoll_id',
         'unit_id',
         'geraetetyp_id',
-        'freitext',
         'anzahl',
         'notiz',
         'cam_number',

@@ -63,22 +63,6 @@
                                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
                                     Bearbeiten
                                 </a>
-
-                                @isset($ShowDelete)
-                                    @if ($ShowDelete)
-                                        <form action="{{ route('productions.destroy', $production->id) }}"
-                                              method="POST"
-                                              onsubmit="return confirm('Diese Produktion wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button type="submit"
-                                                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded">
-                                                Löschen
-                                            </button>
-                                        </form>
-                                    @endif
-                                @endisset
                                 @endif
                             </div>
                         </td>
@@ -132,22 +116,6 @@
                        class="text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
                         Bearbeiten
                     </a>
-
-                    @isset($ShowDelete)
-                        @if ($ShowDelete)
-                            <form action="{{ route('productions.destroy', $production->id) }}"
-                                  method="POST"
-                                  onsubmit="return confirm('Diese Produktion wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit"
-                                        class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded">
-                                    Löschen
-                                </button>
-                            </form>
-                        @endif
-                    @endisset
                     @endif
                 </div>
             </div>
