@@ -10,6 +10,7 @@ use App\Models\VbProtokoll;
 use App\Models\VbProtokollFoto;
 use App\Services\SlackVorgangSync;
 use App\Services\VbProtokollAnforderungSyncService;
+use App\Services\VbProtokollFreitextBlockSyncService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +19,7 @@ class VbProtokollController extends Controller
 {
     public function __construct(
         private VbProtokollAnforderungSyncService $anforderungen,
+        private VbProtokollFreitextBlockSyncService $freitextBloecke,
         private SlackVorgangSync $slack,
     ) {}
 
@@ -35,7 +37,7 @@ class VbProtokollController extends Controller
 
     public function store(VbProtokollRequest $request, Production $production)
     {
-        if ($production->vbProtokoll) {
+        if ($production->vbProtokoll()->exists()) {
             return redirect()->route('vb-protokoll.edit', $production->id);
         }
 
@@ -45,6 +47,7 @@ class VbProtokollController extends Controller
         ));
 
         $this->anforderungen->sync($vbProtokoll, $request->anforderungenInput());
+        $this->freitextBloecke->sync($vbProtokoll, $request->freitextBloeckeInput());
         $this->storeFotos($vbProtokoll, $request);
 
         $this->slack->syncProduction($production);
@@ -56,14 +59,14 @@ class VbProtokollController extends Controller
 
     public function show(Production $production)
     {
-        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])->firstOrFail();
+        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'freitextBloecke', 'fotos', 'creator'])->firstOrFail();
 
         return view('vb-protokoll.show', compact('production', 'vbProtokoll'));
     }
 
     public function edit(Production $production)
     {
-        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen', 'fotos'])->firstOrFail();
+        $vbProtokoll = $production->vbProtokoll()->with(['anforderungen', 'freitextBloecke', 'fotos'])->firstOrFail();
         $units = Unit::ordered()->get();
         $geraetetypen = Geraetetyp::orderedByUnit()->get();
 
@@ -77,6 +80,7 @@ class VbProtokollController extends Controller
         $vbProtokoll->update($request->fields());
 
         $this->anforderungen->sync($vbProtokoll, $request->anforderungenInput());
+        $this->freitextBloecke->sync($vbProtokoll, $request->freitextBloeckeInput());
         $this->storeFotos($vbProtokoll, $request);
 
         $this->slack->syncProduction($production);
@@ -99,7 +103,7 @@ class VbProtokollController extends Controller
     private function renderPdf(Production $production, bool $showAbgleich)
     {
         $vbProtokoll = $production->vbProtokoll()
-            ->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'fotos', 'creator'])
+            ->with(['anforderungen.unit', 'anforderungen.geraetetyp', 'freitextBloecke', 'fotos', 'creator'])
             ->firstOrFail();
 
         $fotoPaths = $vbProtokoll->fotos->map(

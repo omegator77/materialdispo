@@ -9,9 +9,8 @@ class VbProtokollAnforderungSyncService
 {
     /**
      * Ersetzt alle Anforderungen eines VB-Protokolls durch die übergebenen
-     * Zeilen. Unterstützt drei Modi: 'typ' (Gruppe/Gerätetyp + Anzahl),
-     * 'frei' (Freitext + optionale Anzahl) und 'kamera' (Kamerazug-Anforderung
-     * mit Slots für Objektiv/Stativ/Kopf/Adapter).
+     * Zeilen. Unterstützt zwei Modi: 'typ' (Gruppe/Gerätetyp + Anzahl) und
+     * 'kamera' (Kamerazug-Anforderung mit Slots für Objektiv/Stativ/Kopf/Adapter).
      */
     public function sync(VbProtokoll $vbProtokoll, array $anforderungen): void
     {
@@ -19,12 +18,6 @@ class VbProtokollAnforderungSyncService
 
         foreach ($anforderungen as $anforderung) {
             $mode = $anforderung['mode'] ?? 'typ';
-
-            if ($mode === 'frei') {
-                $this->createFreitext($vbProtokoll, $anforderung);
-
-                continue;
-            }
 
             if ($mode === 'kamera') {
                 $this->createKamera($vbProtokoll, $anforderung);
@@ -34,21 +27,6 @@ class VbProtokollAnforderungSyncService
 
             $this->createTyp($vbProtokoll, $anforderung);
         }
-    }
-
-    private function createFreitext(VbProtokoll $vbProtokoll, array $anforderung): void
-    {
-        if (empty($anforderung['freitext'])) {
-            return;
-        }
-
-        $vbProtokoll->anforderungen()->create([
-            'unit_id' => null,
-            'geraetetyp_id' => null,
-            'freitext' => $anforderung['freitext'],
-            'anzahl' => $anforderung['anzahl'] ?? null,
-            'notiz' => $anforderung['notiz'] ?? null,
-        ]);
     }
 
     private function createKamera(VbProtokoll $vbProtokoll, array $anforderung): void
@@ -63,7 +41,6 @@ class VbProtokollAnforderungSyncService
         $vbProtokoll->anforderungen()->create([
             'unit_id' => $unitId,
             'geraetetyp_id' => $cameraGeraetetypId,
-            'freitext' => null,
             'anzahl' => null,
             'cam_number' => $anforderung['cam_number'],
             'lens_geraetetyp_id' => $anforderung['lens_geraetetyp_id'] ?? null,
@@ -96,7 +73,6 @@ class VbProtokollAnforderungSyncService
         $vbProtokoll->anforderungen()->create([
             'unit_id' => $unitId,
             'geraetetyp_id' => $geraetetypId,
-            'freitext' => null,
             'anzahl' => $anforderung['anzahl'],
             'notiz' => $anforderung['notiz'] ?? null,
         ]);

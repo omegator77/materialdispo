@@ -95,14 +95,18 @@ class Production extends Model
 
     /**
      * Zweistufiger Zuordnungsstatus für die Slack-Ampel: ohne VB-Protokoll
-     * gibt es noch nichts abzugleichen (grau); mit VB-Protokoll entscheidet
-     * VbProtokoll::abgleich(), ob alle Anforderungen durch zugeordnete Geräte
-     * gedeckt sind (rot = offene Positionen, grün = vollständig).
+     * bzw. ohne Anforderungen darin gibt es noch nichts abzugleichen (grau);
+     * mit Anforderungen entscheidet VbProtokoll::abgleich(), ob alle durch
+     * zugeordnete Geräte gedeckt sind (rot = offene Positionen, grün = vollständig).
      */
     public function assignmentStatus(): array
     {
         if (! $this->vbProtokoll) {
             return ['level' => 'grau', 'label' => 'Kein VB-Protokoll angelegt'];
+        }
+
+        if ($this->vbProtokoll->anforderungen->isEmpty()) {
+            return ['level' => 'grau', 'label' => 'Keine Anforderungen im VB-Protokoll'];
         }
 
         $offen = $this->vbProtokoll->abgleich()->where('erfuellt', false)->count();

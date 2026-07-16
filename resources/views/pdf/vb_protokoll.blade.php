@@ -241,44 +241,13 @@
     @endif
     @endif
 
-    {{-- Besonderheiten / Kabelwege --}}
-    @if($vbProtokoll->besonderheiten || $vbProtokoll->kabelwege)
-    <h2>Besonderheiten</h2>
-    @if($vbProtokoll->besonderheiten)
+    {{-- Freitext-Blöcke --}}
+    @if($vbProtokoll->freitextBloecke->count())
+    <h2>Freitext</h2>
+    @foreach($vbProtokoll->freitextBloecke as $block)
     <div class="text-block">
-        <div class="text-block-title">Besonderheiten</div>
-        <div class="text-block-body">{{ $vbProtokoll->besonderheiten }}</div>
-    </div>
-    @endif
-    @if($vbProtokoll->kabelwege)
-    <div class="text-block">
-        <div class="text-block-title">Kabelwege, Länge, Überbauten, Besonderheiten</div>
-        <div class="text-block-body">{{ $vbProtokoll->kabelwege }}</div>
-    </div>
-    @endif
-    @endif
-
-    {{-- Audio / Technik --}}
-    @php
-        $textBlocks = [
-            'audio_mic' => 'Mic Anzahl und Art',
-            'audio_inear' => 'In Ear Sender/Empfänger',
-            'audio_kommplatz' => 'Kommplatz/Sprechstellen/4-Draht',
-            'isdn_funk' => 'ISDN/SIP/Funk',
-            'maz_evs_usb' => 'MAZ/EVS/USB',
-            'monitore' => 'Monitore',
-            'sonstiges' => 'Sonstiges',
-            'zeitplan' => 'Zeitplan',
-        ];
-        $filledBlocks = collect($textBlocks)->filter(fn ($label, $field) => !empty($vbProtokoll->{$field}));
-    @endphp
-
-    @if($filledBlocks->count())
-    <h2>Audio / Technik</h2>
-    @foreach($filledBlocks as $field => $label)
-    <div class="text-block">
-        <div class="text-block-title">{{ $label }}</div>
-        <div class="text-block-body">{{ $vbProtokoll->{$field} }}</div>
+        <div class="text-block-title">{{ $block->ueberschrift ?: '—' }}</div>
+        <div class="text-block-body">{{ $block->text }}</div>
     </div>
     @endforeach
     @endif

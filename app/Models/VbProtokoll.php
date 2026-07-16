@@ -32,16 +32,6 @@ class VbProtokoll extends Model
         'crew_kabelhilfen',
         'crew_kamera',
         'crew_evs',
-        'besonderheiten',
-        'kabelwege',
-        'audio_mic',
-        'audio_inear',
-        'audio_kommplatz',
-        'isdn_funk',
-        'maz_evs_usb',
-        'monitore',
-        'sonstiges',
-        'zeitplan',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -78,6 +68,11 @@ class VbProtokoll extends Model
         return $this->hasMany(VbProtokollAnforderung::class);
     }
 
+    public function freitextBloecke()
+    {
+        return $this->hasMany(VbProtokollFreitextBlock::class)->orderBy('sort_order');
+    }
+
     public function fotos()
     {
         return $this->hasMany(VbProtokollFoto::class);
@@ -93,17 +88,6 @@ class VbProtokoll extends Model
         return $this->anforderungen->flatMap(function (VbProtokollAnforderung $anforderung) {
             if ($anforderung->cam_number !== null) {
                 return $this->kameraAbgleich($anforderung);
-            }
-
-            if ($anforderung->freitext) {
-                return [[
-                    'label' => $anforderung->freitext,
-                    'kind' => 'frei',
-                    'benoetigt' => $anforderung->anzahl,
-                    'gepackt' => null,
-                    'erfuellt' => null,
-                    'notiz' => $anforderung->notiz,
-                ]];
             }
 
             $packlist = $this->production->packlistEntries();
@@ -194,18 +178,6 @@ class VbProtokoll extends Model
         return $this->anforderungen->flatMap(function (VbProtokollAnforderung $anforderung) use ($packedIds) {
             if ($anforderung->cam_number !== null) {
                 return $this->kameraAbgleichMitPackstatus($anforderung, $packedIds);
-            }
-
-            if ($anforderung->freitext) {
-                return [[
-                    'label' => $anforderung->freitext,
-                    'kind' => 'frei',
-                    'benoetigt' => $anforderung->anzahl,
-                    'zugeordnet' => null,
-                    'gepackt' => null,
-                    'erfuellt' => null,
-                    'notiz' => $anforderung->notiz,
-                ]];
             }
 
             $packlist = $this->production->packlistEntries();

@@ -4,10 +4,9 @@ $v = fn ($field, $default = '') => old($field, $isEdit ? ($vbProtokoll->{$field}
 
 $initialAnforderungen = $isEdit
     ? $vbProtokoll->anforderungen->map(fn ($a) => [
-        'mode' => $a->cam_number !== null ? 'kamera' : ($a->freitext ? 'frei' : 'typ'),
+        'mode' => $a->cam_number !== null ? 'kamera' : 'typ',
         'unit_id' => $a->unit_id,
         'geraetetyp_id' => $a->geraetetyp_id,
-        'freitext' => $a->freitext,
         'anzahl' => $a->anzahl,
         'notiz' => $a->notiz,
         'cam_number' => $a->cam_number,
@@ -15,6 +14,13 @@ $initialAnforderungen = $isEdit
         'tripod_geraetetyp_id' => $a->tripod_geraetetyp_id,
         'tripod_head_geraetetyp_id' => $a->tripod_head_geraetetyp_id,
         'adapter_geraetetyp_id' => $a->adapter_geraetetyp_id,
+    ])->values()
+    : collect();
+
+$initialFreitextBloecke = $isEdit
+    ? $vbProtokoll->freitextBloecke->map(fn ($b) => [
+        'ueberschrift' => $b->ueberschrift,
+        'text' => $b->text,
     ])->values()
     : collect();
 
@@ -39,7 +45,8 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
       class="space-y-6"
       x-data="vbProtokollForm({
           anforderungen: {{ $initialAnforderungen->toJson() }},
-          geraetetypen: {{ $geraetetypenForJs->toJson() }}
+          geraetetypen: {{ $geraetetypenForJs->toJson() }},
+          freitextBloecke: {{ $initialFreitextBloecke->toJson() }}
       })">
     @csrf
     @if($isEdit)
@@ -125,10 +132,6 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                             Gerätetyp
                         </label>
                         <label class="flex items-center gap-1">
-                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="frei" x-model="anforderung.mode">
-                            Freitext
-                        </label>
-                        <label class="flex items-center gap-1">
                             <input type="radio" :name="`anforderungen[${index}][mode]`" value="kamera" x-model="anforderung.mode">
                             Kamera-Setup
                         </label>
@@ -157,15 +160,6 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                         <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
                                :disabled="anforderung.mode !== 'typ'"
                                placeholder="Anzahl" class="form-control w-full sm:w-24 text-sm">
-                    </div>
-
-                    <div x-show="anforderung.mode === 'frei'" class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" :name="`anforderungen[${index}][freitext]`" x-model="anforderung.freitext"
-                               :disabled="anforderung.mode !== 'frei'"
-                               placeholder="z. B. Sandsäcke" class="form-control flex-1 text-sm">
-                        <input type="number" min="1" :name="`anforderungen[${index}][anzahl]`" x-model="anforderung.anzahl"
-                               :disabled="anforderung.mode !== 'frei'"
-                               placeholder="Anzahl (optional)" class="form-control w-full sm:w-24 text-sm">
                     </div>
 
                     <div x-show="anforderung.mode === 'kamera'" class="space-y-2">
@@ -222,58 +216,30 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
         </button>
     </div>
 
-    {{-- Besonderheiten / Kabelwege --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <div>
-            <label for="besonderheiten" class="block text-sm font-medium text-gray-700 mb-1">Besonderheiten</label>
-            <textarea name="besonderheiten" id="besonderheiten" rows="3" class="form-control w-full">{{ $v('besonderheiten') }}</textarea>
-        </div>
-        <div>
-            <label for="kabelwege" class="block text-sm font-medium text-gray-700 mb-1">Kabelwege, Länge, Überbauten, Besonderheiten</label>
-            <textarea name="kabelwege" id="kabelwege" rows="3" class="form-control w-full">{{ $v('kabelwege') }}</textarea>
-        </div>
-    </div>
+    {{-- Freitext-Blöcke (frei benennbare Rubriken, z. B. Audio, Kabelwege) --}}
+    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">Freitext</h2>
+        <p class="text-xs text-gray-500 mb-4">
+            Beliebig viele Rubriken mit eigener Überschrift, z. B. "Audio" mit "5 Mikrofone, 3 In Ears".
+        </p>
 
-    {{-- Audio --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <h2 class="text-lg font-semibold text-gray-800">Audio</h2>
+        <div class="space-y-3">
+            <template x-for="(block, index) in freitextBloecke" :key="index">
+                <div class="border border-gray-200 rounded-lg p-3 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="text" :name="`freitext_bloecke[${index}][ueberschrift]`" x-model="block.ueberschrift"
+                               placeholder="Überschrift, z. B. Audio" class="form-control flex-1 text-sm font-medium">
+                        <button type="button" @click="removeFreitextBlock(index)" class="text-red-500 hover:text-red-700 px-2" title="Entfernen">×</button>
+                    </div>
+                    <textarea :name="`freitext_bloecke[${index}][text]`" x-model="block.text" rows="3"
+                              placeholder="Text" class="form-control w-full text-sm"></textarea>
+                </div>
+            </template>
+        </div>
 
-        <div>
-            <label for="audio_mic" class="block text-sm font-medium text-gray-700 mb-1">Mic Anzahl und Art</label>
-            <textarea name="audio_mic" id="audio_mic" rows="2" class="form-control w-full">{{ $v('audio_mic') }}</textarea>
-        </div>
-        <div>
-            <label for="audio_inear" class="block text-sm font-medium text-gray-700 mb-1">In Ear Sender/Empfänger</label>
-            <textarea name="audio_inear" id="audio_inear" rows="2" class="form-control w-full">{{ $v('audio_inear') }}</textarea>
-        </div>
-        <div>
-            <label for="audio_kommplatz" class="block text-sm font-medium text-gray-700 mb-1">Kommplatz/Sprechstellen/4-Draht</label>
-            <textarea name="audio_kommplatz" id="audio_kommplatz" rows="2" class="form-control w-full">{{ $v('audio_kommplatz') }}</textarea>
-        </div>
-    </div>
-
-    {{-- Technik --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4">
-        <div>
-            <label for="isdn_funk" class="block text-sm font-medium text-gray-700 mb-1">ISDN/SIP/Funk</label>
-            <textarea name="isdn_funk" id="isdn_funk" rows="2" class="form-control w-full">{{ $v('isdn_funk') }}</textarea>
-        </div>
-        <div>
-            <label for="maz_evs_usb" class="block text-sm font-medium text-gray-700 mb-1">MAZ/EVS/USB</label>
-            <textarea name="maz_evs_usb" id="maz_evs_usb" rows="2" class="form-control w-full">{{ $v('maz_evs_usb') }}</textarea>
-        </div>
-        <div>
-            <label for="monitore" class="block text-sm font-medium text-gray-700 mb-1">Monitore (Anzahl, Größe, VKS?, Grafik?)</label>
-            <textarea name="monitore" id="monitore" rows="2" class="form-control w-full">{{ $v('monitore') }}</textarea>
-        </div>
-        <div>
-            <label for="sonstiges" class="block text-sm font-medium text-gray-700 mb-1">Sonstiges (Hotel, Zusätze etc.)</label>
-            <textarea name="sonstiges" id="sonstiges" rows="2" class="form-control w-full">{{ $v('sonstiges') }}</textarea>
-        </div>
-        <div>
-            <label for="zeitplan" class="block text-sm font-medium text-gray-700 mb-1">Zeitplan</label>
-            <textarea name="zeitplan" id="zeitplan" rows="3" class="form-control w-full">{{ $v('zeitplan') }}</textarea>
-        </div>
+        <button type="button" @click="addFreitextBlock()" class="mt-3 text-sm text-blue-600 hover:underline">
+            + Freitext-Block hinzufügen
+        </button>
     </div>
 
     {{-- Fotos --}}
@@ -357,10 +323,11 @@ function fotoUpload() {
     };
 }
 
-function vbProtokollForm({ anforderungen, geraetetypen }) {
+function vbProtokollForm({ anforderungen, geraetetypen, freitextBloecke }) {
     return {
         anforderungen: anforderungen,
         geraetetypen: geraetetypen,
+        freitextBloecke: freitextBloecke,
         typesForUnit(unitId) {
             if (!unitId) {
                 return [];
@@ -369,12 +336,18 @@ function vbProtokollForm({ anforderungen, geraetetypen }) {
         },
         addAnforderung() {
             this.anforderungen.push({
-                mode: 'typ', unit_id: '', geraetetyp_id: '', freitext: '', anzahl: 1, notiz: '',
+                mode: 'typ', unit_id: '', geraetetyp_id: '', anzahl: 1, notiz: '',
                 cam_number: '', lens_geraetetyp_id: '', tripod_geraetetyp_id: '', tripod_head_geraetetyp_id: '', adapter_geraetetyp_id: '',
             });
         },
         removeAnforderung(index) {
             this.anforderungen.splice(index, 1);
+        },
+        addFreitextBlock() {
+            this.freitextBloecke.push({ ueberschrift: '', text: '' });
+        },
+        removeFreitextBlock(index) {
+            this.freitextBloecke.splice(index, 1);
         }
     };
 }
