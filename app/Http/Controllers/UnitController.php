@@ -25,9 +25,8 @@ class UnitController extends Controller
     public function create()
     {
         $units = Unit::all();
-        $items = Item::all();
 
-        return view('units.create', compact('units', 'items'));
+        return view('units.create', compact('units'));
     }
 
     /**
