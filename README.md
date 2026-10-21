@@ -1,6 +1,8 @@
 # Material Dispo
 
-Verwaltungssystem für Produktionsausstattung in der Film- und Videoproduktion. Trackt Mietequipment (Kameras, Objektive, Stative, Monitore), ordnet es Produktionen zu und erstellt Packlisten und Kamerakonfigurationen.
+Verwaltungssystem für Produktionsausstattung im Broadcast- und Film-/Videobereich:
+Disposition, Miete und Vermietung von Material, Packlisten, Verfügbarkeitsprüfung
+und bidirektionale Slack-Anbindung.
 
 ## Features
 
@@ -10,6 +12,8 @@ Verwaltungssystem für Produktionsausstattung in der Film- und Videoproduktion. 
 - **Packliste** — Gesamtübersicht aller Produktionen mit Kamerazügen und Einzelgeräten, filterbar, PDF-Export
 - **Geräte-Timeline** — Gantt-Ansicht aller Geräte über einen Zeitraum, zoom- und scrollbar
 - **Dashboard** — Überblick über aktuelle Belegung
+- **Vermietung:** Material mieten und vermieten
+- **Slack-Anbindung:** bidirektional, Meldungen und Aktionen in beide Richtungen
 
 ## Tech Stack
 
