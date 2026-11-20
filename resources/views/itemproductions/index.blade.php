@@ -72,8 +72,6 @@
         return 'kommend';
     };
 
-    $statusOrder = ['laufend' => 0, 'kommend' => 1, 'vergangen' => 2, 'archiv' => 3];
-
     $allIds = $itemproductionsByProduction
         ->keys()
         ->merge($cameraConfigsByProduction->keys())
@@ -85,10 +83,11 @@
 
     $productionIds = $allIds
         ->reject(fn ($id) => $statusById->get($id) === 'archiv')
-        ->sortBy(function ($id) use ($productionsById, $statusById, $statusOrder) {
+        ->sortBy(function ($id) use ($productionsById) {
             $p = $productionsById->get($id);
             $start = $p && $p->booking_start ? $p->booking_start : '9999-12-31';
-            return $statusOrder[$statusById->get($id)] . '_' . $start;
+            // Offene Produktionen zuerst, abgeschlossene danach; jeweils nach Beginn
+            return ($p && $p->packvorgang_confirmed_at ? '1' : '0') . '_' . $start;
         })
         ->values();
 

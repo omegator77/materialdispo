@@ -56,7 +56,10 @@ class ItemproductionController extends Controller
             'cameraConfigs.adapterItem',
             'itemPacks',
             'vbProtokoll',
-        ])->orderBy('booking_start')->get();
+        ])->orderBy('booking_start')->get()
+            // Offene Produktionen zuerst, abgeschlossene danach; jeweils nach Beginn
+            ->sortBy(fn ($p) => [$p->packvorgang_confirmed_at !== null ? 1 : 0, (string) $p->booking_start])
+            ->values();
         $allUnits = Unit::ordered()->get();
         $allItems = Item::orderBy('bezeichnung')->get();
 

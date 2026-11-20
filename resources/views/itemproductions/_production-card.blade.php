@@ -42,18 +42,19 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
     <div class="p-4 md:p-6 space-y-6">
         @if($production)
         @php
-        $packlistCount = $production->packlistEntries()->count();
-        $packedCount = $production->packedItemIds()->count();
+        $steps = $production->stepStatus();
+        $packlistCount = $steps['packliste'];
+        $packedCount = $steps['packed'];
         @endphp
         <div class="flex flex-wrap justify-end gap-2 border-b pb-4">
             <a href="{{ route('packvorgang.show', $production->id) }}"
-                class="btn btn-secondary gap-2">
+                class="btn btn-primary gap-2">
                 Packen
                 @if($packlistCount > 0)
-                <span class="text-xs px-1.5 py-0.5 rounded-full {{ $production->packvorgang_confirmed_at ? 'bg-green-500' : ($packedCount > 0 ? 'bg-yellow-500' : 'bg-gray-500') }}">
+                <span class="text-xs px-1.5 py-0.5 rounded-full text-white {{ $steps['confirmed'] ? 'bg-green-500' : ($packedCount > 0 ? 'bg-yellow-500' : 'bg-gray-500') }}">
                     {{ $packedCount }}/{{ $packlistCount }}
                 </span>
-                @if($production->packvorgang_confirmed_at && $packedCount < $packlistCount)
+                @if($steps['confirmed'] && $packedCount < $packlistCount)
                 <span class="text-yellow-400" title="Abgeschlossen trotz fehlender Geräte">⚠</span>
                 @endif
                 @endif
