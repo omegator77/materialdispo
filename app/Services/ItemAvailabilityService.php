@@ -53,7 +53,7 @@ class ItemAvailabilityService
             $mietvorgaenge = $item->mietvorgaenge;
 
             if ($mietvorgaenge->isEmpty()) {
-                $warning = 'Mietgerät ist noch nicht gemietet (kein Mietvorgang)';
+                $warning = 'noch nicht gemietet';
             } else {
                 // Wichtig: beide Seiten vor dem Vergleich auf reine 'Y-m-d'-Strings
                 // normalisieren. $mv->rent_start ist ein Carbon-Objekt (cast 'date'),

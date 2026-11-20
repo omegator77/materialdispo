@@ -121,7 +121,7 @@ class SendTransportReminders extends Command
         $label = $type === 'start' ? 'Mietbeginn' : 'Mietende';
         $transportLabel = $type === 'start' ? ($mietvorgang->transport_type_start ?: '–') : ($mietvorgang->transport_type_end ?: '–');
 
-        $this->slack->threadReply($mietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
+        $this->slack->threadReply($mietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: ".SlackVorgangSync::escape($transportLabel).').');
     }
 
     private function maybeSendVermietung(Vermietvorgang $vermietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
@@ -183,6 +183,6 @@ class SendTransportReminders extends Command
         $label = $type === 'start' ? 'Verleihbeginn' : 'Verleihende';
         $transportLabel = $type === 'start' ? ($vermietvorgang->transport_type_start ?: '–') : ($vermietvorgang->transport_type_end ?: '–');
 
-        $this->slack->threadReply($vermietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
+        $this->slack->threadReply($vermietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: ".SlackVorgangSync::escape($transportLabel).').');
     }
 }

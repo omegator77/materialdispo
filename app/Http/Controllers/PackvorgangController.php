@@ -52,6 +52,13 @@ class PackvorgangController extends Controller
             ], 423);
         }
 
+        // Nur Geräte der Packliste (Einzelgeräte + Kamerazug-Slots) sind packbar.
+        abort_unless(
+            $production->packlistEntries()->contains(fn ($entry) => $entry['item']->id === $item->id),
+            404,
+            'Gerät gehört nicht zur Packliste.'
+        );
+
         $existing = ProductionItemPack::where('production_id', $production->id)
             ->where('item_id', $item->id)
             ->first();

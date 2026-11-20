@@ -20,6 +20,9 @@
 
     @php
     $locked = (bool) $production->packvorgang_confirmed_at;
+    // Betrachter dürfen die Packliste nur ansehen (Schreibrolle admin/user nötig).
+    $readonly = ! Auth::user()->isUser();
+    $checklistLocked = $locked || $readonly;
     $initialPacks = [];
     foreach ($entries as $entry) {
         $pack = $packs->get($entry['item']->id);
@@ -35,12 +38,18 @@
          x-data='packChecklist({
             packs: @json($initialPacks),
             toggleUrlBase: "{{ url('productions/'.$production->id.'/packvorgang/toggle') }}",
-            locked: @json($locked)
+            locked: @json($checklistLocked)
          })'>
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
             {{ session('success') }}
+        </div>
+        @endif
+
+        @if($readonly)
+        <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded">
+            👁 Nur Lesezugriff — Betrachter können Geräte nicht als gepackt markieren.
         </div>
         @endif
 
@@ -82,7 +91,7 @@
 
                     <div class="space-y-2">
                         @foreach($configEntries as $entry)
-                        @include('packvorgang._entry-row', ['entry' => $entry, 'locked' => $locked])
+                        @include('packvorgang._entry-row', ['entry' => $entry, 'locked' => $checklistLocked])
                         @endforeach
                     </div>
                 </div>
@@ -100,7 +109,7 @@
 
             <div class="space-y-2">
                 @foreach($unitEntries as $entry)
-                @include('packvorgang._entry-row', ['entry' => $entry, 'locked' => $locked])
+                @include('packvorgang._entry-row', ['entry' => $entry, 'locked' => $checklistLocked])
                 @endforeach
             </div>
         </div>

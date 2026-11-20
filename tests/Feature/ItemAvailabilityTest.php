@@ -204,7 +204,7 @@ test('Mietgerät ohne Mietvorgang ist für Produktionen planbar, liefert aber ei
     $result = app(ItemAvailabilityService::class)->check($item, $production);
 
     expect($result['available'])->toBeTrue()
-        ->and($result['warning'])->toContain('nicht gemietet');
+        ->and($result['warning'])->toBe('noch nicht gemietet');
 });
 
 test('eigene Geräte und gedeckte Mietgeräte liefern keine Warnung', function () {
@@ -278,6 +278,6 @@ test('Produktion mit ungemietetem Mietgerät zeigt beim Hinzufügen einen Hinwei
     $response = $this->actingAs($admin)->post(route('productions.attachItem', $production->id), ['item_id' => [$item->id]]);
 
     $response->assertSessionHas('success')->assertSessionHas('warning');
-    expect(session('warning'))->toContain('nicht gemietet')
+    expect(session('warning'))->toBe('Hinweis: Testgerät (noch nicht gemietet)')
         ->and($production->items()->where('items.id', $item->id)->exists())->toBeTrue();
 });
