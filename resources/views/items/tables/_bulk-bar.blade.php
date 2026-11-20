@@ -70,33 +70,40 @@ function bulkSelection() {
         lastIndex: null,
         get count() { return this.ids.length; },
         boxes() { return Array.from(document.querySelectorAll('.bulk-select')); },
+        // Sichtbar = nicht per Filter/Einklappen/Breakpoint ausgeblendet (Tabelle und Mobil-Karten liegen beide im DOM).
+        visible() { return this.boxes().filter(b => b.offsetParent !== null); },
+        setValue(value, checked) { this.boxes().filter(b => b.value === value).forEach(b => b.checked = checked); },
         init() {
-            // Delegiert: funktioniert für alle Tabellenvarianten und nach Filterung.
             document.addEventListener('change', (e) => {
-                if (e.target.classList.contains('bulk-select-all')) {
-                    this.boxes().forEach(b => { if (!b.closest('tr').classList.contains('hidden')) b.checked = e.target.checked; });
-                    this.sync();
-                } else if (e.target.classList.contains('bulk-select')) {
-                    this.sync();
-                }
+                const t = e.target;
+                if (t.classList?.contains('bulk-select-all')) {
+                    this.visible().forEach(b => this.setValue(b.value, t.checked));
+                    document.querySelectorAll('.bulk-select-all').forEach(c => c.checked = t.checked);
+                } else if (t.classList?.contains('bulk-select-group')) {
+                    const rows = document.querySelector(`[data-group-rows="${t.dataset.group}"]`);
+                    rows?.querySelectorAll('.bulk-select').forEach(b => this.setValue(b.value, t.checked));
+                } else if (t.classList?.contains('bulk-select')) {
+                    this.setValue(t.value, t.checked);
+                } else { return; }
+                this.sync();
             });
             document.addEventListener('click', (e) => {
                 const box = e.target.closest?.('.bulk-select');
                 if (!box) return;
-                const visible = this.boxes().filter(b => !b.closest('tr').classList.contains('hidden'));
+                const visible = this.visible();
                 const idx = visible.indexOf(box);
                 // Shift-Klick wählt den ganzen Bereich seit der letzten Auswahl.
                 if (e.shiftKey && this.lastIndex !== null && idx >= 0) {
                     const [from, to] = [Math.min(idx, this.lastIndex), Math.max(idx, this.lastIndex)];
-                    visible.slice(from, to + 1).forEach(b => b.checked = box.checked);
+                    visible.slice(from, to + 1).forEach(b => this.setValue(b.value, box.checked));
                     this.sync();
                 }
                 this.lastIndex = idx;
             });
         },
         sync() {
-            this.ids = this.boxes().filter(b => b.checked).map(b => b.value);
-            if (!this.ids.length) document.querySelectorAll('.bulk-select-all').forEach(c => c.checked = false);
+            this.ids = [...new Set(this.boxes().filter(b => b.checked).map(b => b.value))];
+            if (!this.ids.length) document.querySelectorAll('.bulk-select-all, .bulk-select-group').forEach(c => c.checked = false);
         },
         clear() {
             this.boxes().forEach(b => b.checked = false);

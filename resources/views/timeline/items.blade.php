@@ -142,6 +142,9 @@
                                         class="shrink-0 flex items-center gap-2 px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 sticky left-0 z-20"
                                         style="width: var(--col-width, 200px);"
                                     >
+                                        @if(Auth::user()->isUser())
+                                        <input type="checkbox" class="bulk-select-group rounded border-gray-300" data-group="{{ $gi }}" @click.stop title="Ganze Gruppe auswählen" aria-label="Ganze Gruppe auswählen">
+                                        @endif
                                         <span x-text="(groups[{{ $gi }}] ?? true) ? '▼' : '▶'" class="text-[10px]"></span>
                                         <span>{{ $unitName }}</span>
                                         <span class="text-gray-400 font-normal">({{ $groupItems->count() }})</span>
@@ -155,7 +158,7 @@
                                 </div>
 
                                 {{-- Gerätezeilen --}}
-                                <div x-show="groups[{{ $gi }}] ?? true"
+                                <div x-show="groups[{{ $gi }}] ?? true" data-group-rows="{{ $gi }}"
                                     x-transition:enter="transition-opacity duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                                     x-transition:leave="transition-opacity duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
@@ -164,18 +167,23 @@
                                             style="min-height: 36px;">
 
                                             {{-- Gerätename – sticky links --}}
-                                            <a href="{{ route('items.show', $item->id) }}"
-                                                class="shrink-0 flex items-center px-2 py-1 text-xs bg-white hover:bg-blue-50 border-r border-gray-200 sticky left-0 z-20 transition-colors"
-                                                style="width: var(--col-width, 200px);"
-                                                title="Gerät öffnen">
-                                                <span class="font-semibold text-gray-800 whitespace-nowrap">
-                                                    {{ $item->nummer ?: '—' }}
-                                                </span>
-                                                <span class="mx-1.5 text-gray-300">•</span>
-                                                <span class="text-gray-600 truncate">
-                                                    {{ $item->bezeichnung }}
-                                                </span>
-                                            </a>
+                                            <div class="shrink-0 flex items-center bg-white hover:bg-blue-50 border-r border-gray-200 sticky left-0 z-20 transition-colors"
+                                                style="width: var(--col-width, 200px);">
+                                                @if(Auth::user()->isUser())
+                                                <input type="checkbox" class="bulk-select ml-2 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
+                                                @endif
+                                                <a href="{{ route('items.show', $item->id) }}"
+                                                    class="flex-1 min-w-0 flex items-center px-2 py-1 text-xs self-stretch"
+                                                    title="Gerät öffnen">
+                                                    <span class="font-semibold text-gray-800 whitespace-nowrap">
+                                                        {{ $item->nummer ?: '—' }}
+                                                    </span>
+                                                    <span class="mx-1.5 text-gray-300">•</span>
+                                                    <span class="text-gray-600 truncate">
+                                                        {{ $item->bezeichnung }}
+                                                    </span>
+                                                </a>
+                                            </div>
 
                                             {{-- Timeline-Zellen --}}
                                             <div class="relative flex" style="height: 36px;">
@@ -442,5 +450,9 @@
         if (e.key === '0')                  { e.preventDefault(); timelineZoomReset(); }
     });
     </script>
+
+    @if(Auth::user()->isUser())
+        @include('items.tables._bulk-bar')
+    @endif
 
 </x-app-layout>

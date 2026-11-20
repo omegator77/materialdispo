@@ -74,7 +74,7 @@ Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddat
 - optional gleich mit Vermieter und Mietzeitraum — alle Geräte einer Zeile landen im selben Mietvorgang,
 - oder einfach Text eintippen: `3x LDX 86N #21-23` / `5 Stativ` → „Zeilen erkennen". Typ und Gruppe werden automatisch (auch bei Tippfehlern) erkannt.
 
-**Massenaktionen in der Geräteliste** — Geräte per Checkbox markieren (Shift-Klick wählt einen Bereich, Kopf-Checkbox alle sichtbaren). Unten erscheint eine Leiste: markierte Geräte in einem Zug einer Produktion, einem Miet-/Vermietvorgang zuordnen oder in eine andere Gruppe verschieben. Nicht verfügbare Geräte werden übersprungen und mit Grund gemeldet.
+**Massenaktionen in der Geräteliste** — Geräte per Checkbox markieren (Shift-Klick wählt einen Bereich, Kopf-Checkbox alle sichtbaren). Unten erscheint eine Leiste: markierte Geräte in einem Zug einer Produktion, einem Miet-/Vermietvorgang zuordnen oder in eine andere Gruppe verschieben. Nicht verfügbare Geräte werden übersprungen und mit Grund gemeldet. Das funktioniert auch am Handy (Checkbox oben rechts an jeder Karte, „Alle sichtbaren auswählen") und in der **Timeline**: dort lassen sich einzelne Geräte oder per Checkbox im Gruppenkopf eine ganze Gruppe markieren — die Leiste ist dieselbe.
 
 **Produktion: „Schnell hinzufügen"** — Bedarf als Text eingeben (`3x LDX, 2 Stativ`). Eine Live-Vorschau zeigt, welche konkreten Geräte gewählt werden (Eigentum vor Miete, niedrige Nummer zuerst), was blockiert ist und warum, und welche Alternativen es in der Gruppe gibt.
 

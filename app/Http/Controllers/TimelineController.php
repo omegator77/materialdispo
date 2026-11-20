@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Item;
 use App\Models\Unit;
+use App\Support\BulkTargets;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TimelineController extends Controller
 {
@@ -62,7 +64,9 @@ class TimelineController extends Controller
             ->filter(fn (array $group) => $group['items']->isNotEmpty())
             ->values();
 
-        return view('timeline.items', compact(
+        $bulk = Auth::user()->isUser() ? BulkTargets::load() : [];
+
+        return view('timeline.items', $bulk + compact(
             'items',
             'units',
             'start',

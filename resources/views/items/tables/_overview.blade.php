@@ -100,9 +100,17 @@
     </div>
 
     {{-- Mobile --}}
+    @if(Auth::user()->isUser())
+    <label class="md:hidden flex items-center gap-2 text-sm text-gray-600 mb-2 px-1">
+        <input type="checkbox" class="bulk-select-all rounded border-gray-300 w-5 h-5"> Alle sichtbaren auswählen
+    </label>
+    @endif
     <div class="md:hidden space-y-3">
         @forelse($items as $item)
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}">
+        <div class="relative bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
+            @if(Auth::user()->isUser())
+            <input type="checkbox" class="bulk-select absolute top-3 right-3 w-6 h-6 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
+            @endif
             <a href="{{ route('items.show', $item->id) }}" class="text-lg font-semibold text-gray-900 hover:text-orange-500">
                 {{ $item->bezeichnung }}
             </a>
