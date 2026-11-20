@@ -8,6 +8,7 @@ use App\Models\Production;
 use App\Models\Unit;
 use App\Models\VbProtokoll;
 use App\Models\VbProtokollFoto;
+use App\Services\EquipmentMatcher;
 use App\Services\SlackVorgangSync;
 use App\Services\VbProtokollAnforderungSyncService;
 use App\Services\VbProtokollFreitextBlockSyncService;
@@ -32,8 +33,58 @@ class VbProtokollController extends Controller
 
         $units = Unit::ordered()->get();
         $geraetetypen = Geraetetyp::orderedByUnit()->get();
+        $templates = $this->templateCandidates($production);
 
-        return view('vb-protokoll.create', compact('production', 'units', 'geraetetypen'));
+        return view('vb-protokoll.create', compact('production', 'units', 'geraetetypen', 'templates'));
+    }
+
+    /** Produktionen mit VB-Protokoll — ähnlichste (Name) zuerst, dann neueste. */
+    private function templateCandidates(Production $production)
+    {
+        $matcher = app(EquipmentMatcher::class);
+
+        return Production::whereHas('vbProtokoll.anforderungen')
+            ->where('id', '!=', $production->id)
+            ->orderByDesc('booking_start')
+            ->limit(30)
+            ->get()
+            ->sortByDesc(fn (Production $p) => $matcher->score($production->bezeichnung, $p->bezeichnung))
+            ->take(8)
+            ->values();
+    }
+
+    /**
+     * Neues Protokoll aus einer früheren Produktion: Bedarf (Anforderungen),
+     * Freitext-Blöcke und Crew-Stärken werden übernommen — Kunde und Ort
+     * sind veranstaltungsspezifisch und bleiben leer.
+     */
+    public function fromTemplate(Production $production, Production $source)
+    {
+        if ($production->vbProtokoll()->exists()) {
+            return redirect()->route('vb-protokoll.edit', $production->id);
+        }
+
+        $template = $source->vbProtokoll()->with(['anforderungen', 'freitextBloecke'])->first();
+        if (! $template) {
+            return redirect()->back()->with('error', "„{$source->bezeichnung}“ hat kein VB-Protokoll.");
+        }
+
+        $vb = $production->vbProtokoll()->create(array_merge(
+            collect($template->only(array_filter((new VbProtokoll)->getFillable(), fn ($f) => str_starts_with($f, 'crew_'))))->all(),
+            ['created_by' => auth()->id()]
+        ));
+
+        foreach ($template->anforderungen as $a) {
+            $vb->anforderungen()->create(collect($a->only($a->getFillable()))->except('vb_protokoll_id')->all());
+        }
+        foreach ($template->freitextBloecke as $b) {
+            $vb->freitextBloecke()->create(['ueberschrift' => $b->ueberschrift, 'text' => $b->text, 'sort_order' => $b->sort_order]);
+        }
+
+        $this->slack->syncProduction($production);
+
+        return redirect()->route('vb-protokoll.edit', $production->id)
+            ->with('success', "Protokoll aus „{$source->bezeichnung}“ übernommen — bitte Kunde/Ort ergänzen und Bedarf prüfen.");
     }
 
     public function store(VbProtokollRequest $request, Production $production)

@@ -6,10 +6,12 @@ use App\Http\Requests\ItemRequest;
 use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Mieter;
-use App\Models\Production;
+use App\Models\Mietvorgang;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Models\Vermietvorgang;
 use App\Services\ItemDetailSyncService;
+use App\Support\BulkTargets;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -69,12 +71,9 @@ class ItemController extends Controller
         }
 
         $items = $query->get();
-        $units = Unit::ordered()->get();
-        $productions = Production::where('booking_end', '>=', today()->toDateString())
-            ->orderBy('booking_start')
-            ->get();
+        ['units' => $units, 'productions' => $productions, 'mietvorgaenge' => $mietvorgaenge, 'vermietvorgaenge' => $vermietvorgaenge] = BulkTargets::load();
 
-        return view('items.index', compact('items', 'units', 'productions'));
+        return view('items.index', compact('items', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge'));
     }
 
     public function create()

@@ -48,7 +48,7 @@
                 <input type="text"
                        name="cam_number" id="cam_number"
                        class="w-full border rounded p-2"
-                       value="{{ old('cam_number') }}"
+                       value="{{ old('cam_number', $suggestedCamNumber ?? '') }}"
                        required>
                 @error('cam_number') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
@@ -74,7 +74,7 @@
                     <select name="lens" id="lens" class="w-full border rounded p-2">
                         <option value="">– optional –</option>
                         @foreach(($lenses ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('lens') == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('lens', $suggested['lens'] ?? null) == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
                                 @if (!empty($it->nummer)) NR. {{ $it->nummer }}
                                     
@@ -90,7 +90,7 @@
                     <select name="large_lens_adapter" id="large_lens_adapter" class="w-full border rounded p-2">
                         <option value="">– optional –</option>
                         @foreach(($adapters ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('large_lens_adapter') == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('large_lens_adapter', $suggested['large_lens_adapter'] ?? null) == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
                                 @if (!empty($it->nummer)) NR. {{ $it->nummer }}
                                 @endif
@@ -105,7 +105,7 @@
                     <select name="tripod" id="tripod" class="w-full border rounded p-2">
                         <option value="">– optional –</option>
                         @foreach(($tripods ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('tripod') == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('tripod', $suggested['tripod'] ?? null) == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }}
                             </option>
                         @endforeach
@@ -118,7 +118,7 @@
                     <select name="tripod_head" id="tripod_head" class="w-full border rounded p-2">
                         <option value="">– optional –</option>
                         @foreach(($heads ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('tripod_head') == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('tripod_head', $suggested['tripod_head'] ?? null) == $it->id)>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }}
                             </option>
                         @endforeach
@@ -141,6 +141,9 @@
 
         
 
+        @if(!empty($suggestedBasis))
+            <p class="text-xs text-green-700 mt-4">Zubehör vorbelegt nach {{ $suggestedBasis }} früheren Zügen mit dieser Kamera — frei änderbar.</p>
+        @endif
         @if(!empty($preselectedCameraId))
             <p class="text-xs text-gray-500 mt-4">Vorausgewählte Kamera‑ID: {{ $preselectedCameraId }}</p>
         @endif
