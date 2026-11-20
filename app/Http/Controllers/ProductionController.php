@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AttachItemRequest;
 use App\Http\Requests\ProductionRequest;
+use App\Http\Requests\StoreProductionImportRequest;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
 use App\Services\ProductionImportService;
 use App\Services\SlackVorgangSync;
+use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -62,14 +65,14 @@ class ProductionController extends Controller
         return response()->json($productions->map(fn ($p) => [
             'id' => $p->id,
             'bezeichnung' => $p->bezeichnung,
-            'booking_start' => $p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : null,
+            'booking_start' => $p->booking_start ? Carbon::parse($p->booking_start)->format('d.m.Y') : null,
         ]));
     }
 
     public function store(ProductionRequest $request)
     {
-        $bookingStart = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
 
         $production = Production::create([
             'bezeichnung' => $request->input('bezeichnung'),
@@ -135,8 +138,8 @@ class ProductionController extends Controller
 
     public function update(ProductionRequest $request, Production $production)
     {
-        $bookingStart = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
 
         $production->update([
             'bezeichnung' => $request->input('bezeichnung'),
@@ -191,8 +194,12 @@ class ProductionController extends Controller
 
             $added = [];
             $skipped = [];
+            $warnings = [];
 
-            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped) {
+            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped, &$warnings) {
+                // Zeilensperre VOR den Verfügbarkeitsprüfungen (siehe lockItems()).
+                $this->availability->lockItems($itemIds);
+
                 foreach ($itemIds as $itemId) {
                     $item = $items->get($itemId);
 
@@ -223,6 +230,10 @@ class ProductionController extends Controller
                         ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
 
                     $added[] = $item->bezeichnung;
+
+                    if ($availability['warning'] ?? null) {
+                        $warnings[] = "{$item->bezeichnung} ({$availability['warning']})";
+                    }
                 }
             });
 
@@ -241,12 +252,15 @@ class ProductionController extends Controller
 
             return redirect()
                 ->route('productions.show', $redirectParams)
-                ->with($messageType, $message);
+                ->with($messageType, $message)
+                ->with('warning', $warnings ? 'Hinweis: '.implode(', ', $warnings) : null);
         } catch (ModelNotFoundException $e) {
             return redirect()
                 ->route('productions.index')
                 ->with('error', 'Produktion oder Item nicht gefunden.');
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()
                 ->route('productions.index')
                 ->with('error', 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
@@ -292,7 +306,7 @@ class ProductionController extends Controller
 
         $pdf = Pdf::loadView('pdf.production_items', $data);
 
-        return $pdf->download("{$production->bezeichnung}.pdf");
+        return $pdf->download(PdfFilename::make($production->bezeichnung));
     }
 
     public function importFrom(Production $production, Production $source)
@@ -307,16 +321,21 @@ class ProductionController extends Controller
         ]);
     }
 
-    public function storeImport(Request $request, Production $production, Production $source)
+    public function storeImport(StoreProductionImportRequest $request, Production $production, Production $source)
     {
-        $this->imports->applyImport(
+        $result = $this->imports->applyImport(
             $production,
             $source,
-            $request->input('items', []),
-            $request->input('configs', [])
+            $request->validated('items', []),
+            $request->validated('configs', [])
         );
 
+        if ($result['imported'] > 0) {
+            $this->slack->syncProduction($production);
+        }
+
         return redirect()->route('productions.show', $production)
-            ->with('success', 'Geräte aus Vorlage übernommen.');
+            ->with('success', $result['imported'].' Position(en) aus Vorlage übernommen.')
+            ->with('warning', $result['skipped'] ? 'Nicht übernommen: '.implode(', ', $result['skipped']) : null);
     }
 }

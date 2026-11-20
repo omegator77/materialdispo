@@ -11,6 +11,7 @@ use App\Models\VbProtokollFoto;
 use App\Services\SlackVorgangSync;
 use App\Services\VbProtokollAnforderungSyncService;
 use App\Services\VbProtokollFreitextBlockSyncService;
+use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -114,7 +115,7 @@ class VbProtokollController extends Controller
 
         $suffix = $showAbgleich ? ' Abgleich' : '';
 
-        return $pdf->download("VB-Protokoll {$production->bezeichnung}{$suffix}.pdf");
+        return $pdf->download(PdfFilename::make('VB-Protokoll', $production->bezeichnung, $suffix));
     }
 
     public function destroy(Production $production)

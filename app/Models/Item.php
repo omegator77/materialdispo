@@ -82,7 +82,15 @@ class Item extends Model
 
         $mietvorgang = Mietvorgang::findOrCreateFor($this->suppliers_id, $rentStart, $rentEnd);
 
-        return app(ItemAssignmentService::class)->attachToMietvorgang($this, $mietvorgang, manual: false);
+        $result = app(ItemAssignmentService::class)->attachToMietvorgang($this, $mietvorgang, manual: false);
+
+        // Wurde der Vorgang nur für diese Zuordnung angelegt und diese abgelehnt,
+        // bleibt sonst ein leerer Vorgang (samt verbrauchtem Referenzcode) zurück.
+        if ($mietvorgang->wasRecentlyCreated && ! $result['added']) {
+            $mietvorgang->delete();
+        }
+
+        return $result;
     }
 
     /**
@@ -96,7 +104,13 @@ class Item extends Model
     {
         $vermietvorgang = Vermietvorgang::findOrCreateFor($mieterId, $verleihStart, $verleihEnd);
 
-        return app(ItemAssignmentService::class)->attachToVermietvorgang($this, $vermietvorgang, manual: false);
+        $result = app(ItemAssignmentService::class)->attachToVermietvorgang($this, $vermietvorgang, manual: false);
+
+        if ($vermietvorgang->wasRecentlyCreated && ! $result['added']) {
+            $vermietvorgang->delete();
+        }
+
+        return $result;
     }
 
     public function productions()

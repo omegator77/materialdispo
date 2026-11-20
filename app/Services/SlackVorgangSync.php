@@ -6,6 +6,10 @@ use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Setting;
 use App\Models\Vermietvorgang;
+use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,6 +24,17 @@ use Illuminate\Support\Facades\Log;
  */
 class SlackVorgangSync
 {
+    /**
+     * Maskiert die Slack-mrkdwn-Steuerzeichen (&, <, >) in Nutzereingaben.
+     * Sonst könnten Bezeichnungen/Namen mit "<!channel>" Massen-Pings oder mit
+     * "<https://…|Text>" untergeschobene Links im Kanal auslösen. Nur für Werte
+     * aus der Datenbank verwenden, nicht für selbst gebaute "<url|text>"-Links.
+     */
+    public static function escape(?string $text): string
+    {
+        return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], (string) $text);
+    }
+
     public function syncMietvorgang(Mietvorgang $mietvorgang): void
     {
         if (! $mietvorgang->suppliers_id || ! $mietvorgang->rent_start || ! $mietvorgang->rent_end || ! $mietvorgang->items()->exists()) {
@@ -29,16 +44,16 @@ class SlackVorgangSync
         $mietvorgang->loadMissing(['supplier', 'items.productions']);
 
         $lines = [
-            ['label' => 'Vermieter', 'value' => $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'],
+            ['label' => 'Vermieter', 'value' => self::escape($mietvorgang->supplier?->bezeichnung ?? 'unbekannt')],
             ['label' => 'Zeitraum', 'value' => $mietvorgang->rent_start->format('d.m.Y').' – '.$mietvorgang->rent_end->format('d.m.Y')],
-            ['label' => 'Transportart Hinweg', 'value' => $mietvorgang->transport_type_start ?: '–'],
-            ['label' => 'Transportart Rückweg', 'value' => $mietvorgang->transport_type_end ?: '–'],
-            ['label' => 'Geräte', 'value' => $mietvorgang->items->pluck('bezeichnung')->implode(', ') ?: '–'],
+            ['label' => 'Transportart Hinweg', 'value' => self::escape($mietvorgang->transport_type_start ?: '–')],
+            ['label' => 'Transportart Rückweg', 'value' => self::escape($mietvorgang->transport_type_end ?: '–')],
+            ['label' => 'Geräte', 'value' => $this->escapedList($mietvorgang->items->pluck('bezeichnung'))],
         ];
 
         $productions = $mietvorgang->relatedProductions();
         if ($productions->isNotEmpty()) {
-            $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
+            $lines[] = ['label' => 'Benötigt für', 'value' => $this->escapedList($productions->pluck('bezeichnung'))];
         }
 
         $lines[] = ['label' => 'Link', 'value' => '<'.route('mietvorgaenge.show', $mietvorgang).'|Zum Vorgang in der App>'];
@@ -53,7 +68,7 @@ class SlackVorgangSync
             $this->statusEntry('mietvorgang', 'end', $endLabel, 'Als '.mb_strtolower($endLabel).' markieren', $mietvorgang->transport_end_confirmed_at, $mietvorgang->transportEndConfirmedBy),
         ];
 
-        $this->render($mietvorgang, '📥 MIETE — '.($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete(), 'slack_reminder_channel');
+        $this->render($mietvorgang, '📥 MIETE — '.self::escape($mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $mietvorgang->isComplete(), 'slack_reminder_channel');
     }
 
     public function syncVermietvorgang(Vermietvorgang $vermietvorgang): void
@@ -65,16 +80,16 @@ class SlackVorgangSync
         $vermietvorgang->loadMissing(['mieter', 'items.productions']);
 
         $lines = [
-            ['label' => 'Mieter', 'value' => $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'],
+            ['label' => 'Mieter', 'value' => self::escape($vermietvorgang->mieter?->bezeichnung ?? 'unbekannt')],
             ['label' => 'Zeitraum', 'value' => $vermietvorgang->rent_start->format('d.m.Y').' – '.$vermietvorgang->rent_end->format('d.m.Y')],
-            ['label' => 'Transportart Hinweg', 'value' => $vermietvorgang->transport_type_start ?: '–'],
-            ['label' => 'Transportart Rückweg', 'value' => $vermietvorgang->transport_type_end ?: '–'],
-            ['label' => 'Geräte', 'value' => $vermietvorgang->items->pluck('bezeichnung')->implode(', ') ?: '–'],
+            ['label' => 'Transportart Hinweg', 'value' => self::escape($vermietvorgang->transport_type_start ?: '–')],
+            ['label' => 'Transportart Rückweg', 'value' => self::escape($vermietvorgang->transport_type_end ?: '–')],
+            ['label' => 'Geräte', 'value' => $this->escapedList($vermietvorgang->items->pluck('bezeichnung'))],
         ];
 
         $productions = $vermietvorgang->relatedProductions();
         if ($productions->isNotEmpty()) {
-            $lines[] = ['label' => 'Benötigt für', 'value' => $productions->pluck('bezeichnung')->implode(', ')];
+            $lines[] = ['label' => 'Benötigt für', 'value' => $this->escapedList($productions->pluck('bezeichnung'))];
         }
 
         $lines[] = ['label' => 'Link', 'value' => '<'.route('vermietvorgaenge.show', $vermietvorgang).'|Zum Vorgang in der App>'];
@@ -92,7 +107,7 @@ class SlackVorgangSync
             $this->statusEntry('vermietvorgang', 'vollstaendig_zurueck', 'Geprüft', 'Geprüft', $vermietvorgang->vollstaendig_zurueck_confirmed_at, $vermietvorgang->vollstaendigZurueckConfirmedBy),
         ];
 
-        $this->render($vermietvorgang, '📤 VERMIETUNG — '.($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete(), 'slack_reminder_channel');
+        $this->render($vermietvorgang, '📤 VERMIETUNG — '.self::escape($vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'unbekannt'), $lines, $statuses, $vermietvorgang->isComplete(), 'slack_reminder_channel');
     }
 
     /**
@@ -117,7 +132,7 @@ class SlackVorgangSync
         $gesamt = $production->packlistEntries()->count();
         $packInfo = "{$gepackt}/{$gesamt} Geräte gepackt";
         if ($production->packvorgang_confirmed_at) {
-            $by = $production->packvorgangConfirmedBy?->name ? " von {$production->packvorgangConfirmedBy->name}" : '';
+            $by = $production->packvorgangConfirmedBy?->name ? ' von '.self::escape($production->packvorgangConfirmedBy->name) : '';
             $packInfo .= " — ✅ abgeschlossen{$by} am {$production->packvorgang_confirmed_at->format('d.m.Y H:i')} Uhr";
         }
 
@@ -126,9 +141,9 @@ class SlackVorgangSync
             : '<'.route('vb-protokoll.create', $production).'|VB-Protokoll anlegen>';
 
         $lines = [
-            ['label' => 'Zeitraum', 'value' => \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y').' – '.\Carbon\Carbon::parse($production->booking_end)->format('d.m.Y')],
-            ['label' => 'Kunde', 'value' => $production->vbProtokoll?->kunde ?: '–'],
-            ['label' => 'Ort', 'value' => $production->vbProtokoll?->produktionsort ?: '–'],
+            ['label' => 'Zeitraum', 'value' => Carbon::parse($production->booking_start)->format('d.m.Y').' – '.Carbon::parse($production->booking_end)->format('d.m.Y')],
+            ['label' => 'Kunde', 'value' => self::escape($production->vbProtokoll?->kunde ?: '–')],
+            ['label' => 'Ort', 'value' => self::escape($production->vbProtokoll?->produktionsort ?: '–')],
             ['label' => 'Zuordnungsstatus', 'value' => "{$ampel} {$status['label']}"],
             ['label' => 'Packstatus', 'value' => $packInfo],
             ['label' => 'VB-Protokoll', 'value' => $vbProtokollLink],
@@ -145,7 +160,7 @@ class SlackVorgangSync
         ] : null;
         $statuses = [$packStatus];
 
-        $this->render($production, '🎬 PRODUKTION — '.$production->bezeichnung, $lines, $statuses, $production->isComplete(), 'slack_production_channel');
+        $this->render($production, '🎬 PRODUKTION — '.self::escape($production->bezeichnung), $lines, $statuses, $production->isComplete(), 'slack_production_channel');
     }
 
     /**
@@ -161,13 +176,13 @@ class SlackVorgangSync
             return;
         }
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.postMessage', [
+        $response = $this->slackApi($token, 'chat.postMessage', [
             'channel' => $vorgang->slack_channel,
             'thread_ts' => $vorgang->slack_message_ts,
             'text' => $text,
         ]);
 
-        if (! $response->json('ok')) {
+        if ($response && ! $response->json('ok')) {
             Log::warning('Slack-Thread-Reply konnte nicht gesendet werden: '.$response->json('error'));
         }
     }
@@ -197,9 +212,9 @@ class SlackVorgangSync
         }
 
         $label = match (true) {
-            $vorgang instanceof Mietvorgang => 'MIETE — '.($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt'),
-            $vorgang instanceof Vermietvorgang => 'VERMIETUNG — '.($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt'),
-            default => 'PRODUKTION — '.($vorgang->bezeichnung ?? 'unbekannt'),
+            $vorgang instanceof Mietvorgang => 'MIETE — '.self::escape($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt'),
+            $vorgang instanceof Vermietvorgang => 'VERMIETUNG — '.self::escape($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt'),
+            default => 'PRODUKTION — '.self::escape($vorgang->bezeichnung ?? 'unbekannt'),
         };
 
         $url = match (true) {
@@ -210,7 +225,7 @@ class SlackVorgangSync
 
         $text = "✅ {$label} abgeschlossen. <{$url}|Zum Vorgang>";
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.update', [
+        $response = $this->slackApi($token, 'chat.update', [
             'channel' => $vorgang->slack_channel,
             'ts' => $vorgang->slack_message_ts,
             'text' => $text,
@@ -219,8 +234,10 @@ class SlackVorgangSync
             ],
         ]);
 
-        if (! $response->json('ok')) {
-            Log::warning('Slack-Nachricht konnte nicht kompaktiert werden: '.$response->json('error'));
+        if (! $response?->json('ok')) {
+            if ($response) {
+                Log::warning('Slack-Nachricht konnte nicht kompaktiert werden: '.$response->json('error'));
+            }
 
             return;
         }
@@ -242,6 +259,29 @@ class SlackVorgangSync
     }
 
     /**
+     * Ruft die Slack-Web-API mit kurzem Timeout auf. Ein Netzwerkfehler oder
+     * Slack-Ausfall wird nur geloggt (null zurück) — die Geschäftsaktion, die
+     * den Sync ausgelöst hat, ist dann längst committed und darf nicht mit
+     * einem 500er enden.
+     */
+    private function slackApi(string $token, string $method, array $payload): ?Response
+    {
+        try {
+            return Http::withToken($token)->timeout(5)->post("https://slack.com/api/{$method}", $payload);
+        } catch (ConnectionException $e) {
+            Log::warning("Slack {$method} nicht erreichbar: ".$e->getMessage());
+
+            return null;
+        }
+    }
+
+    /** Kommagetrennte, maskierte Liste; "–" wenn leer. */
+    private function escapedList(Collection $values): string
+    {
+        return $values->map(fn ($v) => self::escape($v))->implode(', ') ?: '–';
+    }
+
+    /**
      * @return array{action_id: string, label: string, buttonLabel: string, done: bool, confirmedAt: mixed, confirmedByName: ?string}
      */
     private function statusEntry(string $kind, string $subtype, string $label, string $buttonLabel, mixed $confirmedAt, mixed $confirmedBy): array
@@ -252,7 +292,7 @@ class SlackVorgangSync
             'buttonLabel' => $buttonLabel,
             'done' => $confirmedAt !== null,
             'confirmedAt' => $confirmedAt,
-            'confirmedByName' => $confirmedBy?->name,
+            'confirmedByName' => $confirmedBy?->name ? self::escape($confirmedBy->name) : null,
         ];
     }
 
@@ -341,9 +381,9 @@ class SlackVorgangSync
         $payload = ['channel' => $channel, 'text' => $headline, 'blocks' => $blocks];
 
         if ($vorgang->slack_message_ts) {
-            $response = Http::withToken($token)->post('https://slack.com/api/chat.update', $payload + ['ts' => $vorgang->slack_message_ts]);
+            $response = $this->slackApi($token, 'chat.update', $payload + ['ts' => $vorgang->slack_message_ts]);
 
-            if ($response->json('ok')) {
+            if (! $response || $response->json('ok')) {
                 return;
             }
 
@@ -356,10 +396,12 @@ class SlackVorgangSync
             // Nachricht wurde in Slack manuell gelöscht -> defensiv neu anlegen.
         }
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.postMessage', $payload);
+        $response = $this->slackApi($token, 'chat.postMessage', $payload);
 
-        if (! $response->json('ok')) {
-            Log::warning('Slack-Nachricht konnte nicht gepostet werden: '.$response->json('error'));
+        if (! $response?->json('ok')) {
+            if ($response) {
+                Log::warning('Slack-Nachricht konnte nicht gepostet werden: '.$response->json('error'));
+            }
 
             return;
         }

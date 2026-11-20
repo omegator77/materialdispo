@@ -6,11 +6,12 @@ use App\Mail\TransportReminderMail;
 use App\Mail\VerleihReminderMail;
 use App\Models\MailingList;
 use App\Models\Mietvorgang;
-use App\Models\MietvorgangReminderLog;
 use App\Models\Vermietvorgang;
-use App\Models\VermietvorgangReminderLog;
 use App\Services\SlackVorgangSync;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
@@ -30,13 +31,68 @@ class SendTransportReminders extends Command
      */
     protected $description = 'Versendet Transport-Erinnerungsmails für Mietvorgänge und Vermietvorgänge (Beginn/Ende).';
 
+    /** Anzahl Erinnerungen, bei denen ALLE Mails fehlgeschlagen sind. */
+    private int $failures = 0;
+
     public function __construct(private SlackVorgangSync $slack)
     {
         parent::__construct();
     }
 
+    /**
+     * Eine Erinnerung ist fällig ab (Termin − Vorlauftage) und nur bis zum
+     * Termin selbst: Für bereits vergangene Termine (nachträglich angelegte
+     * Vorgänge, Altdaten) wird keine Mail mehr nachgeschickt.
+     */
+    private function isDue(Carbon $today, $date, int $daysBefore): bool
+    {
+        $date = Carbon::parse($date);
+
+        return $today->greaterThanOrEqualTo($date->copy()->subDays($daysBefore))
+            && $today->lessThanOrEqualTo($date);
+    }
+
+    /**
+     * Reserviert die Erinnerung (Unique-Index je Vorgang+Typ), BEVOR gesendet
+     * wird: Ein Absturz oder zwei überlappende Läufe führen so nie zu doppelten
+     * Mails. Gibt null zurück, wenn sie schon reserviert/versendet wurde.
+     */
+    private function claim(HasMany $logs, string $type): ?Model
+    {
+        try {
+            return $logs->create(['reminder_type' => $type, 'sent_at' => now()]);
+        } catch (UniqueConstraintViolationException) {
+            return null;
+        }
+    }
+
+    /**
+     * Versendet die Mail an alle Adressen. Gibt false zurück, wenn es Adressen
+     * gab und KEINE davon erreicht wurde — dann wird die Reservierung wieder
+     * freigegeben und beim nächsten Lauf erneut versucht. Teilerfolge zählen als
+     * gesendet, damit bereits erreichte Empfänger nicht erneut angeschrieben werden.
+     *
+     * @param  array<int, string>  $addresses
+     */
+    private function deliver(array $addresses, $mailable, string $label): bool
+    {
+        $reached = 0;
+
+        foreach ($addresses as $email) {
+            try {
+                Mail::to($email)->send($mailable);
+                $reached++;
+            } catch (\Throwable $e) {
+                $this->error("{$label}: Versand an {$email} fehlgeschlagen: {$e->getMessage()}");
+            }
+        }
+
+        return $addresses === [] || $reached > 0;
+    }
+
     public function handle(): int
     {
+        $this->failures = 0;
         $today = Carbon::today();
 
         Mietvorgang::with(['supplier', 'mailingList.recipients', 'items.productions'])
@@ -55,25 +111,29 @@ class SendTransportReminders extends Command
                 $this->maybeSendVermietung($vermietvorgang, 'end', $vermietvorgang->rent_end, $today, $vermietvorgang->effectiveReminderDaysBeforeEnd());
             });
 
-        return self::SUCCESS;
+        return $this->failures > 0 ? self::FAILURE : self::SUCCESS;
     }
 
     private function maybeSend(Mietvorgang $mietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
     {
-        $dueDate = Carbon::parse($rentDate)->subDays($daysBefore);
-
-        if ($today->lessThan($dueDate)) {
+        if (! $this->isDue($today, $rentDate, $daysBefore)) {
             return;
         }
 
-        if ($mietvorgang->reminderLogs()->where('reminder_type', $type)->exists()) {
+        if (! ($claim = $this->claim($mietvorgang->reminderLogs(), $type))) {
             return;
         }
 
-        $this->send($mietvorgang, $type);
+        if (! $this->send($mietvorgang, $type)) {
+            $claim->delete();
+            $this->failures++;
+        }
     }
 
-    private function send(Mietvorgang $mietvorgang, string $type): void
+    /**
+     * @return bool false, wenn alle Mails fehlgeschlagen sind (dann kein Slack-Ping)
+     */
+    private function send(Mietvorgang $mietvorgang, string $type): bool
     {
         $recipients = $mietvorgang->mailingList?->recipients->pluck('email') ?? collect();
 
@@ -84,36 +144,22 @@ class SendTransportReminders extends Command
         if ($recipients->isEmpty() && ! $mietvorgang->notify_supplier) {
             $this->warn("Mietvorgang #{$mietvorgang->id}: keine E-Mail-Empfänger, E-Mail übersprungen.");
         } else {
-            $productions = $mietvorgang->relatedProductions();
-
-            $mailable = new TransportReminderMail($mietvorgang, $type, $productions);
-
             $addresses = $recipients->values()->all();
 
             if ($mietvorgang->notify_supplier && $mietvorgang->supplier?->email) {
                 $addresses[] = $mietvorgang->supplier->email;
             }
 
-            foreach ($addresses as $email) {
-                try {
-                    Mail::to($email)->send($mailable);
-                } catch (\Throwable $e) {
-                    $this->error("Mietvorgang #{$mietvorgang->id}: Versand an {$email} fehlgeschlagen: {$e->getMessage()}");
-                }
+            $mailable = new TransportReminderMail($mietvorgang, $type, $mietvorgang->relatedProductions());
+
+            if (! $this->deliver($addresses, $mailable, "Mietvorgang #{$mietvorgang->id}")) {
+                return false;
             }
         }
 
         $this->sendSlack($mietvorgang, $type);
 
-        // Wird unabhängig vom Erfolg/Vorhandensein einzelner Kanäle protokolliert,
-        // damit weder ein dauerhaft ungültiger Empfänger noch eine fehlende
-        // Mailingliste/Slack-Konfiguration bei jedem Lauf erneut alle anderen
-        // (bereits erfolgreich erreichten) Kanäle neu anschreibt.
-        MietvorgangReminderLog::create([
-            'mietvorgang_id' => $mietvorgang->id,
-            'reminder_type' => $type,
-            'sent_at' => now(),
-        ]);
+        return true;
     }
 
     private function sendSlack(Mietvorgang $mietvorgang, string $type): void
@@ -121,25 +167,29 @@ class SendTransportReminders extends Command
         $label = $type === 'start' ? 'Mietbeginn' : 'Mietende';
         $transportLabel = $type === 'start' ? ($mietvorgang->transport_type_start ?: '–') : ($mietvorgang->transport_type_end ?: '–');
 
-        $this->slack->threadReply($mietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
+        $this->slack->threadReply($mietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: ".SlackVorgangSync::escape($transportLabel).').');
     }
 
     private function maybeSendVermietung(Vermietvorgang $vermietvorgang, string $type, $rentDate, Carbon $today, int $daysBefore): void
     {
-        $dueDate = Carbon::parse($rentDate)->subDays($daysBefore);
-
-        if ($today->lessThan($dueDate)) {
+        if (! $this->isDue($today, $rentDate, $daysBefore)) {
             return;
         }
 
-        if ($vermietvorgang->reminderLogs()->where('reminder_type', $type)->exists()) {
+        if (! ($claim = $this->claim($vermietvorgang->reminderLogs(), $type))) {
             return;
         }
 
-        $this->sendVermietung($vermietvorgang, $type);
+        if (! $this->sendVermietung($vermietvorgang, $type)) {
+            $claim->delete();
+            $this->failures++;
+        }
     }
 
-    private function sendVermietung(Vermietvorgang $vermietvorgang, string $type): void
+    /**
+     * @return bool false, wenn alle Mails fehlgeschlagen sind (dann kein Slack-Ping)
+     */
+    private function sendVermietung(Vermietvorgang $vermietvorgang, string $type): bool
     {
         $recipients = $vermietvorgang->mailingList?->recipients->pluck('email') ?? collect();
 
@@ -150,32 +200,22 @@ class SendTransportReminders extends Command
         if ($recipients->isEmpty() && ! $vermietvorgang->notify_mieter) {
             $this->warn("Vermietvorgang #{$vermietvorgang->id}: keine E-Mail-Empfänger, E-Mail übersprungen.");
         } else {
-            $productions = $vermietvorgang->relatedProductions();
-
-            $mailable = new VerleihReminderMail($vermietvorgang, $type, $productions);
-
             $addresses = $recipients->values()->all();
 
             if ($vermietvorgang->notify_mieter && $vermietvorgang->mieter?->email) {
                 $addresses[] = $vermietvorgang->mieter->email;
             }
 
-            foreach ($addresses as $email) {
-                try {
-                    Mail::to($email)->send($mailable);
-                } catch (\Throwable $e) {
-                    $this->error("Vermietvorgang #{$vermietvorgang->id}: Versand an {$email} fehlgeschlagen: {$e->getMessage()}");
-                }
+            $mailable = new VerleihReminderMail($vermietvorgang, $type, $vermietvorgang->relatedProductions());
+
+            if (! $this->deliver($addresses, $mailable, "Vermietvorgang #{$vermietvorgang->id}")) {
+                return false;
             }
         }
 
         $this->sendVermietungSlack($vermietvorgang, $type);
 
-        VermietvorgangReminderLog::create([
-            'vermietvorgang_id' => $vermietvorgang->id,
-            'reminder_type' => $type,
-            'sent_at' => now(),
-        ]);
+        return true;
     }
 
     private function sendVermietungSlack(Vermietvorgang $vermietvorgang, string $type): void
@@ -183,6 +223,6 @@ class SendTransportReminders extends Command
         $label = $type === 'start' ? 'Verleihbeginn' : 'Verleihende';
         $transportLabel = $type === 'start' ? ($vermietvorgang->transport_type_start ?: '–') : ($vermietvorgang->transport_type_end ?: '–');
 
-        $this->slack->threadReply($vermietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: {$transportLabel}).");
+        $this->slack->threadReply($vermietvorgang, "🚚 Erinnerung: {$label} steht an (Transportart: ".SlackVorgangSync::escape($transportLabel).').');
     }
 }

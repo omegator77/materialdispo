@@ -6,8 +6,10 @@ use App\Models\Item;
 use App\Models\Production;
 use App\Models\ProductionItemPack;
 use App\Services\SlackVorgangSync;
+use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class PackvorgangController extends Controller
 {
@@ -15,7 +17,7 @@ class PackvorgangController extends Controller
 
     public function show(Production $production)
     {
-        $production->load(['items.unit', 'cameraConfigs.item.unit', 'cameraConfigs.lensItem', 'cameraConfigs.tripodItem', 'cameraConfigs.headItem', 'cameraConfigs.adapterItem', 'itemPacks', 'packvorgangConfirmedBy']);
+        $production->load(['items.unit', 'cameraConfigs.item.unit', 'cameraConfigs.lensItem', 'cameraConfigs.tripodItem', 'cameraConfigs.headItem', 'cameraConfigs.adapterItem', 'itemPacks.packedByUser', 'packvorgangConfirmedBy']);
 
         $entries = $production->packlistEntries();
         $packs = $production->itemPacks->keyBy('item_id');
@@ -30,7 +32,7 @@ class PackvorgangController extends Controller
      * oft gemeinsam auf einen Rollwagen gepackt), restliche Geräte nach
      * Gerätegruppe (Einheit).
      */
-    private function groupEntries(\Illuminate\Support\Collection $entries): array
+    private function groupEntries(Collection $entries): array
     {
         $cameraGroups = $entries
             ->where('source', 'kamera')
@@ -51,6 +53,13 @@ class PackvorgangController extends Controller
                 'error' => 'Packvorgang ist abgeschlossen und gesperrt.',
             ], 423);
         }
+
+        // Nur Geräte der Packliste (Einzelgeräte + Kamerazug-Slots) sind packbar.
+        abort_unless(
+            $production->packlistEntries()->contains(fn ($entry) => $entry['item']->id === $item->id),
+            404,
+            'Gerät gehört nicht zur Packliste.'
+        );
 
         $existing = ProductionItemPack::where('production_id', $production->id)
             ->where('item_id', $item->id)
@@ -132,6 +141,6 @@ class PackvorgangController extends Controller
 
         $pdf = Pdf::loadView('pdf.packvorgang_checklist', compact('production', 'cameraGroups', 'groupedEinzelEntries', 'packedIds'));
 
-        return $pdf->download("Packvorgang {$production->bezeichnung}.pdf");
+        return $pdf->download(PdfFilename::make('Packvorgang', $production->bezeichnung));
     }
 }

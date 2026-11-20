@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (SQLite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, gd, pdo_sqlite, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: PHP-Abhängigkeiten
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: .env und App-Key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Frontend bauen (Vite-Manifest wird von den Tests gebraucht)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Code-Stil (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Tests
+        run: vendor/bin/pest
+
+  tests-mysql:
+    name: Tests (MySQL, wie Produktion)
+    runs-on: ubuntu-latest
+    # Lokal gegen MySQL 8.0 grün (alle Tests). Im CI noch nicht gelaufen: Sobald dieser
+    # Job dort stabil grün ist, "continue-on-error" entfernen und ihn als Pflicht-Check
+    # für Merges nach main eintragen.
+    continue-on-error: true
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: laravel_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, gd, pdo_mysql, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - run: |
+          npm ci
+          npm run build
+
+      - run: vendor/bin/pest
+
+  audit:
+    name: Sicherheitsprüfung der Abhängigkeiten
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Bekannte, bis zum Laravel-12-Upgrade nicht behebbare Meldungen stehen mit Begründung in
+      # composer.json (config.audit.ignore). Jede NEUE Meldung lässt diesen Job rot werden.
+      - name: composer audit
+        run: composer audit --locked
+
+      # Läuft auch, wenn composer audit rot ist, damit beide Ergebnisse sichtbar sind.
+      - name: npm audit (nur Produktionsabhängigkeiten)
+        if: always()
+        run: npm audit --omit=dev --audit-level=high

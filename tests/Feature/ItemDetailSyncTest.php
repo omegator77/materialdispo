@@ -9,7 +9,8 @@ use App\Models\User;
 
 test('creating a camera item does not create camera details yet, but updating it does', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    $cameraUnit = Unit::create(['bezeichnung' => 'Kameras']);
+    // ItemDetailSyncService erkennt Kameras/Objektive an den festen IDs 1 und 2.
+    $cameraUnit = Unit::forceCreate(['id' => 1, 'bezeichnung' => 'Kameras']);
 
     $this->actingAs($admin)->post(route('items.store'), [
         'units_id' => $cameraUnit->id,
@@ -54,7 +55,8 @@ test('creating a monitor item syncs monitor details immediately', function () {
 test('switching an item unit type deletes the stale detail record and creates the new one', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $monitorUnit = Unit::create(['bezeichnung' => 'Monitore bis 24 Zoll']);
-    $lensUnit = Unit::create(['bezeichnung' => 'Objektive']);
+    // Objektive haben in ItemDetailSyncService die feste ID 2.
+    $lensUnit = Unit::forceCreate(['id' => 2, 'bezeichnung' => 'Objektive']);
 
     $this->actingAs($admin)->post(route('items.store'), [
         'units_id' => $monitorUnit->id,

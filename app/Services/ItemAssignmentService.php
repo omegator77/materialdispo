@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Item;
 use App\Models\Mietvorgang;
 use App\Models\Vermietvorgang;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Einziger Weg, ein Gerät einem Miet-/Vermietvorgang zuzuordnen oder daraus
@@ -27,29 +28,36 @@ class ItemAssignmentService
      */
     public function attachToMietvorgang(Item $item, Mietvorgang $mietvorgang, bool $manual, bool $notifySlack = true): array
     {
-        if ($item->mietvorgaenge()->where('mietvorgaenge.id', $mietvorgang->id)->exists()) {
-            return ['added' => false, 'alreadyAttached' => true, 'reason' => null];
-        }
+        // Prüfung + Zuordnung unter Zeilensperre, Slack erst nach dem Commit.
+        $result = DB::transaction(function () use ($item, $mietvorgang, $manual) {
+            $this->availability->lockItems([$item->id]);
 
-        $check = $this->availability->checkForMiete($item, $mietvorgang);
+            if ($item->mietvorgaenge()->where('mietvorgaenge.id', $mietvorgang->id)->exists()) {
+                return ['added' => false, 'alreadyAttached' => true, 'reason' => null];
+            }
 
-        if (! $check['available']) {
-            return ['added' => false, 'alreadyAttached' => false, 'reason' => $check['reason']];
-        }
+            $check = $this->availability->checkForMiete($item, $mietvorgang);
 
-        $item->mietvorgaenge()->syncWithoutDetaching([$mietvorgang->id => ['manual' => $manual]]);
+            if (! $check['available']) {
+                return ['added' => false, 'alreadyAttached' => false, 'reason' => $check['reason']];
+            }
 
-        activity('item')
-            ->performedOn($item)
-            ->event('attached')
-            ->withProperties(['mietvorgang_id' => $mietvorgang->id])
-            ->log("Gerät \"{$item->bezeichnung}\" dem Mietvorgang ({$mietvorgang->supplier->bezeichnung}) zugeordnet");
+            $item->mietvorgaenge()->syncWithoutDetaching([$mietvorgang->id => ['manual' => $manual]]);
 
-        if ($notifySlack) {
+            activity('item')
+                ->performedOn($item)
+                ->event('attached')
+                ->withProperties(['mietvorgang_id' => $mietvorgang->id])
+                ->log("Gerät \"{$item->bezeichnung}\" dem Mietvorgang ({$mietvorgang->supplier->bezeichnung}) zugeordnet");
+
+            return ['added' => true, 'alreadyAttached' => false, 'reason' => null];
+        });
+
+        if ($result['added'] && $notifySlack) {
             $this->slack->syncMietvorgang($mietvorgang);
         }
 
-        return ['added' => true, 'alreadyAttached' => false, 'reason' => null];
+        return $result;
     }
 
     public function detachFromMietvorgang(Item $item, Mietvorgang $mietvorgang, bool $notifySlack = true): void
@@ -66,29 +74,36 @@ class ItemAssignmentService
      */
     public function attachToVermietvorgang(Item $item, Vermietvorgang $vermietvorgang, bool $manual, bool $notifySlack = true): array
     {
-        if ($item->vermietvorgaenge()->where('vermietvorgaenge.id', $vermietvorgang->id)->exists()) {
-            return ['added' => false, 'alreadyAttached' => true, 'reason' => null];
-        }
+        // Prüfung + Zuordnung unter Zeilensperre, Slack erst nach dem Commit.
+        $result = DB::transaction(function () use ($item, $vermietvorgang, $manual) {
+            $this->availability->lockItems([$item->id]);
 
-        $check = $this->availability->checkForVerleih($item, $vermietvorgang);
+            if ($item->vermietvorgaenge()->where('vermietvorgaenge.id', $vermietvorgang->id)->exists()) {
+                return ['added' => false, 'alreadyAttached' => true, 'reason' => null];
+            }
 
-        if (! $check['available']) {
-            return ['added' => false, 'alreadyAttached' => false, 'reason' => $check['reason']];
-        }
+            $check = $this->availability->checkForVerleih($item, $vermietvorgang);
 
-        $item->vermietvorgaenge()->syncWithoutDetaching([$vermietvorgang->id => ['manual' => $manual]]);
+            if (! $check['available']) {
+                return ['added' => false, 'alreadyAttached' => false, 'reason' => $check['reason']];
+            }
 
-        activity('item')
-            ->performedOn($item)
-            ->event('attached')
-            ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
-            ->log("Gerät \"{$item->bezeichnung}\" dem Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) zugeordnet");
+            $item->vermietvorgaenge()->syncWithoutDetaching([$vermietvorgang->id => ['manual' => $manual]]);
 
-        if ($notifySlack) {
+            activity('item')
+                ->performedOn($item)
+                ->event('attached')
+                ->withProperties(['vermietvorgang_id' => $vermietvorgang->id])
+                ->log("Gerät \"{$item->bezeichnung}\" dem Vermietvorgang ({$vermietvorgang->mieter->bezeichnung}) zugeordnet");
+
+            return ['added' => true, 'alreadyAttached' => false, 'reason' => null];
+        });
+
+        if ($result['added'] && $notifySlack) {
             $this->slack->syncVermietvorgang($vermietvorgang);
         }
 
-        return ['added' => true, 'alreadyAttached' => false, 'reason' => null];
+        return $result;
     }
 
     public function detachFromVermietvorgang(Item $item, Vermietvorgang $vermietvorgang, bool $notifySlack = true): void

@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Services\ItemAssignmentService;
 use App\Services\ItemAvailabilityService;
 use App\Services\SlackVorgangSync;
+use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -104,7 +105,7 @@ class MietvorgangController extends Controller
 
         $pdf = Pdf::loadView('pdf.mietvorgang_materialliste', compact('mietvorgang', 'itemsByUnit'));
 
-        return $pdf->download("Materialliste {$mietvorgang->bezeichnung}.pdf");
+        return $pdf->download(PdfFilename::make('Materialliste', $mietvorgang->bezeichnung));
     }
 
     public function update(MietvorgangRequest $request, Mietvorgang $mietvorgang)

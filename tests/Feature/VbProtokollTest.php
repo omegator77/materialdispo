@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\Geraetetyp;
+use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\VbProtokoll;
+use App\Models\VbProtokollAnforderung;
 
 function makeVbProduction(): Production
 {
@@ -39,8 +42,8 @@ test('admin can create a vb-protokoll requirement targeting a specific geraetety
     $admin = User::factory()->create(['role' => 'admin']);
     $production = makeVbProduction();
     $unit = Unit::create(['bezeichnung' => 'Stative']);
-    $eng = \App\Models\Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'ENG']);
-    $quattro = \App\Models\Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'Quattro']);
+    $eng = Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'ENG']);
+    $quattro = Geraetetyp::create(['units_id' => $unit->id, 'bezeichnung' => 'Quattro']);
 
     $response = $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
         'kunde' => 'Testkunde',
@@ -59,8 +62,8 @@ test('admin can create a vb-protokoll requirement targeting a specific geraetety
     expect($engAnforderung->unit_id)->toBe($unit->id)
         ->and($engAnforderung->anzahl)->toBe(2);
 
-    $item1 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'bezeichnung' => 'ENG 1', 'is_rented' => false]);
-    $item2 = \App\Models\Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'bezeichnung' => 'Quattro 1', 'is_rented' => false]);
+    $item1 = Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $eng->id, 'bezeichnung' => 'ENG 1', 'is_rented' => false]);
+    $item2 = Item::create(['units_id' => $unit->id, 'geraetetyp_id' => $quattro->id, 'bezeichnung' => 'Quattro 1', 'is_rented' => false]);
     $production->items()->attach([$item1->id, $item2->id]);
 
     $abgleich = $vbProtokoll->fresh()->abgleich();
@@ -101,9 +104,9 @@ test('admin can define a typ-based kamerakonfiguration as an anforderung', funct
     $optikUnit = Unit::create(['bezeichnung' => 'Optiken']);
     $stativUnit = Unit::create(['bezeichnung' => 'Stative']);
 
-    $kameraTyp = \App\Models\Geraetetyp::create(['units_id' => $kameraUnit->id, 'bezeichnung' => 'LDX 86N WorldCam']);
-    $optikTyp = \App\Models\Geraetetyp::create(['units_id' => $optikUnit->id, 'bezeichnung' => 'Fujinon HA23']);
-    $stativTyp = \App\Models\Geraetetyp::create(['units_id' => $stativUnit->id, 'bezeichnung' => 'Sachtler Quattro']);
+    $kameraTyp = Geraetetyp::create(['units_id' => $kameraUnit->id, 'bezeichnung' => 'LDX 86N WorldCam']);
+    $optikTyp = Geraetetyp::create(['units_id' => $optikUnit->id, 'bezeichnung' => 'Fujinon HA23']);
+    $stativTyp = Geraetetyp::create(['units_id' => $stativUnit->id, 'bezeichnung' => 'Sachtler Quattro']);
 
     $response = $this->actingAs($admin)->post(route('vb-protokoll.store', $production->id), [
         'kunde' => 'Testkunde',
@@ -132,7 +135,7 @@ test('admin can define a typ-based kamerakonfiguration as an anforderung', funct
         ->and($anforderung->tripod_geraetetyp_id)->toBe($stativTyp->id)
         ->and($anforderung->tripod_head_geraetetyp_id)->toBeNull();
 
-    $item = \App\Models\Item::create(['units_id' => $kameraUnit->id, 'geraetetyp_id' => $kameraTyp->id, 'bezeichnung' => 'LDX 86N WorldCam', 'is_rented' => false]);
+    $item = Item::create(['units_id' => $kameraUnit->id, 'geraetetyp_id' => $kameraTyp->id, 'bezeichnung' => 'LDX 86N WorldCam', 'is_rented' => false]);
     $production->items()->attach($item->id);
 
     $abgleich = $vbProtokoll->fresh()->abgleich();
@@ -161,7 +164,7 @@ test('vb-protokoll show page renders the soll/ist abgleich against the packlist'
     $vbProtokoll = $production->vbProtokoll()->create(['kunde' => 'X', 'created_by' => $admin->id]);
     $vbProtokoll->anforderungen()->create(['unit_id' => $unit->id, 'anzahl' => 2]);
 
-    $item = \App\Models\Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Kamera 1', 'is_rented' => false]);
+    $item = Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Kamera 1', 'is_rented' => false]);
     $production->items()->attach($item->id);
 
     $response = $this->actingAs($admin)->get(route('vb-protokoll.show', $production->id));
@@ -205,5 +208,5 @@ test('deleting a vb-protokoll removes its anforderungen', function () {
         ->assertRedirect(route('productions.show', $production->id));
 
     expect(VbProtokoll::find($vbProtokoll->id))->toBeNull();
-    expect(\App\Models\VbProtokollAnforderung::count())->toBe(0);
+    expect(VbProtokollAnforderung::count())->toBe(0);
 });

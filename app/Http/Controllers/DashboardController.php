@@ -39,14 +39,14 @@ class DashboardController extends Controller
                     $q->whereDate('booking_start', '<=', $today)
                         ->whereDate('booking_end', '>=', $today);
                 })
-                ->orWhereHas('mietvorgaenge', function ($q) use ($today) {
-                    $q->whereDate('rent_start', '<=', $today)
-                        ->whereDate('rent_end', '>=', $today);
-                })
-                ->orWhereHas('vermietvorgaenge', function ($q) use ($today) {
-                    $q->whereDate('rent_start', '<=', $today)
-                        ->whereDate('rent_end', '>=', $today);
-                });
+                    ->orWhereHas('mietvorgaenge', function ($q) use ($today) {
+                        $q->whereDate('rent_start', '<=', $today)
+                            ->whereDate('rent_end', '>=', $today);
+                    })
+                    ->orWhereHas('vermietvorgaenge', function ($q) use ($today) {
+                        $q->whereDate('rent_start', '<=', $today)
+                            ->whereDate('rent_end', '>=', $today);
+                    });
             })->count(),
 
             'runningEntries' => $this->runningEntries($today),
@@ -230,6 +230,9 @@ class DashboardController extends Controller
             ->filter(fn (array $e) => $e['doneCount'] < count($e['checks']));
 
         $productions = Production::with(array_merge($this->packStatusRelations(), ['vbProtokoll']))
+            // Nur offene: abgeschlossene Packvorgänge fallen unten ohnehin heraus und
+            // sollen nicht erst vollständig geladen werden.
+            ->whereNull('packvorgang_confirmed_at')
             ->get()
             ->filter(fn (Production $p) => $p->packlistEntries()->isNotEmpty())
             ->map(function (Production $p) {

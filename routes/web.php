@@ -1,29 +1,29 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\ProductionController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\BookingController;
-use App\Http\Controllers\ItemproductionController;
-use App\Http\Controllers\CameraConfigController;
-use App\Http\Controllers\TimelineController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\VbProtokollController;
-use App\Http\Controllers\GeraetetypController;
-use App\Http\Controllers\PackvorgangController;
-use App\Http\Controllers\MailingListController;
-use App\Http\Controllers\MietvorgangController;
-use App\Http\Controllers\MieterController;
-use App\Http\Controllers\VermietvorgangController;
-use App\Http\Controllers\TestMailController;
-use App\Http\Controllers\SlackInteractionController;
-use App\Http\Controllers\SettingController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CameraConfigController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\GeraetetypController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemproductionController;
+use App\Http\Controllers\MailingListController;
+use App\Http\Controllers\MieterController;
+use App\Http\Controllers\MietvorgangController;
+use App\Http\Controllers\PackvorgangController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SlackInteractionController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TestMailController;
+use App\Http\Controllers\TimelineController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VbProtokollController;
+use App\Http\Controllers\VermietvorgangController;
+use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
 
@@ -66,6 +66,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('productions/{production}/vb-protokoll', [VbProtokollController::class, 'destroy'])->name('vb-protokoll.destroy');
     Route::delete('vb-protokoll-fotos/{foto}', [VbProtokollController::class, 'destroyFoto'])->name('vb-protokoll.foto.destroy');
 
+    Route::post('productions/{production}/packvorgang/toggle/{item}', [PackvorgangController::class, 'toggle'])->name('packvorgang.toggle');
     Route::post('productions/{production}/packvorgang/complete', [PackvorgangController::class, 'complete'])->name('packvorgang.complete');
     Route::post('productions/{production}/packvorgang/reopen', [PackvorgangController::class, 'reopen'])->name('packvorgang.reopen');
 
@@ -137,7 +138,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('productions/{production}/vb-protokoll/pdf-abgleich', [VbProtokollController::class, 'generateAbgleichReportPDF'])->name('vb-protokoll.pdf-abgleich');
 
     Route::get('productions/{production}/packvorgang', [PackvorgangController::class, 'show'])->name('packvorgang.show');
-    Route::post('productions/{production}/packvorgang/toggle/{item}', [PackvorgangController::class, 'toggle'])->name('packvorgang.toggle');
     Route::get('productions/{production}/packvorgang/pdf', [PackvorgangController::class, 'pdf'])->name('packvorgang.pdf');
 
     Route::get('/timeline/items', [TimelineController::class, 'items'])->name('timeline.items');

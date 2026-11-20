@@ -7,6 +7,7 @@ use App\Models\Production;
 use App\Models\User;
 use App\Models\Vermietvorgang;
 use App\Services\SlackVorgangSync;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -88,9 +89,26 @@ class SlackInteractionController extends Controller
      */
     private function handleConfirm(string $actionId, array $payload, ?string $responseUrl): void
     {
-        [, $kind, $subtype] = explode(':', $actionId);
+        $parts = explode(':', $actionId, 3);
+
+        if (count($parts) !== 3) {
+            return;
+        }
+
+        [, $kind, $subtype] = $parts;
 
         if (! in_array($subtype, self::VALID_SUBTYPES[$kind] ?? [], true)) {
+            return;
+        }
+
+        // Dieselbe Schreibberechtigung wie in der App (Rolle admin/user): Der
+        // klickende Slack-Nutzer muss per E-Mail einem App-Nutzer zugeordnet
+        // sein. Betrachter und Unbekannte im Kanal dürfen nichts bestätigen.
+        $causer = $this->resolveAppUser($payload['user']['id'] ?? null);
+
+        if (! $causer || ! $causer->isUser()) {
+            $this->replyEphemeral($responseUrl, '🚫 Keine Berechtigung: Dein Slack-Konto ist keinem App-Benutzer mit Schreibrechten zugeordnet (Abgleich über die E-Mail-Adresse).');
+
             return;
         }
 
@@ -107,9 +125,6 @@ class SlackInteractionController extends Controller
             return;
         }
 
-        $slackUserName = $payload['user']['username'] ?? 'jemand';
-        $confirmedByUserId = $this->resolveAppUserId($payload['user']['id'] ?? null);
-        $causer = $confirmedByUserId ? User::find($confirmedByUserId) : null;
         $field = self::FIELD_PREFIXES[$subtype];
         $label = in_array($subtype, ['start', 'end'], true)
             ? $vorgang->transportActionLabel($subtype)
@@ -117,19 +132,14 @@ class SlackInteractionController extends Controller
 
         $vorgang->update([
             "{$field}_confirmed_at" => now(),
-            "{$field}_confirmed_by" => $confirmedByUserId,
+            "{$field}_confirmed_by" => $causer->id,
         ]);
-
-        $description = "{$label} über Slack als geklärt markiert";
-        if (! $causer) {
-            $description .= " (Slack-Nutzer: {$slackUserName}, keine App-Zuordnung gefunden)";
-        }
 
         activity($kind)
             ->performedOn($vorgang)
             ->causedBy($causer)
             ->event('confirmed')
-            ->log($description);
+            ->log("{$label} über Slack als geklärt markiert");
 
         match ($kind) {
             'mietvorgang' => $this->slack->syncMietvorgang($vorgang),
@@ -140,21 +150,42 @@ class SlackInteractionController extends Controller
 
     /**
      * Ordnet den klickenden Slack-Nutzer per Profil-E-Mail einem App-Nutzer
-     * zu (für "confirmed_by"). Kein Treffer oder API-Fehler → null, die
-     * Bestätigung läuft trotzdem durch.
+     * zu. Kein Treffer, fehlendes Token oder API-/Netzwerkfehler → null
+     * (der Klick wird dann abgelehnt, nicht durchgewunken).
      */
-    private function resolveAppUserId(?string $slackUserId): ?int
+    private function resolveAppUser(?string $slackUserId): ?User
     {
         if (! $slackUserId) {
             return null;
         }
 
-        $response = Http::withToken(config('services.slack.bot_token'))
-            ->get('https://slack.com/api/users.info', ['user' => $slackUserId]);
+        try {
+            $response = Http::withToken(config('services.slack.bot_token'))
+                ->timeout(5)
+                ->get('https://slack.com/api/users.info', ['user' => $slackUserId]);
+        } catch (ConnectionException $e) {
+            Log::warning('Slack users.info nicht erreichbar: '.$e->getMessage());
+
+            return null;
+        }
 
         $email = $response->json('user.profile.email');
 
-        return $email ? User::where('email', $email)->value('id') : null;
+        return $email ? User::where('email', $email)->first() : null;
+    }
+
+    /** Antwort, die nur der klickende Slack-Nutzer sieht. */
+    private function replyEphemeral(?string $responseUrl, string $text): void
+    {
+        if (! $responseUrl) {
+            return;
+        }
+
+        Http::timeout(5)->post($responseUrl, [
+            'response_type' => 'ephemeral',
+            'replace_original' => false,
+            'text' => $text,
+        ]);
     }
 
     private function replaceMessage(?string $responseUrl, string $text): void

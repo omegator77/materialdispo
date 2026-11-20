@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasReadableActivityDescription;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -74,7 +76,7 @@ class Production extends Model
         return $this->belongsTo(User::class, 'packvorgang_confirmed_by');
     }
 
-    public function packedItemIds(): \Illuminate\Support\Collection
+    public function packedItemIds(): Collection
     {
         return $this->itemPacks->pluck('item_id');
     }
@@ -88,7 +90,7 @@ class Production extends Model
      * Zeitpunkt, ab dem der Packvorgang abgeschlossen ist — Basis für die
      * 48h-Kompaktierung der Slack-Nachricht, analog zu Mietvorgang::completedAt().
      */
-    public function completedAt(): ?\Carbon\Carbon
+    public function completedAt(): ?Carbon
     {
         return $this->packvorgang_confirmed_at;
     }
@@ -121,7 +123,7 @@ class Production extends Model
      * Kamera-Konfigurationen, dedupliziert nach Gerät. Einzige Quelle der
      * Wahrheit für Abgleich, Packvorgang-Ansicht und Packvorgang-PDF.
      */
-    public function packlistEntries(): \Illuminate\Support\Collection
+    public function packlistEntries(): Collection
     {
         $entries = collect();
 

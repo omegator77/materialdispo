@@ -142,6 +142,7 @@ class CameraDetailSeeder extends Seeder
 
             if (! $item) {
                 $this->command?->warn("Kamera {$nummer} nicht gefunden.");
+
                 continue;
             }
 

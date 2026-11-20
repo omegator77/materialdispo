@@ -7,12 +7,36 @@ use App\Models\Item;
 use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Vermietvorgang;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class ItemAvailabilityService
 {
     /**
+     * Sperrt die Geräte-Zeilen (FOR UPDATE, in fester ID-Reihenfolge gegen
+     * Deadlocks), damit Verfügbarkeitsprüfung + Zuordnung nicht von einem
+     * parallelen Request unterlaufen werden. Muss INNERHALB einer
+     * DB::transaction() VOR den check*()-Aufrufen laufen. Unter SQLite
+     * (Tests) ist die Sperre ein No-op.
+     *
+     * @param  iterable<int|string>  $itemIds
+     */
+    public function lockItems(iterable $itemIds): void
+    {
+        $ids = collect($itemIds)->filter()->unique()->sort()->values();
+
+        if ($ids->isNotEmpty()) {
+            Item::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+        }
+    }
+
+    /**
      * Prüft ob ein Gerät für eine Produktion verfügbar ist.
-     * Gibt ['available' => bool, 'reason' => string|null] zurück.
+     * Gibt ['available' => bool, 'reason' => string|null, 'warning' => string|null]
+     * zurück. 'warning' ist ein Hinweis bei verfügbaren Geräten: ein Mietgerät
+     * (Vermieter gesetzt) ohne Mietvorgang darf vorläufig verplant werden, ist
+     * aber noch nicht gemietet — der Mietvorgang muss die Produktion später
+     * abdecken (siehe checkForMiete()).
      *
      * $ignoreConfig blendet eine Kamerakonfiguration beim Konfliktcheck aus —
      * nötig beim Editieren einer bestehenden Config, damit sie nicht mit sich
@@ -25,10 +49,14 @@ class ItemAvailabilityService
         //    Zuordnungen, von denen keine passt, ist "zu spät"/"zu früh" eine
         //    Annäherung — echte Mehrfachzuordnungen sind mit dieser Prüfung
         //    noch nicht ausführlich getestet (aktuell 0 Mietvorgänge im System).
+        $warning = null;
+
         if ($item->suppliers_id) {
             $mietvorgaenge = $item->mietvorgaenge;
 
-            if ($mietvorgaenge->isNotEmpty()) {
+            if ($mietvorgaenge->isEmpty()) {
+                $warning = 'noch nicht gemietet';
+            } else {
                 // Wichtig: beide Seiten vor dem Vergleich auf reine 'Y-m-d'-Strings
                 // normalisieren. $mv->rent_start ist ein Carbon-Objekt (cast 'date'),
                 // $production->booking_start eine reine DB-Zeichenkette (Production
@@ -49,6 +77,7 @@ class ItemAvailabilityService
                     return [
                         'available' => false,
                         'reason' => $tooLate ? 'Mietbeginn zu spät' : 'Mietende zu früh',
+                        'warning' => null,
                     ];
                 }
             }
@@ -68,6 +97,7 @@ class ItemAvailabilityService
             return [
                 'available' => false,
                 'reason' => 'Vermietet an '.($verleihConflict->mieter->bezeichnung ?? 'Mieter gelöscht'),
+                'warning' => null,
             ];
         }
 
@@ -82,6 +112,7 @@ class ItemAvailabilityService
             return [
                 'available' => false,
                 'reason' => 'Gebucht in Produktion: '.$conflict->bezeichnung,
+                'warning' => null,
             ];
         }
 
@@ -105,19 +136,23 @@ class ItemAvailabilityService
             return [
                 'available' => false,
                 'reason' => 'In Kamerakonfiguration: '.$configConflict->production->bezeichnung,
+                'warning' => null,
             ];
         }
 
         return [
             'available' => true,
             'reason' => null,
+            'warning' => $warning,
         ];
     }
 
     /**
      * Prüft ob ein Gerät einem Mietvorgang (Wareneingang) zugeordnet werden
-     * darf: weder anderweitig geclaimt (siehe claimConflict()) noch in einer
-     * überlappenden Produktion/Kamerakonfiguration verplant.
+     * darf: nicht anderweitig geclaimt (siehe claimConflict()) und jede
+     * überlappende Produktion/Kamerakonfiguration muss vom Mietzeitraum
+     * vollständig abgedeckt sein (Mieten nach dem Verplanen ist erlaubt,
+     * solange der Mietvorgang die Produktion abdeckt).
      * Gibt ['available' => bool, 'reason' => string|null] zurück.
      */
     public function checkForMiete(Item $item, Mietvorgang $mietvorgang): array
@@ -131,7 +166,7 @@ class ItemAvailabilityService
             return ['available' => false, 'reason' => $claim];
         }
 
-        return $this->productionConflict($item, $periodStart, $periodEnd);
+        return $this->productionConflict($item, $periodStart, $periodEnd, requireCoverage: true);
     }
 
     /**
@@ -191,9 +226,9 @@ class ItemAvailabilityService
      * Bedarf selbst (claimConflict() blendet Abgeschlossene aus, check()
      * Fall 2 bewusst nicht).
      *
-     * @param  \Illuminate\Database\Eloquent\Relations\BelongsToMany  $relation
+     * @param  BelongsToMany  $relation
      */
-    private function overlappingVorgaenge($relation, string $periodStart, string $periodEnd, ?int $excludeId, string $relatedTable): \Illuminate\Support\Collection
+    private function overlappingVorgaenge($relation, string $periodStart, string $periodEnd, ?int $excludeId, string $relatedTable): Collection
     {
         return $relation
             ->when($excludeId, fn ($q) => $q->where("{$relatedTable}.id", '!=', $excludeId))
@@ -208,24 +243,32 @@ class ItemAvailabilityService
      * Baustein für checkForMiete()/checkForVerleih().
      * Gibt ['available' => bool, 'reason' => string|null] zurück.
      */
-    private function productionConflict(Item $item, string $periodStart, string $periodEnd): array
+    private function productionConflict(Item $item, string $periodStart, string $periodEnd, bool $requireCoverage = false): array
     {
-        $conflict = $item->productions()
+        // Mit $requireCoverage (Mietvorgang) zählen nur überlappende
+        // Produktionen als Konflikt, die der Zeitraum NICHT vollständig abdeckt.
+        $notCovered = fn ($q) => $requireCoverage
+            ? $q->where(fn ($q) => $q->where('booking_start', '<', $periodStart)->orWhere('booking_end', '>', $periodEnd))
+            : $q;
+
+        $conflict = $notCovered($item->productions()
             ->where('booking_start', '<=', $periodEnd)
-            ->where('booking_end', '>=', $periodStart)
+            ->where('booking_end', '>=', $periodStart))
             ->first();
 
         if ($conflict) {
             return [
                 'available' => false,
-                'reason' => 'Gebucht in Produktion: '.$conflict->bezeichnung,
+                'reason' => 'Gebucht in Produktion: '.$conflict->bezeichnung
+                    .($requireCoverage ? ' (Mietzeitraum deckt die Produktion nicht ab)' : ''),
             ];
         }
 
         $configConflict = CameraConfig::query()
-            ->whereHas('production', function ($q) use ($periodStart, $periodEnd) {
+            ->whereHas('production', function ($q) use ($periodStart, $periodEnd, $notCovered) {
                 $q->where('booking_start', '<=', $periodEnd)
                     ->where('booking_end', '>=', $periodStart);
+                $notCovered($q);
             });
 
         $this->applyItemInConfigFilter($configConflict, $item->id);
@@ -251,7 +294,7 @@ class ItemAvailabilityService
      * jedes Gerät mit is_available/availability_reason und blendet nicht
      * verfügbare Geräte aus, sofern $showUnavailable nicht gesetzt ist.
      */
-    public function assignableItemsFor(Production $production, ?string $unitFilter, bool $showUnavailable): \Illuminate\Support\Collection
+    public function assignableItemsFor(Production $production, ?string $unitFilter, bool $showUnavailable): Collection
     {
         $itemsQuery = Item::query()
             ->whereDoesntHave('productions', function ($query) use ($production) {
