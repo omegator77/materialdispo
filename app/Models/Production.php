@@ -119,10 +119,19 @@ class Production extends Model
     }
 
     /**
-     * Vereinheitlichte Soll-Geräteliste: Einzelgeräte + alle Slots aus
-     * Kamera-Konfigurationen, dedupliziert nach Gerät. Einzige Quelle der
-     * Wahrheit für Abgleich, Packvorgang-Ansicht und Packvorgang-PDF.
+     * Relationen, die stepStatus() für die Listenansichten braucht.
      */
+    public const LIST_RELATIONS = [
+        'items',
+        'cameraConfigs.item',
+        'cameraConfigs.lensItem',
+        'cameraConfigs.tripodItem',
+        'cameraConfigs.headItem',
+        'cameraConfigs.adapterItem',
+        'itemPacks',
+        'vbProtokoll',
+    ];
+
     /**
      * Stand der vier Produktionsschritte für die Schrittleiste.
      *
@@ -138,6 +147,11 @@ class Production extends Model
         ];
     }
 
+    /**
+     * Vereinheitlichte Soll-Geräteliste: Einzelgeräte + alle Slots aus
+     * Kamera-Konfigurationen, dedupliziert nach Gerät. Einzige Quelle der
+     * Wahrheit für Abgleich, Packvorgang-Ansicht und Packvorgang-PDF.
+     */
     public function packlistEntries(): Collection
     {
         $entries = collect();
