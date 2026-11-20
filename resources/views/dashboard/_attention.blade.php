@@ -4,12 +4,12 @@
     $dot = ['rot' => 'bg-red-500', 'gelb' => 'bg-amber-400'];
     $ring = ['rot' => 'border-red-200 bg-red-50', 'gelb' => 'border-amber-200 bg-amber-50'];
 @endphp
-<div class="bg-white rounded-lg shadow-sm p-5" x-data="{ all: false }">
+<div class="card card-pad" x-data="{ all: false }">
     <div class="flex items-center justify-between mb-3">
-        <h3 class="text-base font-semibold text-gray-900">
+        <h3 class="card-title">
             Handlungsbedarf
             @if(count($attention))
-                <span class="ml-1 text-xs font-medium bg-gray-900 text-white rounded-full px-2 py-0.5">{{ count($attention) }}</span>
+                <span class="badge ml-1 bg-gray-900 text-white">{{ count($attention) }}</span>
             @endif
         </h3>
         <span class="text-xs text-gray-400">nächste 45 Tage</span>
@@ -30,13 +30,13 @@
                     </div>
                     @if($canAct && $f['action'])
                         @if(($f['action']['method'] ?? 'POST') === 'GET')
-                            <a href="{{ $f['action']['url'] }}" class="shrink-0 text-xs font-semibold bg-white border border-gray-300 hover:border-orange-400 hover:text-orange-600 rounded px-3 py-1.5 text-center">
+                            <a href="{{ $f['action']['url'] }}" class="btn btn-secondary btn-sm shrink-0 hover:border-orange-400 text-center">
                                 {{ $f['action']['label'] }}
                             </a>
                         @else
                             <form method="POST" action="{{ $f['action']['url'] }}" class="shrink-0">
                                 @csrf
-                                <button type="submit" class="w-full text-xs font-semibold bg-gray-900 hover:bg-gray-700 text-white rounded px-3 py-1.5">
+                                <button type="submit" class="btn btn-secondary btn-sm w-full">
                                     {{ $f['action']['label'] }}
                                 </button>
                             </form>

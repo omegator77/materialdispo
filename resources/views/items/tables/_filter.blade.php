@@ -1,9 +1,9 @@
-<div class="max-w-7xl w-11/12 mx-auto mt-6" x-data="itemSearch()">
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+<div class="page" x-data="itemSearch()">
+    <div class="card p-4">
         <div class="flex flex-col sm:flex-row sm:items-end gap-4">
             <form method="GET" action="{{ route('items.index') }}" class="contents">
                 <div class="w-full sm:w-72">
-                    <label for="unitFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="unitFilter" class="form-label">
                         Gruppe filtern
                     </label>
                     <select id="unitFilter" name="unit_id" class="form-control w-full" onchange="this.form.submit()">
@@ -18,7 +18,7 @@
             </form>
 
             <div class="w-full sm:flex-1">
-                <label for="itemSearch" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="itemSearch" class="form-label">
                     Suche
                 </label>
                 <input
@@ -34,7 +34,7 @@
 
             @if(request('unit_id'))
                 <a href="{{ route('items.index') }}"
-                   class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                   class="btn btn-secondary">
                     Filter zurücksetzen
                 </a>
             @endif

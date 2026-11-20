@@ -1,51 +1,51 @@
 @include('items.tables._filter')
 
-<div class="max-w-7xl w-11/12 mx-auto mt-6">
+<div class="page">
 
     {{-- Desktop --}}
-    <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-100 border-b">
+    <div class="hidden md:block card overflow-hidden">
+        <table class="data-table">
+            <thead>
                 <tr>
                     @if(Auth::user()->isUser())
-                    <th class="px-3 py-3 w-8"><input type="checkbox" class="bulk-select-all rounded border-gray-300" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
+                    <th class="w-8"><input type="checkbox" class="bulk-select-all form-check" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
                     @endif
-                    <th class="text-left px-4 py-3">
+                    <th>
                         <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
                     </th>
-                    <th class="text-left px-4 py-3">
+                    <th>
                         <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Bezeichnung</a>
                     </th>
-                    <th class="text-left px-4 py-3">Hersteller</th>
-                    <th class="text-left px-4 py-3">Modell</th>
-                    <th class="text-left px-4 py-3">Zoom</th>
-                    <th class="text-left px-4 py-3">Seriennummer</th>
-                    <th class="text-left px-4 py-3">Vermieter</th>
-                    <th class="text-right px-4 py-3">Aktionen</th>
+                    <th>Hersteller</th>
+                    <th>Modell</th>
+                    <th>Zoom</th>
+                    <th>Seriennummer</th>
+                    <th>Vermieter</th>
+                    <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($items as $item)
                 <tr class="border-b hover:bg-gray-50" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
                     @if(Auth::user()->isUser())
-                    <td class="px-3 py-3"><input type="checkbox" class="bulk-select rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
+                    <td><input type="checkbox" class="bulk-select form-check" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
                     @endif
-                    <td class="px-4 py-3">{{ $item->nummer ?: '—' }}</td>
-                    <td class="px-4 py-3 font-medium">
+                    <td>{{ $item->nummer ?: '—' }}</td>
+                    <td class="font-medium">
                         <a href="{{ route('items.show', $item->id) }}" class="text-gray-900 hover:text-orange-500">
                             {{ $item->bezeichnung }}
                         </a>
                     </td>
-                    <td class="px-4 py-3">{{ $item->lensDetail->manufacturer ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->lensDetail->model ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->lensDetail->zoom_factor ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->lensDetail->serial_number ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
-                    <td class="px-4 py-3">@include('items.tables._actions')</td>
+                    <td>{{ $item->lensDetail->manufacturer ?? '—' }}</td>
+                    <td>{{ $item->lensDetail->model ?? '—' }}</td>
+                    <td>{{ $item->lensDetail->zoom_factor ?? '—' }}</td>
+                    <td>{{ $item->lensDetail->serial_number ?? '—' }}</td>
+                    <td>{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
+                    <td>@include('items.tables._actions')</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center py-6 text-gray-500">Keine Objektive gefunden.</td>
+                    <td colspan="9" class="empty-state">Keine Objektive gefunden.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -55,14 +55,14 @@
     {{-- Mobile --}}
     @if(Auth::user()->isUser())
     <label class="md:hidden flex items-center gap-2 text-sm text-gray-600 mb-2 px-1">
-        <input type="checkbox" class="bulk-select-all rounded border-gray-300 w-5 h-5"> Alle sichtbaren auswählen
+        <input type="checkbox" class="bulk-select-all form-check"> Alle sichtbaren auswählen
     </label>
     @endif
     <div class="md:hidden space-y-4">
         @forelse($items as $item)
-        <div class="relative bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
+        <div class="relative card p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
             @if(Auth::user()->isUser())
-            <input type="checkbox" class="bulk-select absolute top-3 right-3 w-6 h-6 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
+            <input type="checkbox" class="bulk-select absolute top-3 right-3 form-check" value="{{ $item->id }}" aria-label="Gerät auswählen">
             @endif
             <a href="{{ route('items.show', $item->id) }}" class="block text-lg font-semibold text-gray-900 hover:text-orange-500">
                 {{ $item->bezeichnung }}
@@ -77,11 +77,11 @@
             <div class="mt-4">@include('items.tables._actions')</div>
         </div>
         @empty
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 text-center text-gray-500">Keine Objektive gefunden.</div>
+        <div class="card p-4 text-center text-gray-500">Keine Objektive gefunden.</div>
         @endforelse
     </div>
 
-    <div data-search-empty class="hidden mt-4 bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+    <div data-search-empty class="hidden mt-4 card card-pad text-center text-gray-500">
         Keine Objektive gefunden.
     </div>
 

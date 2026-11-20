@@ -1,20 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Mietvorgänge
-            </h2>
-
-            @if(Auth::user()->isUser())
+        <x-page-header title="Mietvorgänge">
+            <x-slot name="actions">
+                @if(Auth::user()->isUser())
             <a href="{{ route('mietvorgaenge.create') }}"
-               class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+               class="btn btn-primary">
                 Neuer Mietvorgang
             </a>
             @endif
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6">
+    <div class="page">
 
         @if(session('success'))
             <div class="mb-4 bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
@@ -29,50 +27,50 @@
         @endif
 
         {{-- Desktop / Tablet --}}
-        <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-100 border-b">
+        <div class="hidden md:block card overflow-hidden">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="text-left px-4 py-3">Bezeichnung</th>
-                        <th class="text-left px-4 py-3">Zeitraum</th>
-                        <th class="text-left px-4 py-3">Hinweg</th>
-                        <th class="text-left px-4 py-3">Rückweg</th>
-                        <th class="text-left px-4 py-3">Geräte</th>
-                        <th class="text-right px-4 py-3">Aktionen</th>
+                        <th>Bezeichnung</th>
+                        <th>Zeitraum</th>
+                        <th>Hinweg</th>
+                        <th>Rückweg</th>
+                        <th>Geräte</th>
+                        <th class="text-right">Aktionen</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @forelse($mietvorgaenge as $mietvorgang)
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium">
+                        <tr>
+                            <td class="font-medium">
                                 <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
                                    class="text-gray-900 hover:text-orange-500">
                                     {{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
                                 </a>
                             </td>
 
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y') }}
                                 – {{ \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y') }}
                             </td>
 
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $mietvorgang->transport_type_start ?: '—' }}
                             </td>
 
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $mietvorgang->transport_type_end ?: '—' }}
                             </td>
 
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $mietvorgang->items_count }}
                             </td>
 
-                            <td class="px-4 py-3">
+                            <td>
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
-                                       class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
+                                       class="btn btn-primary btn-sm">
                                         Details
                                     </a>
 
@@ -83,7 +81,7 @@
                                         @method('DELETE')
                                         <input type="hidden" name="force" value="0">
                                         <button type="submit"
-                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
+                                                class="btn btn-danger btn-sm">
                                             Löschen
                                         </button>
                                     </form>
@@ -93,7 +91,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-6 text-gray-500">
+                            <td colspan="6" class="empty-state">
                                 Noch keine Mietvorgänge vorhanden.
                             </td>
                         </tr>
@@ -107,7 +105,7 @@
 
             @forelse($mietvorgaenge as $mietvorgang)
 
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+                <div class="card p-4">
 
                     <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
                        class="text-lg font-semibold text-gray-900 hover:text-orange-500">
@@ -127,7 +125,7 @@
 
                     <div class="mt-4 flex gap-2">
                         <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
-                           class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
+                           class="btn btn-primary flex-1 text-center">
                             Details
                         </a>
 
@@ -138,7 +136,7 @@
                             @method('DELETE')
                             <input type="hidden" name="force" value="0">
                             <button type="submit"
-                                    class="w-full text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                                    class="btn btn-danger w-full text-center">
                                 Löschen
                             </button>
                         </form>
@@ -149,7 +147,7 @@
 
             @empty
 
-                <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+                <div class="card card-pad text-center text-gray-500">
                     Noch keine Mietvorgänge vorhanden.
                 </div>
 

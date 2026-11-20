@@ -1,10 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Geräte-Timeline
-            </h2>
-            {{-- Zoom-Steuerung (Desktop sichtbar, Mobile im Timeline-Header) --}}
+        <x-page-header title="Geräte-Timeline">
+            <x-slot name="actions">
+                {{-- Zoom-Steuerung (Desktop sichtbar, Mobile im Timeline-Header) --}}
             <div class="hidden sm:flex items-center gap-4">
                 <div class="flex items-center gap-3 text-xs text-gray-600">
                     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span> Produktion</span>
@@ -16,31 +14,32 @@
                     <button onclick="timelineZoom(-1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">−</button>
                     <span id="zoom-label-header" class="text-xs font-mono w-10 text-center text-gray-700">100%</span>
                     <button onclick="timelineZoom(+1)" class="w-7 h-7 rounded border border-gray-300 bg-white hover:bg-gray-100 flex items-center justify-center text-sm font-bold leading-none">+</button>
-                    <button onclick="timelineZoomReset()" class="text-xs text-blue-600 hover:underline ml-1">Reset</button>
+                    <button onclick="timelineZoomReset()" class="link ml-1 text-xs">Reset</button>
                 </div>
             </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-full mx-auto px-4">
+        <div class="page">
 
             {{-- Filter --}}
-            <div class="bg-white shadow-sm rounded-lg p-4 mb-4">
+            <div class="card p-4 mb-4">
                 <form method="GET" action="{{ route('timeline.items') }}" class="flex flex-wrap gap-4 items-end">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Von</label>
+                        <label class="form-label">Von</label>
                         <input type="date" name="start" value="{{ $start }}"
-                            class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
+                            class="form-control mt-1">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Bis</label>
+                        <label class="form-label">Bis</label>
                         <input type="date" name="end" value="{{ $end }}"
-                            class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
+                            class="form-control mt-1">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Gruppe</label>
-                        <select name="unit_id" class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
+                        <label class="form-label">Gruppe</label>
+                        <select name="unit_id" class="form-control mt-1">
                             <option value="">Alle Gruppen</option>
                             @foreach($units as $unit)
                                 <option value="{{ $unit->id }}" @selected((string)$unitId === (string)$unit->id)>
@@ -50,8 +49,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Buchungsstatus</label>
-                        <select name="booking_status" class="mt-1 rounded-md border-gray-300 shadow-sm text-sm">
+                        <label class="form-label">Buchungsstatus</label>
+                        <select name="booking_status" class="form-control mt-1">
                             <option value="all" @selected((string)$bookingStatus === 'all')>Alle</option>
                             <option value="booked" @selected((string)$bookingStatus === 'booked')>Nur gebucht</option>
                             <option value="free" @selected((string)$bookingStatus === 'free')>Nur frei</option>
@@ -59,7 +58,7 @@
                     </div>
                     <div>
                         <button type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                            class="btn btn-primary">
                             Anzeigen
                         </button>
                     </div>
@@ -67,7 +66,7 @@
             </div>
 
             {{-- Timeline-Container --}}
-            <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="card overflow-hidden">
 
                 {{-- Mobile Zoom-Bar --}}
                 <div class="sm:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gray-50">
@@ -143,7 +142,7 @@
                                         style="width: var(--col-width, 200px);"
                                     >
                                         @if(Auth::user()->isUser())
-                                        <input type="checkbox" class="bulk-select-group rounded border-gray-300" data-group="{{ $gi }}" @click.stop title="Ganze Gruppe auswählen" aria-label="Ganze Gruppe auswählen">
+                                        <input type="checkbox" class="form-check bulk-select-group" data-group="{{ $gi }}" @click.stop title="Ganze Gruppe auswählen" aria-label="Ganze Gruppe auswählen">
                                         @endif
                                         <span x-text="(groups[{{ $gi }}] ?? true) ? '▼' : '▶'" class="text-[10px]"></span>
                                         <span>{{ $unitName }}</span>
@@ -170,7 +169,7 @@
                                             <div class="shrink-0 flex items-center bg-white hover:bg-blue-50 border-r border-gray-200 sticky left-0 z-20 transition-colors"
                                                 style="width: var(--col-width, 200px);">
                                                 @if(Auth::user()->isUser())
-                                                <input type="checkbox" class="bulk-select ml-2 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
+                                                <input type="checkbox" class="bulk-select ml-2 form-check" value="{{ $item->id }}" aria-label="Gerät auswählen">
                                                 @endif
                                                 <a href="{{ route('items.show', $item->id) }}"
                                                     class="flex-1 min-w-0 flex items-center px-2 py-1 text-xs self-stretch"

@@ -1,16 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Packliste
-            </h2>
-        </div>
+        <x-page-header title="Packliste"></x-page-header>
     </x-slot>
 
     {{-- Filter --}}
-    <div class="mt-4 px-4">
+    <div class="page">
         <form method="GET" action="{{ route('itemprods') }}"
-              class="flex flex-wrap justify-center items-center gap-2">
+              class="toolbar">
             <select name="production_id" class="form-control text-sm py-1.5 w-auto" onchange="this.form.submit()">
                 <option value="">Alle Produktionen</option>
                 @foreach($allProductions as $production)
@@ -116,7 +112,7 @@
     };
     @endphp
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-6">
+    <div class="page">
         @forelse($productionIds as $productionId)
         @php
         $production = $productionsById->get($productionId);
@@ -134,14 +130,14 @@
         ])
         @empty
         @if($archivedProductionIds->isEmpty())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-500">
+        <div class="card card-pad text-center text-gray-500">
             Keine Einträge gefunden.
         </div>
         @endif
         @endforelse
 
         @if($archivedProductionIds->isNotEmpty())
-        <details class="bg-gray-50 border border-gray-300 rounded-lg shadow-md overflow-hidden">
+        <details class="card overflow-hidden bg-gray-50">
             <summary class="cursor-pointer bg-gray-200 hover:bg-gray-300 px-4 py-4 font-bold text-gray-700">
                 Archiv ({{ $archivedProductionIds->count() }}) – Produktionen, deren Ende mehr als 14 Tage zurückliegt
             </summary>

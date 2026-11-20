@@ -1,12 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Gruppendetails
-        </h2>
+        <x-page-header title="Gruppendetails"></x-page-header>
     </x-slot>
 
-    <div class="max-w-5xl w-11/12 mx-auto mt-6 space-y-6">
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+    <div class="page">
+        <div class="card card-pad">
 
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div>
@@ -21,7 +19,7 @@
 
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('units.edit', $unit->id) }}"
-                       class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                       class="btn btn-primary">
                         Bearbeiten
                     </a>
 
@@ -32,13 +30,13 @@
                         @method('DELETE')
 
                         <button type="submit"
-                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                                class="btn btn-danger">
                             Löschen
                         </button>
                     </form>
 
                     <a href="{{ route('units.index') }}"
-                       class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                       class="btn btn-secondary">
                         Zurück
                     </a>
                 </div>

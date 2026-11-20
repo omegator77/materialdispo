@@ -1,4 +1,4 @@
-<div class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
+<div class="card card-pad space-y-6">
 
     {{-- Fehlermeldungen --}}
     @if ($errors->any())
@@ -13,13 +13,13 @@
 
     {{-- Stammdaten --}}
     <section>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <h3 class="card-title mb-4">
             Stammdaten
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="units_id" class="block text-sm font-medium text-gray-700">Gruppe</label>
+                <label for="units_id" class="form-label">Gruppe</label>
                 <select name="units_id" id="units_id" class="form-control w-full" required>
                     @foreach($units as $unit)
                     <option value="{{ $unit->id }}"
@@ -44,7 +44,7 @@
                     }
                 }">
                 <div>
-                    <label for="geraetetyp_id" class="block text-sm font-medium text-gray-700">Gerätetyp</label>
+                    <label for="geraetetyp_id" class="form-label">Gerätetyp</label>
                     <select name="geraetetyp_id" id="geraetetyp_id" class="form-control w-full" @change="applyType($event.target.value)">
                         <option value="">— Kein Typ —</option>
                         @foreach($geraetetypen->groupBy('units_id') as $groupUnitsId => $typesInUnit)
@@ -60,12 +60,12 @@
                     </select>
                     <p class="text-xs text-gray-400 mt-1">
                         Füllt die Bezeichnung automatisch aus.
-                        <a href="{{ route('geraetetypen.create') }}" target="_blank" class="text-blue-600 hover:underline">Neuen Typ anlegen</a>
+                        <a href="{{ route('geraetetypen.create') }}" target="_blank" class="link">Neuen Typ anlegen</a>
                     </p>
                 </div>
 
                 <div>
-                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <label for="bezeichnung" class="form-label">Bezeichnung</label>
                     <input
                         type="text"
                         name="bezeichnung"
@@ -77,7 +77,7 @@
             </div>
 
             <div>
-                <label for="nummer" class="block text-sm font-medium text-gray-700">Nummer</label>
+                <label for="nummer" class="form-label">Nummer</label>
                 <input
                     type="text"
                     name="nummer"
@@ -87,7 +87,7 @@
             </div>
 
             <div>
-                <label for="description" class="block text-sm font-medium text-gray-700">Bemerkung</label>
+                <label for="description" class="form-label">Bemerkung</label>
                 <textarea
                     name="description"
                     id="description"
@@ -99,13 +99,13 @@
 
     {{-- Mietmaterial --}}
     <section class="border-t pt-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <h3 class="card-title mb-4">
             Mietmaterial
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label for="suppliers_id" class="block text-sm font-medium text-gray-700">Vermieter</label>
+                <label for="suppliers_id" class="form-label">Vermieter</label>
                 <select name="suppliers_id" id="suppliers_id" class="form-control w-full">
                     <option value="">Eigentum / kein Vermieter</option>
                     @foreach($suppliers as $supplier)
@@ -120,7 +120,7 @@
             <div id="rental-fields" class="md:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Neuen Mietzeitraum eintragen — Beginn</label>
+                        <label for="rent_start" class="form-label">Neuen Mietzeitraum eintragen — Beginn</label>
                         <input
                             type="text"
                             name="rent_start"
@@ -131,7 +131,7 @@
                     </div>
 
                     <div>
-                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Ende</label>
+                        <label for="rent_end" class="form-label">Ende</label>
                         <input
                             type="text"
                             name="rent_end"
@@ -152,7 +152,7 @@
             <p class="text-sm font-medium text-gray-700">Aktuelle Mietvorgänge</p>
             @forelse($item->mietvorgaenge as $mietvorgang)
                 <div class="flex items-center justify-between border border-gray-200 rounded px-3 py-1.5 text-sm">
-                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="text-orange-600 hover:underline" target="_blank">
+                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="link" target="_blank">
                         {{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}
                         ({{ $mietvorgang->rent_start->format('d.m.Y') }} – {{ $mietvorgang->rent_end->format('d.m.Y') }})
                     </a>
@@ -172,13 +172,13 @@
 
     {{-- Verleih --}}
     <section class="border-t pt-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <h3 class="card-title mb-4">
             Verleih
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-                <label for="mieter_id" class="block text-sm font-medium text-gray-700">Neue Vermietung — Mieter</label>
+                <label for="mieter_id" class="form-label">Neue Vermietung — Mieter</label>
                 <select name="mieter_id" id="mieter_id" class="form-control w-full">
                     <option value="">Keine neue Vermietung</option>
                     @foreach($mieter as $m)
@@ -192,7 +192,7 @@
             <div id="verleih-fields" class="md:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="verleih_start" class="block text-sm font-medium text-gray-700">Beginn</label>
+                        <label for="verleih_start" class="form-label">Beginn</label>
                         <input
                             type="text"
                             name="verleih_start"
@@ -203,7 +203,7 @@
                     </div>
 
                     <div>
-                        <label for="verleih_end" class="block text-sm font-medium text-gray-700">Ende</label>
+                        <label for="verleih_end" class="form-label">Ende</label>
                         <input
                             type="text"
                             name="verleih_end"
@@ -224,7 +224,7 @@
             <p class="text-sm font-medium text-gray-700">Aktuelle Vermietvorgänge</p>
             @forelse($item->vermietvorgaenge as $vermietvorgang)
                 <div class="flex items-center justify-between border border-gray-200 rounded px-3 py-1.5 text-sm">
-                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="text-orange-600 hover:underline" target="_blank">
+                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="link" target="_blank">
                         {{ $vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}
                         ({{ $vermietvorgang->rent_start->format('d.m.Y') }} – {{ $vermietvorgang->rent_end->format('d.m.Y') }})
                     </a>
@@ -248,51 +248,51 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Body Seriennummer</label>
+                <label class="form-label">Body Seriennummer</label>
                 <input type="text" name="body_serial"
                     value="{{ old('body_serial', $item->cameraDetail->body_serial ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Fiber Adapter Seriennummer</label>
+                <label class="form-label">Fiber Adapter Seriennummer</label>
                 <input type="text" name="fiber_adapter_serial"
                     value="{{ old('fiber_adapter_serial', $item->cameraDetail->fiber_adapter_serial ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Großer Sucher Modell</label>
+                <label class="form-label">Großer Sucher Modell</label>
                 <input type="text" name="large_viewfinder_model"
                     value="{{ old('large_viewfinder_model', $item->cameraDetail->large_viewfinder_model ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Großer Sucher Seriennummer</label>
+                <label class="form-label">Großer Sucher Seriennummer</label>
                 <input type="text" name="large_viewfinder_serial"
                     value="{{ old('large_viewfinder_serial', $item->cameraDetail->large_viewfinder_serial ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Modell</label>
+                <label class="form-label">Kleiner Sucher Modell</label>
                 <input type="text" name="small_viewfinder_model"
                     value="{{ old('small_viewfinder_model', $item->cameraDetail->small_viewfinder_model ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Seriennummer</label>
+                <label class="form-label">Kleiner Sucher Seriennummer</label>
                 <input type="text" name="small_viewfinder_serial"
                     value="{{ old('small_viewfinder_serial', $item->cameraDetail->small_viewfinder_serial ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Großer Sucher Typ</label>
+                <label class="form-label">Großer Sucher Typ</label>
                 <select name="large_viewfinder_type"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
                     <option value="">—</option>
                     <option value="OLED" @selected(old('large_viewfinder_type', $item->cameraDetail->large_viewfinder_type ?? '') === 'OLED')>OLED</option>
                     <option value="LCD" @selected(old('large_viewfinder_type', $item->cameraDetail->large_viewfinder_type ?? '') === 'LCD')>LCD</option>
@@ -300,9 +300,9 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Kleiner Sucher Typ</label>
+                <label class="form-label">Kleiner Sucher Typ</label>
                 <select name="small_viewfinder_type"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
                     <option value="">—</option>
                     <option value="OLED" @selected(old('small_viewfinder_type', $item->cameraDetail->small_viewfinder_type ?? '') === 'OLED')>OLED</option>
                     <option value="LCD" @selected(old('small_viewfinder_type', $item->cameraDetail->small_viewfinder_type ?? '') === 'LCD')>LCD</option>
@@ -311,7 +311,7 @@
 
             <div class="md:col-span-2">
                 <label class="flex items-center gap-2">
-                    <input type="checkbox"
+                    <input class="form-check" type="checkbox"
                         name="ssl_license"
                         value="1"
                         @checked(old('ssl_license', $item->cameraDetail->ssl_license ?? false))>
@@ -331,35 +331,35 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Hersteller</label>
+            <label class="form-label">Hersteller</label>
             <input type="text"
                 name="lens_manufacturer"
                 value="{{ old('lens_manufacturer', $item->lensDetail->manufacturer ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Modell</label>
+            <label class="form-label">Modell</label>
             <input type="text"
                 name="lens_model"
                 value="{{ old('lens_model', $item->lensDetail->model ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <label class="form-label">Seriennummer</label>
             <input type="text"
                 name="lens_serial_number"
                 value="{{ old('lens_serial_number', $item->lensDetail->serial_number ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Zoomfaktor</label>
+            <label class="form-label">Zoomfaktor</label>
             <input type="text"
                 name="lens_zoom_factor"
                 value="{{ old('lens_zoom_factor', $item->lensDetail->zoom_factor ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
     </div>
@@ -371,19 +371,19 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Typ</label>
+            <label class="form-label">Typ</label>
             <input type="text"
                 name="lens_zoom_servo_model"
                 value="{{ old('lens_zoom_servo_model', $item->lensDetail->zoom_servo_model ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <label class="form-label">Seriennummer</label>
             <input type="text"
                 name="lens_zoom_servo_serial_number"
                 value="{{ old('lens_zoom_servo_serial_number', $item->lensDetail->zoom_servo_serial_number ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
     </div>
@@ -395,19 +395,19 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Typ</label>
+            <label class="form-label">Typ</label>
             <input type="text"
                 name="lens_focus_servo_model"
                 value="{{ old('lens_focus_servo_model', $item->lensDetail->focus_servo_model ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+            <label class="form-label">Seriennummer</label>
             <input type="text"
                 name="lens_focus_servo_serial_number"
                 value="{{ old('lens_focus_servo_serial_number', $item->lensDetail->focus_servo_serial_number ?? '') }}"
-                class="mt-1 block w-full rounded border-gray-300">
+                class="form-control mt-1 block w-full">
         </div>
 
     </div>
@@ -422,86 +422,86 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700">Hersteller</label>
+                <label class="form-label">Hersteller</label>
                 <input type="text" name="manufacturer"
                     value="{{ old('manufacturer', $item->monitorDetail->manufacturer ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Modell</label>
+                <label class="form-label">Modell</label>
                 <input type="text" name="model"
                     value="{{ old('model', $item->monitorDetail->model ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Seriennummer</label>
+                <label class="form-label">Seriennummer</label>
                 <input type="text" name="serial_number"
                     value="{{ old('serial_number', $item->monitorDetail->serial_number ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Bildschirmgröße</label>
+                <label class="form-label">Bildschirmgröße</label>
                 <input type="text" name="screen_size"
                     placeholder='z. B. 24"'
                     value="{{ old('screen_size', $item->monitorDetail->screen_size ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Max. Eingabeformat</label>
+                <label class="form-label">Max. Eingabeformat</label>
                 <input type="text" name="max_input_format"
                     placeholder="z. B. 1080p50 (3G)"
                     value="{{ old('max_input_format', $item->monitorDetail->max_input_format ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Wandler Nr.</label>
+                <label class="form-label">Wandler Nr.</label>
                 <input type="text" name="converter_number"
                     value="{{ old('converter_number', $item->monitorDetail->converter_number ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700">Wandler</label>
+                <label class="form-label">Wandler</label>
                 <input type="text" name="converter_model"
                     placeholder="z. B. BMD BiDirectional 3G"
                     value="{{ old('converter_model', $item->monitorDetail->converter_model ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Standfuß Nr.</label>
+                <label class="form-label">Standfuß Nr.</label>
                 <input type="text" name="stand_number"
                     value="{{ old('stand_number', $item->monitorDetail->stand_number ?? '') }}"
-                    class="mt-1 block w-full rounded border-gray-300">
+                    class="form-control mt-1 block w-full">
             </div>
         </div>
 
         <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="has_speakers" value="1"
+                <input class="form-check" type="checkbox" name="has_speakers" value="1"
                     @checked(old('has_speakers', $item->monitorDetail->has_speakers ?? false))>
                 <span>Lautsprecher</span>
             </label>
 
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="has_headphone" value="1"
+                <input class="form-check" type="checkbox" name="has_headphone" value="1"
                     @checked(old('has_headphone', $item->monitorDetail->has_headphone ?? false))>
                 <span>Kopfhörer</span>
             </label>
 
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="converter_audio" value="1"
+                <input class="form-check" type="checkbox" name="converter_audio" value="1"
                     @checked(old('converter_audio', $item->monitorDetail->converter_audio ?? false))>
                 <span>Wandler Audio</span>
             </label>
 
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="has_stand" value="1"
+                <input class="form-check" type="checkbox" name="has_stand" value="1"
                     @checked(old('has_stand', $item->monitorDetail->has_stand ?? false))>
                 <span>Standfuß vorhanden</span>
             </label>
@@ -514,12 +514,12 @@
     {{-- Aktionen --}}
     <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
         <a href="{{ route('items.index') }}"
-            class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+            class="btn btn-secondary">
             Abbrechen
         </a>
 
         <button type="submit"
-            class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+            class="btn btn-primary">
             Speichern
         </button>
     </div>

@@ -1,11 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Materialzuordnung
-            </h2>
-
-            <div class="flex items-center gap-2">
+        <x-page-header title="Materialzuordnung">
+            <x-slot name="actions">
+                <div class="flex items-center gap-2">
                 @php
                 $vbProtokoll = $production->vbProtokoll;
                 $vbAbgleich = $vbProtokoll && $vbProtokoll->anforderungen->isNotEmpty() ? $vbProtokoll->abgleich() : null;
@@ -14,7 +11,7 @@
 
                 @if($vbProtokoll || Auth::user()->isUser())
                 <a href="{{ $vbProtokoll ? route('vb-protokoll.show', $production->id) : route('vb-protokoll.create', $production->id) }}"
-                    class="inline-flex items-center gap-2 justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary gap-2">
                     VB-Protokoll
                     @if($vbAbgleichMatched && $vbAbgleichMatched->isNotEmpty())
                     <span class="text-xs px-1.5 py-0.5 rounded-full {{ $vbAbgleichMatched->every(fn ($r) => $r['erfuellt']) ? 'bg-green-500' : 'bg-yellow-500' }}">
@@ -25,19 +22,20 @@
                 @endif
 
                 <a href="{{ route('productions.pdf', $production->id) }}"
-                    class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     PDF exportieren
                 </a>
 
                 <a href="{{ route('productions.index') }}"
-                    class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     Zurück
                 </a>
             </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-6">
+    <div class="page">
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
@@ -64,7 +62,7 @@
         @endif
 
         {{-- Produktionskopf --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <h1 class="text-2xl font-bold text-gray-900">
                 {{ $production->bezeichnung }}
             </h1>
@@ -85,8 +83,8 @@
 
         {{-- Mietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Mietvorgang-Seite --}}
         @if($mietvorgaenge->isNotEmpty())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Mietvorgänge (Transport)</h3>
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Mietvorgänge (Transport)</h3>
 
             <div class="space-y-3">
                 @foreach($mietvorgaenge as $mietvorgang)
@@ -98,14 +96,14 @@
                         &middot; {{ $production->items->filter(fn ($item) => $item->mietvorgaenge->contains('id', $mietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Hinweg: {{ $mietvorgang->transport_type_start ?: 'offen' }}
                             </span>
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Rückweg: {{ $mietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($mietvorgang->notify_supplier)
-                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-blue">
                                 Lieferant wird benachrichtigt
                             </span>
                             @endif
@@ -124,8 +122,8 @@
 
         {{-- Vermietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Vermietvorgang-Seite --}}
         @if($vermietvorgaenge->isNotEmpty())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Vermietvorgänge (Transport)</h3>
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Vermietvorgänge (Transport)</h3>
 
             <div class="space-y-3">
                 @foreach($vermietvorgaenge as $vermietvorgang)
@@ -137,14 +135,14 @@
                         &middot; {{ $production->items->filter(fn ($item) => $item->vermietvorgaenge->contains('id', $vermietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Hinweg: {{ $vermietvorgang->transport_type_start ?: 'offen' }}
                             </span>
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Rückweg: {{ $vermietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($vermietvorgang->notify_mieter)
-                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-blue">
                                 Mieter wird benachrichtigt
                             </span>
                             @endif
@@ -167,9 +165,9 @@
         $offenRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] !== true);
         $erfuelltRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] === true);
         @endphp
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6" x-data="{ showAll: false }">
+        <div class="card card-pad" x-data="{ showAll: false }">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-lg font-semibold text-gray-800">Abgleich mit VB-Protokoll</h2>
+                <h2 class="card-title">Abgleich mit VB-Protokoll</h2>
                 <a href="{{ route('vb-protokoll.show', $production->id) }}" class="text-sm text-orange-600 hover:text-orange-700">
                     Vollständiges Protokoll →
                 </a>
@@ -217,14 +215,14 @@
             <div class="lg:col-span-2 space-y-6">
                 @include('productions._quick-add')
 
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
-                    <h2 class="text-lg font-semibold text-gray-800">
+                <div class="card card-pad space-y-6">
+                    <h2 class="card-title">
                         Material hinzufügen
                     </h2>
 
                     <form method="GET" action="{{ route('productions.show', $production->id) }}" class="space-y-4">
                         <div>
-                            <label for="unit" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label for="unit" class="form-label">
                                 Gruppe filtern
                             </label>
 
@@ -246,7 +244,7 @@
                             <input type="checkbox"
                                 name="show_unavailable"
                                 value="1"
-                                class="rounded border-gray-300"
+                                class="form-check"
                                 onchange="this.form.submit()"
                                 {{ request('show_unavailable') ? 'checked' : '' }}>
                             Nicht verfügbare Geräte anzeigen
@@ -270,7 +268,7 @@
                         <input type="hidden" name="show_unavailable" value="{{ request('show_unavailable') }}">
 
                         <div>
-                            <label for="item_search" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label for="item_search" class="form-label">
                                 Items auswählen
                             </label>
 
@@ -319,7 +317,7 @@
                             </div>
 
                             <div class="mt-4">
-                                <label for="notes" class="block text-sm font-medium text-gray-700">
+                                <label for="notes" class="form-label">
                                     Notiz zum Gerät optional
                                 </label>
 
@@ -327,7 +325,7 @@
                                     name="notes"
                                     id="notes"
                                     rows="2"
-                                    class="mt-1 block w-full rounded border-gray-300"
+                                    class="form-control mt-1 block w-full"
                                     placeholder="z. B. ohne Netzteil, defekt, bleibt im Ü-Wagen...">{{ old('notes') }}</textarea>
                             </div>
                         </div>
@@ -336,8 +334,8 @@
                             <button type="submit"
                                 id="add-button"
                                 :disabled="selected.length === 0"
-                                :class="selected.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-500'"
-                                class="flex-1 bg-orange-400 text-white font-semibold py-2 px-4 rounded"
+                                :class="selected.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                                class="btn btn-primary flex-1"
                                 x-text="selected.length > 1 ? selected.length + ' Geräte hinzufügen' : 'Standard hinzufügen'">
                             </button>
 
@@ -345,9 +343,9 @@
                                 id="config-button"
                                 @click="if (!configEnabled) $event.preventDefault()"
                                 :href="configEnabled ? configUrl : '#'"
-                                :class="configEnabled ? 'bg-gray-800 hover:bg-gray-900 cursor-pointer' : 'bg-gray-300 cursor-not-allowed pointer-events-none'"
+                                :class="configEnabled ? '' : 'opacity-50 cursor-not-allowed pointer-events-none'"
                                 x-show="selected.length"
-                                class="flex-1 text-center text-white font-semibold py-2 px-4 rounded">
+                                class="btn btn-secondary flex-1">
                                 Konfigurieren
                             </a>
                         </div>
@@ -360,8 +358,8 @@
             <div class="{{ Auth::user()->isUser() ? 'lg:col-span-3' : 'lg:col-span-5' }} space-y-6">
 
                 {{-- Einzelmaterial gruppiert --}}
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <div class="card card-pad">
+                    <h2 class="card-title mb-4">
                         Gepacktes Einzelmaterial
                     </h2>
 
@@ -413,7 +411,7 @@
                                     @method('DELETE')
 
                                     <button type="submit"
-                                        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded">
+                                        class="btn btn-danger btn-sm w-full sm:w-auto">
                                         Entfernen
                                     </button>
                                 </form>
@@ -430,8 +428,8 @@
                 </div>
 
                 {{-- Kamera-Konfigurationen --}}
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <div class="card card-pad">
+                    <h2 class="card-title mb-4">
                         Kamera-Konfigurationen
                     </h2>
 
@@ -492,7 +490,7 @@
                                     @if(Auth::user()->isUser())
                                     <div class="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
                                         <a href="{{ route('camera-config.edit', $config->id) }}"
-                                            class="text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                                            class="btn btn-primary text-center">
                                             Bearbeiten
                                         </a>
 
@@ -503,7 +501,7 @@
                                             @method('DELETE')
 
                                             <button type="submit"
-                                                class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                                                class="btn btn-danger w-full sm:w-auto">
                                                 Entfernen
                                             </button>
                                         </form>

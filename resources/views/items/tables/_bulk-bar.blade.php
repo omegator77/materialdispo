@@ -55,7 +55,7 @@
                 </template>
             </select>
 
-            <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-semibold text-sm py-2 px-4 rounded whitespace-nowrap">
+            <button type="submit" class="btn btn-primary whitespace-nowrap">
                 Anwenden
             </button>
         </div>

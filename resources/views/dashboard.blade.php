@@ -1,45 +1,41 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Dashboard
-            </h2>
-            <a href="{{ route('anleitung') }}" class="text-sm font-medium text-orange-600 hover:underline">
-                📖 Anleitung
-            </a>
-        </div>
+        <x-page-header title="Dashboard">
+            <x-slot name="actions">
+                <a href="{{ route('anleitung') }}" class="btn btn-secondary btn-sm">📖 Anleitung</a>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 space-y-6">
+    <div class="page">
 
             {{-- Kennzahlen --}}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
-                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
+                <div class="card p-5 h-36">
                     <div class="text-sm text-gray-500">Aktive Vorgänge</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $activeVorgaengeCount }}</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
+                <div class="card p-5 h-36">
                     <div class="text-sm text-gray-500">Geräte gesamt</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $itemsCount }}</div>
                     <div class="text-xs text-gray-400 mt-1">davon {{ $rentedItemsCount }} gemietet</div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm p-5 h-36">
+                <div class="card p-5 h-36">
                     <div class="text-sm text-gray-500">Heute gebucht</div>
                     <div class="text-3xl font-bold text-gray-900">{{ $todayBookedItemsCount }}</div>
                 </div>
 
                 @if(Auth::user()->isUser())
-                <a href="{{ route('activity-log.index') }}" class="bg-white rounded-lg shadow-sm p-5 hover:bg-gray-50 transition-colors h-36 flex flex-col">
+                <a href="{{ route('activity-log.index') }}" class="card p-5 hover:bg-gray-50 transition-colors h-36 flex flex-col">
                     <div class="text-sm text-gray-500 mb-2 shrink-0">Letzte Aktionen</div>
                     <div class="flex-1 overflow-y-auto">
                         @include('dashboard._last-activities')
                     </div>
                 </a>
                 @else
-                <div class="bg-white rounded-lg shadow-sm p-5 h-36 flex flex-col">
+                <div class="card p-5 h-36 flex flex-col">
                     <div class="text-sm text-gray-500 mb-2 shrink-0">Letzte Aktionen</div>
                     <div class="flex-1 overflow-y-auto">
                         @include('dashboard._last-activities')
@@ -47,7 +43,7 @@
                 </div>
                 @endif
 
-                <div class="bg-gray-800 rounded-lg shadow-sm p-5 font-mono text-right h-36 flex flex-col justify-center">
+                <div class="rounded-xl bg-gray-800 shadow-sm p-5 font-mono text-right h-36 flex flex-col justify-center">
                     <div class="text-xs text-gray-400 tracking-widest">LOCAL</div>
                     <div id="local-date" class="text-sm text-green-400"></div>
                     <div id="local-time" class="text-2xl font-bold text-green-400"></div>
@@ -57,13 +53,13 @@
                 </div>
             </div>
 
-            <x-flash />
+            <x-flash contained />
 
             @include('dashboard._attention')
 
             {{-- Kurzanleitung --}}
             {{--
-            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <details class="card overflow-hidden">
                 <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
                     📖 Kurzanleitung: Vom Anlegen bis zum Abfahren
                 </summary>
@@ -73,7 +69,7 @@
                         <li>
                             <strong>Produktion anlegen</strong> —
                             @if(Auth::user()->isUser())
-                            <a href="{{ route('productions.create') }}" class="text-orange-600 hover:underline">Produktionen → Neu</a>,
+                            <a href="{{ route('productions.create') }}" class="link">Produktionen → Neu</a>,
                             @else
                             unter "Produktionen → Neu" (Admin/Benutzer),
                             @endif
@@ -86,7 +82,7 @@
                             <strong>Materialzuordnung</strong> — konkrete Geräte und Kamerazüge der Produktion zuweisen. Ein Live-Abgleich zeigt direkt, was vom VB-Protokoll noch fehlt.
                         </li>
                         <li>
-                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="text-orange-600 hover:underline">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
+                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="link">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
                         </li>
                     </ol>
 
@@ -100,8 +96,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {{-- Laufende Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
-                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
+                <div class="card card-pad flex flex-col max-h-96">
+                    <h3 class="card-title mb-4 shrink-0">
                         Laufende Vorgänge
                     </h3>
 
@@ -117,8 +113,8 @@
                 </div>
 
                 {{-- Kommende Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
-                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
+                <div class="card card-pad flex flex-col max-h-96">
+                    <h3 class="card-title mb-4 shrink-0">
                         Nächste Vorgänge
                     </h3>
 
@@ -134,8 +130,8 @@
                 </div>
 
                 {{-- Offene Vorgänge --}}
-                <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col max-h-96">
-                    <h3 class="font-semibold text-gray-900 mb-4 shrink-0">
+                <div class="card card-pad flex flex-col max-h-96">
+                    <h3 class="card-title mb-4 shrink-0">
                         Offene Vorgänge
                     </h3>
 
@@ -152,42 +148,42 @@
             </div>
 
             {{-- Zuletzt angelegte Produktionen --}}
-            <div class="bg-white rounded-lg shadow-sm p-5">
-                <h3 class="font-semibold text-gray-900 mb-4">
+            <div class="card card-pad">
+                <h3 class="card-title mb-4">
                     Zuletzt angelegte Produktionen
                 </h3>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
+                    <table class="data-table">
                         <thead>
-                            <tr class="border-b text-left text-gray-500">
-                                <th class="py-2">Produktion</th>
-                                <th class="py-2">Start</th>
-                                <th class="py-2">Ende</th>
-                                <th class="py-2">Aktion</th>
+                            <tr>
+                                <th>Produktion</th>
+                                <th>Start</th>
+                                <th>Ende</th>
+                                <th>Aktion</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($latestProductions as $production)
-                                <tr class="border-b last:border-b-0">
-                                    <td class="py-3 font-medium text-gray-900">
+                                <tr>
+                                    <td class="font-medium text-gray-900">
                                         {{ $production->bezeichnung }}
                                     </td>
-                                    <td class="py-3 text-gray-600">
+                                    <td class="text-gray-600">
                                         {{ \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') }}
                                     </td>
-                                    <td class="py-3 text-gray-600">
+                                    <td class="text-gray-600">
                                         {{ \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') }}
                                     </td>
-                                    <td class="py-3">
-                                        <a href="{{ route('productions.show', $production->id) }}" class="text-blue-600 hover:underline">
+                                    <td>
+                                        <a href="{{ route('productions.show', $production->id) }}" class="link">
                                             Öffnen
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="py-4 text-gray-500">
+                                    <td colspan="4" class="empty-state">
                                         Noch keine Produktionen vorhanden.
                                     </td>
                                 </tr>
@@ -197,7 +193,6 @@
                 </div>
             </div>
 
-        </div>
     </div>
 
     <script>

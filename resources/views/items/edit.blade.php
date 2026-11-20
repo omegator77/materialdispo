@@ -1,11 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Material bearbeiten
-        </h2>
+        <x-page-header title="Material bearbeiten"></x-page-header>
     </x-slot>
 
-    <div class="max-w-5xl w-11/12 mx-auto mt-6">
+    <div class="page">
         <form action="{{ route('items.update', $item->id) }}" method="POST">
             @csrf
             @method('PUT')

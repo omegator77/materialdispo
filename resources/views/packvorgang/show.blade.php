@@ -1,21 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Packvorgang: {{ $production->bezeichnung }}
-            </h2>
-
-            <div class="flex gap-2">
+        <x-page-header title="Packvorgang: {{ $production->bezeichnung }}">
+            <x-slot name="actions">
+                <div class="flex gap-2">
                 <a href="{{ route('packvorgang.pdf', $production->id) }}"
-                    class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     PDF-Checkliste
                 </a>
                 <a href="{{ route('itemprods', ['production_id' => $production->id]) }}"
-                    class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     Zurück
                 </a>
             </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @php
@@ -34,7 +32,7 @@
     }
     @endphp
 
-    <div class="max-w-4xl w-11/12 mx-auto mt-6 space-y-6"
+    <div class="page"
          x-data='packChecklist({
             packs: @json($initialPacks),
             toggleUrlBase: "{{ url('productions/'.$production->id.'/packvorgang/toggle') }}",
@@ -56,15 +54,15 @@
         @endif
 
         {{-- Fortschritt --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">Fortschritt</h2>
+                <h2 class="card-title">Fortschritt</h2>
                 <span class="text-sm font-medium text-gray-600" x-text="packedCount + ' / ' + total + ' Geräte im Rüstwagen'"></span>
             </div>
 
             <div class="w-full bg-gray-200 rounded-full h-3">
                 <div class="h-3 rounded-full transition-all"
-                     :class="packedCount === total && total > 0 ? 'bg-green-500' : 'bg-orange-400'"
+                     :class="packedCount === total && total > 0 ? 'bg-green-500' : 'bg-orange-500'"
                      :style="'width: ' + (total > 0 ? Math.round((packedCount / total) * 100) : 0) + '%'">
                 </div>
             </div>
@@ -73,7 +71,7 @@
         {{-- Checkliste --}}
         {{-- Kamerazüge: Geräte einer Konfiguration bleiben zusammen (werden oft gemeinsam auf einen Rollwagen gepackt) --}}
         @if($cameraGroups->isNotEmpty())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Kamerazüge
             </h3>
@@ -98,7 +96,7 @@
 
         {{-- Weitere Geräte: einzeln zugeordnete Geräte, gruppiert nach Gerätegruppe --}}
         @forelse($groupedEinzelEntries as $unitName => $unitEntries)
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 {{ $unitName }}
             </h3>
@@ -111,7 +109,7 @@
         </div>
         @empty
         @if($cameraGroups->isEmpty())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <p class="text-gray-500">Diese Produktion hat noch keine Geräte in der Packliste.</p>
         </div>
         @endif
@@ -119,7 +117,7 @@
 
         {{-- Abschluss --}}
         @if(Auth::user()->isUser())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             @if($production->packvorgang_confirmed_at)
             @php $incomplete = $production->packedItemIds()->count() < $entries->count(); @endphp
             <div class="bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded mb-4">
@@ -132,7 +130,7 @@
 
             <form method="POST" action="{{ route('packvorgang.reopen', $production->id) }}">
                 @csrf
-                <button type="submit" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                <button type="submit" class="btn btn-secondary">
                     Wieder öffnen
                 </button>
             </form>
@@ -145,7 +143,7 @@
                             (<span x-text="total - packedCount"></span> fehlen).
                         </p>
                         <label class="flex items-center gap-2 text-sm">
-                            <input type="checkbox" x-model="confirmIncomplete" class="rounded border-gray-300">
+                            <input type="checkbox" x-model="confirmIncomplete" class="form-check">
                             Trotz fehlender Geräte abschließen
                         </label>
                     </div>
@@ -155,8 +153,8 @@
                     @csrf
                     <button type="submit"
                             :disabled="packedCount < total && !confirmIncomplete"
-                            :class="(packedCount < total && !confirmIncomplete) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-500'"
-                            class="bg-orange-400 text-white font-semibold py-2 px-4 rounded">
+                            :class="(packedCount < total && !confirmIncomplete) ? 'opacity-50 cursor-not-allowed' : ''"
+                            class="btn btn-primary">
                         Packvorgang abschließen
                     </button>
                 </form>

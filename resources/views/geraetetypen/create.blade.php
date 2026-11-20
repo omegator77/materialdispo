@@ -1,18 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Neuer Gerätetyp
-            </h2>
-
-            <a href="{{ route('geraetetypen.index') }}"
-                class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+        <x-page-header title="Neuer Gerätetyp">
+            <x-slot name="actions">
+                <a href="{{ route('geraetetypen.index') }}"
+                class="btn btn-secondary">
                 Zurück
             </a>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-xl w-11/12 mx-auto mt-6">
+    <div class="page-narrow">
         @include('geraetetypen._form')
     </div>
 </x-app-layout>

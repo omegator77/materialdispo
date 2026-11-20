@@ -70,24 +70,24 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
     @endif
 
     {{-- Kopf --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Allgemein</h2>
+    <div class="card card-pad">
+        <h2 class="card-title mb-4">Allgemein</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label for="kunde" class="block text-sm font-medium text-gray-700 mb-1">Kunde</label>
+                <label for="kunde" class="form-label">Kunde</label>
                 <input type="text" name="kunde" id="kunde" class="form-control w-full" value="{{ $v('kunde') }}">
             </div>
             <div>
-                <label for="produktionsort" class="block text-sm font-medium text-gray-700 mb-1">Produktionsort</label>
+                <label for="produktionsort" class="form-label">Produktionsort</label>
                 <input type="text" name="produktionsort" id="produktionsort" class="form-control w-full" value="{{ $v('produktionsort') }}">
             </div>
         </div>
     </div>
 
     {{-- Crew --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Crew</h2>
+    <div class="card card-pad">
+        <h2 class="card-title mb-4">Crew</h2>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             @php
@@ -117,8 +117,8 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
     </div>
 
     {{-- Anforderungen (Soll-Mengen für den Packliste-Abgleich) --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1">Anforderungen</h2>
+    <div class="card card-pad">
+        <h2 class="card-title mb-1">Anforderungen</h2>
         <p class="text-xs text-gray-500 mb-4">
             Wird beim Packen mit der tatsächlich gepackten Menge je Gerätekategorie abgeglichen.
         </p>
@@ -128,11 +128,11 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                 <div class="border border-gray-200 rounded-lg p-3 space-y-2">
                     <div class="flex items-center gap-4 text-xs text-gray-600">
                         <label class="flex items-center gap-1">
-                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="typ" x-model="anforderung.mode">
+                            <input class="form-check" type="radio" :name="`anforderungen[${index}][mode]`" value="typ" x-model="anforderung.mode">
                             Gerätetyp
                         </label>
                         <label class="flex items-center gap-1">
-                            <input type="radio" :name="`anforderungen[${index}][mode]`" value="kamera" x-model="anforderung.mode">
+                            <input class="form-check" type="radio" :name="`anforderungen[${index}][mode]`" value="kamera" x-model="anforderung.mode">
                             Kamera-Setup
                         </label>
                         <button type="button" @click="removeAnforderung(index)" class="ml-auto text-red-500 hover:text-red-700 px-2" title="Entfernen">×</button>
@@ -211,14 +211,14 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
             </template>
         </div>
 
-        <button type="button" @click="addAnforderung()" class="mt-3 text-sm text-blue-600 hover:underline">
+        <button type="button" @click="addAnforderung()" class="link mt-3 text-sm">
             + Anforderung hinzufügen
         </button>
     </div>
 
     {{-- Freitext-Blöcke (frei benennbare Rubriken, z. B. Audio, Kabelwege) --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1">Freitext</h2>
+    <div class="card card-pad">
+        <h2 class="card-title mb-1">Freitext</h2>
         <p class="text-xs text-gray-500 mb-4">
             Beliebig viele Rubriken mit eigener Überschrift, z. B. "Audio" mit "5 Mikrofone, 3 In Ears".
         </p>
@@ -237,14 +237,14 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
             </template>
         </div>
 
-        <button type="button" @click="addFreitextBlock()" class="mt-3 text-sm text-blue-600 hover:underline">
+        <button type="button" @click="addFreitextBlock()" class="link mt-3 text-sm">
             + Freitext-Block hinzufügen
         </button>
     </div>
 
     {{-- Fotos --}}
-    <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Fotos / Lagepläne</h2>
+    <div class="card card-pad">
+        <h2 class="card-title mb-4">Fotos / Lagepläne</h2>
 
         @if($isEdit && $vbProtokoll->fotos->count())
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -255,7 +255,7 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                 </a>
                 <button type="button"
                         onclick="if(confirm('Foto wirklich löschen?')) { fetch('{{ route('vb-protokoll.foto.destroy', $foto->id) }}', { method: 'POST', headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Content-Type': 'application/json'}, body: JSON.stringify({_method: 'DELETE'}) }).then(r => { if(r.ok || r.redirected) location.reload(); else alert('Fehler beim Löschen.') }).catch(() => alert('Netzwerkfehler beim Löschen.')) }"
-                        class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
+                        class="icon-remove">×</button>
             </div>
             @endforeach
         </div>
@@ -268,7 +268,7 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
                     <div class="relative">
                         <img :src="preview" class="w-full h-24 object-cover rounded border border-gray-200">
                         <button type="button" @click="remove(i)"
-                                class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white text-xs w-5 h-5 rounded-full leading-none">×</button>
+                                class="icon-remove">×</button>
                     </div>
                 </template>
             </div>
@@ -286,10 +286,10 @@ $camAdapterTypen = $geraetetypenByUnit->get(5, collect());
 
     <div class="flex justify-end gap-2">
         <a href="{{ $isEdit ? route('vb-protokoll.show', $production->id) : route('productions.show', $production->id) }}"
-           class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded">
+           class="btn btn-secondary">
             Abbrechen
         </a>
-        <button type="submit" class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-6 rounded">
+        <button type="submit" class="btn btn-primary">
             Speichern
         </button>
     </div>

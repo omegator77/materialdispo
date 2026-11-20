@@ -1,7 +1,7 @@
 {{-- Wiederverwendbare Schnell-Hinzufügen-Box. Erwartet: $previewUrl, $storeUrl --}}
 <div x-data="quickAdd({ previewUrl: @js($previewUrl) })" class="space-y-4">
     <div>
-        <h2 class="text-lg font-semibold text-gray-800">Schnell hinzufügen</h2>
+        <h2 class="card-title">Schnell hinzufügen</h2>
         <p class="text-xs text-gray-500">Bedarf einfach tippen — z. B. <code>3x LDX, 2 Stativ, 22er Optik</code>. Freie Geräte werden automatisch gewählt (Eigentum vor Miete).</p>
     </div>
 
@@ -47,7 +47,7 @@
         <div class="flex items-center justify-between gap-3">
             <span class="text-xs text-gray-500" x-show="plan" x-text="plan ? (plan.total + ' Gerät(e) bereit' + (plan.missing ? ', ' + plan.missing + ' fehlen' : '')) : ''"></span>
             <button type="submit" :disabled="!plan || !plan.total"
-                    class="ml-auto bg-orange-400 hover:bg-orange-500 disabled:opacity-40 text-white font-semibold text-sm py-2 px-4 rounded">
+                    class="btn btn-primary ml-auto disabled:opacity-40">
                 Hinzufügen
             </button>
         </div>

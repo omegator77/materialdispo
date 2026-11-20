@@ -5,19 +5,19 @@
     @if(Auth::user()->isUser() && $productions->count())
     <button type="button"
             onclick="openProductionDropdown({{ $item->id }}, {{ $item->units_id }}, this)"
-            class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded whitespace-nowrap">
+            class="btn btn-soft btn-sm whitespace-nowrap">
         + Produktion
     </button>
     @endif
 
     <a href="{{ route('items.show', $item->id) }}"
-       class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded text-xs">
+       class="btn btn-secondary btn-sm">
         Details
     </a>
 
     @if(Auth::user()->isUser())
     <a href="{{ route('items.edit', $item->id) }}"
-       class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded text-xs">
+       class="btn btn-primary btn-sm">
         Bearbeiten
     </a>
     @endif

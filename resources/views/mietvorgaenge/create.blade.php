@@ -1,13 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Neuen Mietvorgang anlegen
-        </h2>
+        <x-page-header title="Neuen Mietvorgang anlegen"></x-page-header>
     </x-slot>
 
-    <div class="max-w-3xl w-11/12 mx-auto mt-6">
+    <div class="page-narrow">
         <form action="{{ route('mietvorgaenge.store') }}" method="POST"
-              class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6"
+              class="card card-pad space-y-6"
               x-data="mietvorgangItemPicker({
                   items: [
                       @foreach($assignableItems as $item)
@@ -29,12 +27,12 @@
             @endif
 
             <section>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Vermieter &amp; Zeitraum</h3>
+                <h3 class="card-title mb-4">Vermieter &amp; Zeitraum</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <div class="flex items-center justify-between">
-                            <label for="suppliers_id" class="block text-sm font-medium text-gray-700">Vermieter</label>
+                            <label for="suppliers_id" class="form-label">Vermieter</label>
                             <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'create-supplier')"
                                     class="text-xs text-orange-600 hover:underline">
                                 + Neu anlegen
@@ -51,14 +49,14 @@
                     </div>
 
                     <div>
-                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Mietbeginn</label>
+                        <label for="rent_start" class="form-label">Mietbeginn</label>
                         <input type="text" name="rent_start" id="rent_start"
                                value="{{ old('rent_start') }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
 
                     <div>
-                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Mietende</label>
+                        <label for="rent_end" class="form-label">Mietende</label>
                         <input type="text" name="rent_end" id="rent_end"
                                value="{{ old('rent_end') }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
@@ -66,7 +64,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <label for="bezeichnung" class="form-label">Bezeichnung</label>
                     <input type="text" name="bezeichnung" id="bezeichnung"
                            value="{{ old('bezeichnung') }}"
                            class="form-control w-full" placeholder="Wird beim Auswählen des Vermieters automatisch vorgeschlagen">
@@ -74,7 +72,7 @@
             </section>
 
             <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte</h3>
+                <h3 class="card-title mb-4">Zugeordnete Geräte</h3>
 
                 <template x-for="item in selected" :key="item.id">
                     <input type="hidden" name="item_id[]" :value="item.id">
@@ -124,14 +122,14 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
+                        <label for="transport_type_start" class="form-label">
                             Hinweg — wie kommt das Gerät zu uns?
                         </label>
                         <input type="text" name="transport_type_start" id="transport_type_start" class="form-control w-full" value="{{ old('transport_type_start') }}">
                     </div>
 
                     <div>
-                        <label for="transport_type_end" class="block text-sm font-medium text-gray-700">
+                        <label for="transport_type_end" class="form-label">
                             Rückweg — wie geht es zurück?
                         </label>
                         <input type="text" name="transport_type_end" id="transport_type_end" class="form-control w-full" value="{{ old('transport_type_end') }}">
@@ -139,7 +137,7 @@
                 </div>
 
                 <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
-                    <input type="checkbox" name="notify_supplier" value="1" @checked(old('notify_supplier'))>
+                    <input class="form-check" type="checkbox" name="notify_supplier" value="1" @checked(old('notify_supplier'))>
                     Lieferant automatisch benachrichtigen
                 </label>
             </details>
@@ -149,7 +147,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_start" class="form-label">
                             Erinnerung vor Mietbeginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
@@ -158,7 +156,7 @@
                                value="{{ old('reminder_days_before_start') }}">
                     </div>
                     <div>
-                        <label for="reminder_days_before_end" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_end" class="form-label">
                             Erinnerung vor Mietende (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
@@ -169,7 +167,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <label for="mailing_list_id" class="block text-sm font-medium text-gray-700">Mailingliste</label>
+                    <label for="mailing_list_id" class="form-label">Mailingliste</label>
                     <select name="mailing_list_id" id="mailing_list_id" class="form-control w-full">
                         <option value="">
                             {{ $defaultMailingList ? '— keine (Standardliste: '.$defaultMailingList->name.') —' : '— keine (keine Standardliste festgelegt) —' }}
@@ -185,12 +183,12 @@
 
             <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <a href="{{ route('mietvorgaenge.index') }}"
-                   class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                   class="btn btn-secondary">
                     Abbrechen
                 </a>
 
                 <button type="submit"
-                        class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                        class="btn btn-primary">
                     Speichern
                 </button>
             </div>
@@ -199,26 +197,26 @@
 
     <x-modal name="create-supplier">
         <div class="p-6">
-            <h2 class="text-lg font-medium text-gray-900">Neuen Vermieter anlegen</h2>
+            <h2 class="card-title">Neuen Vermieter anlegen</h2>
 
             <div id="create-supplier-errors" class="mt-4 hidden bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded text-sm"></div>
 
             <div class="mt-4 space-y-4">
                 <div>
-                    <label for="new_supplier_bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <label for="new_supplier_bezeichnung" class="form-label">Bezeichnung</label>
                     <input type="text" id="new_supplier_bezeichnung" class="form-control w-full">
                 </div>
                 <div>
-                    <label for="new_supplier_kontakt" class="block text-sm font-medium text-gray-700">Kontakt</label>
+                    <label for="new_supplier_kontakt" class="form-label">Kontakt</label>
                     <input type="text" id="new_supplier_kontakt" class="form-control w-full">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="new_supplier_phone" class="block text-sm font-medium text-gray-700">Telefon</label>
+                        <label for="new_supplier_phone" class="form-label">Telefon</label>
                         <input type="text" id="new_supplier_phone" class="form-control w-full">
                     </div>
                     <div>
-                        <label for="new_supplier_email" class="block text-sm font-medium text-gray-700">E-Mail</label>
+                        <label for="new_supplier_email" class="form-label">E-Mail</label>
                         <input type="email" id="new_supplier_email" class="form-control w-full">
                     </div>
                 </div>
@@ -226,11 +224,11 @@
 
             <div class="mt-6 flex justify-end gap-3">
                 <button type="button" x-on:click="$dispatch('close')"
-                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                        class="btn btn-secondary">
                     Abbrechen
                 </button>
                 <button type="button" onclick="submitNewSupplier()"
-                        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                        class="btn btn-primary">
                     Anlegen
                 </button>
             </div>

@@ -1,20 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                VB-Protokoll anlegen
-            </h2>
-
-            <a href="{{ route('productions.show', $production->id) }}"
-                class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+        <x-page-header title="VB-Protokoll anlegen">
+            <x-slot name="actions">
+                <a href="{{ route('productions.show', $production->id) }}"
+                class="btn btn-secondary">
                 Zurück
             </a>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-4xl w-11/12 mx-auto mt-6 space-y-4">
+    <div class="page">
         @if($templates->isNotEmpty())
-        <div class="bg-white border border-orange-300 rounded-lg shadow-md p-4">
+        <div class="card p-4 border-orange-300">
             <h3 class="text-sm font-semibold text-gray-800">Aus früherer Produktion übernehmen</h3>
             <p class="text-xs text-gray-500 mb-3">Bedarf, Textblöcke und Crew-Stärken werden kopiert — Kunde und Ort bleiben leer. Ähnlichste Produktion zuerst.</p>
             <div class="flex flex-wrap gap-2">

@@ -5,3 +5,207 @@
 [x-cloak] {
     display: none !important;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Gemeinsame Bausteine der Oberfläche
+|--------------------------------------------------------------------------
+| Alle Seiten nutzen dieselben Klassen für Seitenraster, Karten, Knöpfe,
+| Formularfelder, Tabellen und Marken. Änderungen am Aussehen gehören hierher,
+| nicht in einzelne Views.
+*/
+@layer components {
+    /* Seitenraster: gleiche Breite und gleicher Rand wie der Seitenkopf im Layout, damit Titel und Inhalt fluchten. */
+    .page {
+        @apply mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8;
+    }
+
+    /* Einspaltige Formulare: gleiches Raster (linksbündig wie der Seitentitel), Inhalt höchstens 48rem breit. */
+    .page-narrow {
+        @apply mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8;
+    }
+
+    .page-narrow > * {
+        max-width: 48rem;
+    }
+
+    /* Mehrere Seitenblöcke untereinander (z. B. Filterleiste und Tabelle): nur ein Abstand dazwischen.
+       Bewusst ~ (Geschwister), nicht +: dazwischen können <script>-Elemente stehen. */
+    .page ~ .page,
+    .page ~ .page-narrow,
+    .page-narrow ~ .page,
+    .page-narrow ~ .page-narrow {
+        @apply pt-0;
+    }
+
+    /* Karten */
+    .card {
+        @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+    }
+
+    .card-pad {
+        @apply p-5 sm:p-6;
+    }
+
+    .card-header {
+        @apply flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 sm:px-6;
+    }
+
+    .card-title {
+        @apply text-base font-semibold text-gray-900;
+    }
+
+    .card-subtitle {
+        @apply text-sm text-gray-500;
+    }
+
+    /* Knöpfe: eine Primäraktion je Bereich (orange), sonst neutral. Rot nur für Löschen/Entfernen. */
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply bg-orange-500 text-white shadow-sm hover:bg-orange-600;
+    }
+
+    .btn-secondary {
+        @apply border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50;
+    }
+
+    .btn-soft {
+        @apply bg-orange-50 text-orange-700 hover:bg-orange-100;
+    }
+
+    /* Rot nur zum Löschen/Entfernen: dezent (weiß mit rotem Text), damit Listen ruhig bleiben. */
+    .btn-danger {
+        @apply border border-red-200 bg-white text-red-600 shadow-sm hover:bg-red-50 hover:text-red-700;
+    }
+
+    /* Endgültige Bestätigung einer zerstörenden Aktion (z. B. im Dialog). */
+    .btn-danger-solid {
+        @apply bg-red-600 text-white shadow-sm hover:bg-red-700;
+    }
+
+    .btn-ghost {
+        @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900;
+    }
+
+    .btn-sm {
+        @apply gap-1 rounded-md px-2.5 py-1 text-xs;
+    }
+
+    /* Formularfelder (ersetzt die bisher wirkungslose Klasse form-control) */
+    .form-control {
+        @apply block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 disabled:bg-gray-50 disabled:text-gray-500;
+    }
+
+    select.form-control {
+        @apply pr-9;
+    }
+
+    .form-label {
+        @apply mb-1 block text-sm font-medium text-gray-700;
+    }
+
+    .form-hint {
+        @apply mt-1 text-xs text-gray-500;
+    }
+
+    .form-error {
+        @apply mt-1 text-xs text-red-600;
+    }
+
+    .form-check {
+        @apply h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-300;
+    }
+
+    /* Filterleiste über Listen */
+    .toolbar {
+        @apply flex flex-wrap items-end gap-3;
+    }
+
+    /* Tabellen */
+    .table-wrap {
+        @apply overflow-x-auto;
+    }
+
+    .data-table {
+        @apply w-full text-left text-sm text-gray-700;
+    }
+
+    .data-table thead {
+        @apply border-b border-gray-200 bg-gray-50;
+    }
+
+    .data-table th {
+        @apply px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500;
+    }
+
+    .data-table td {
+        @apply px-4 py-3 align-middle;
+    }
+
+    .data-table tbody tr {
+        @apply border-t border-gray-100 transition-colors hover:bg-gray-50/70;
+    }
+
+    .data-table tbody tr:first-child {
+        @apply border-t-0;
+    }
+
+    /* In Tabellenzeilen sind Knöpfe neutral: Orange gehört der Hauptaktion der Seite (Kopfbereich). */
+    .data-table .btn-primary {
+        @apply border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50;
+    }
+
+    .row-actions {
+        @apply flex flex-wrap items-center justify-end gap-1.5;
+    }
+
+    .empty-state {
+        @apply px-4 py-10 text-center text-sm text-gray-500;
+    }
+
+    /* Kleiner runder Entfernen-Knopf in der Ecke eines Bildes. */
+    .icon-remove {
+        @apply absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs leading-none text-white hover:bg-red-700;
+    }
+
+    /* Textlinks */
+    .link {
+        @apply font-medium text-orange-600 hover:text-orange-700 hover:underline;
+    }
+
+    /* Marken */
+    .badge {
+        @apply inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium;
+    }
+
+    .badge-gray {
+        @apply bg-gray-100 text-gray-700;
+    }
+
+    .badge-orange {
+        @apply bg-orange-50 text-orange-700;
+    }
+
+    .badge-blue {
+        @apply bg-blue-50 text-blue-700;
+    }
+
+    .badge-green {
+        @apply bg-green-50 text-green-700;
+    }
+
+    .badge-red {
+        @apply bg-red-50 text-red-700;
+    }
+
+    .badge-purple {
+        @apply bg-purple-50 text-purple-700;
+    }
+
+    .badge-amber {
+        @apply bg-amber-50 text-amber-700;
+    }
+}

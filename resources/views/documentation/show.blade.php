@@ -1,13 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Anleitung
-        </h2>
+        <x-page-header title="Anleitung"></x-page-header>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-4xl mx-auto px-4">
-            <div class="bg-white rounded-lg shadow-sm p-8 markdown-body">
+        <div class="page">
+            <div class="card p-8 markdown-body">
                 {!! $html !!}
             </div>
         </div>

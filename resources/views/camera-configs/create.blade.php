@@ -33,29 +33,27 @@
     </div>
 @endif
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Kamera-Konfiguration hinzufügen
-        </h2>
+        <x-page-header title="Kamera-Konfiguration hinzufügen"></x-page-header>
     </x-slot>
 
-    <div class="max-w-4xl mx-auto mt-8 bg-white p-6 border border-gray-200 rounded-md shadow-sm">
+    <div class="page-narrow"><div class="card card-pad">
         {{-- Keep the action signature simple: only the production in the URL --}}
         <form method="POST" action="{{ route('camera-config.store', $production) }}">
             @csrf
 
             <div class="mb-4">
-                <label for="cam_number" class="block font-semibold mb-1">Kameranummer / Position *</label>
+                <label for="cam_number" class="form-label">Kameranummer / Position *</label>
                 <input type="text"
                        name="cam_number" id="cam_number"
-                       class="w-full border rounded p-2"
+                       class="form-control w-full p-2"
                        value="{{ old('cam_number', $suggestedCamNumber ?? '') }}"
                        required>
                 @error('cam_number') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="mb-4">
-                <label for="camera" class="block font-semibold mb-1">Basis-Kamera *</label>
-                <select name="camera" id="camera" class="w-full border rounded p-2" required>
+                <label for="camera" class="form-label">Basis-Kamera *</label>
+                <select name="camera" id="camera" class="form-control w-full p-2" required>
                     <option value="">– auswählen –</option>
                     @foreach(($cameras ?? collect()) as $it)
                         <option value="{{ $it->id }}"
@@ -70,8 +68,8 @@
 
             <div class="grid md:grid-cols-2 gap-4">
                 <div>
-                    <label for="lens" class="block font-semibold mb-1">Optik</label>
-                    <select name="lens" id="lens" class="w-full border rounded p-2">
+                    <label for="lens" class="form-label">Optik</label>
+                    <select name="lens" id="lens" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($lenses ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('lens', $suggested['lens'] ?? null) == $it->id)>
@@ -86,8 +84,8 @@
                 </div>
 
                 <div>
-                    <label for="large_lens_adapter" class="block font-semibold mb-1">Largelens Adapter</label>
-                    <select name="large_lens_adapter" id="large_lens_adapter" class="w-full border rounded p-2">
+                    <label for="large_lens_adapter" class="form-label">Largelens Adapter</label>
+                    <select name="large_lens_adapter" id="large_lens_adapter" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($adapters ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('large_lens_adapter', $suggested['large_lens_adapter'] ?? null) == $it->id)>
@@ -101,8 +99,8 @@
                 </div>
 
                 <div>
-                    <label for="tripod" class="block font-semibold mb-1">Stativ</label>
-                    <select name="tripod" id="tripod" class="w-full border rounded p-2">
+                    <label for="tripod" class="form-label">Stativ</label>
+                    <select name="tripod" id="tripod" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($tripods ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('tripod', $suggested['tripod'] ?? null) == $it->id)>
@@ -114,8 +112,8 @@
                 </div>
 
                 <div>
-                    <label for="tripod_head" class="block font-semibold mb-1">Stativkopf</label>
-                    <select name="tripod_head" id="tripod_head" class="w-full border rounded p-2">
+                    <label for="tripod_head" class="form-label">Stativkopf</label>
+                    <select name="tripod_head" id="tripod_head" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($heads ?? collect()) as $it)
                             <option value="{{ $it->id }}" @selected(old('tripod_head', $suggested['tripod_head'] ?? null) == $it->id)>
@@ -128,14 +126,14 @@
             </div>
 
             <div class="mt-4">
-                <label for="notes" class="block font-semibold mb-1">Notizen</label>
-                <textarea name="notes" id="notes" rows="3" class="w-full border rounded p-2">{{ old('notes') }}</textarea>
+                <label for="notes" class="form-label">Notizen</label>
+                <textarea name="notes" id="notes" rows="3" class="form-control w-full p-2">{{ old('notes') }}</textarea>
                 @error('notes') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex justify-end gap-2 mt-6">
-                <a href="{{ route('productions.show', $production) }}" class="px-4 py-2 border rounded">Abbrechen</a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Speichern</button>
+                <a href="{{ route('productions.show', $production) }}" class="btn btn-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
             </div>
         </form>
 
@@ -147,6 +145,6 @@
         @if(!empty($preselectedCameraId))
             <p class="text-xs text-gray-500 mt-4">Vorausgewählte Kamera‑ID: {{ $preselectedCameraId }}</p>
         @endif
-    </div>
+    </div></div>
 
 </x-app-layout>
