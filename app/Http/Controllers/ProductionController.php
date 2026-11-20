@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AttachItemRequest;
 use App\Http\Requests\ProductionRequest;
+use App\Http\Requests\StoreProductionImportRequest;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
@@ -191,8 +192,12 @@ class ProductionController extends Controller
 
             $added = [];
             $skipped = [];
+            $warnings = [];
 
-            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped) {
+            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped, &$warnings) {
+                // Zeilensperre VOR den Verfügbarkeitsprüfungen (siehe lockItems()).
+                $this->availability->lockItems($itemIds);
+
                 foreach ($itemIds as $itemId) {
                     $item = $items->get($itemId);
 
@@ -223,6 +228,10 @@ class ProductionController extends Controller
                         ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
 
                     $added[] = $item->bezeichnung;
+
+                    if ($availability['warning'] ?? null) {
+                        $warnings[] = "{$item->bezeichnung} ({$availability['warning']})";
+                    }
                 }
             });
 
@@ -241,7 +250,8 @@ class ProductionController extends Controller
 
             return redirect()
                 ->route('productions.show', $redirectParams)
-                ->with($messageType, $message);
+                ->with($messageType, $message)
+                ->with('warning', $warnings ? 'Hinweis: '.implode(', ', $warnings) : null);
         } catch (ModelNotFoundException $e) {
             return redirect()
                 ->route('productions.index')
@@ -307,16 +317,21 @@ class ProductionController extends Controller
         ]);
     }
 
-    public function storeImport(Request $request, Production $production, Production $source)
+    public function storeImport(StoreProductionImportRequest $request, Production $production, Production $source)
     {
-        $this->imports->applyImport(
+        $result = $this->imports->applyImport(
             $production,
             $source,
-            $request->input('items', []),
-            $request->input('configs', [])
+            $request->validated('items', []),
+            $request->validated('configs', [])
         );
 
+        if ($result['imported'] > 0) {
+            $this->slack->syncProduction($production);
+        }
+
         return redirect()->route('productions.show', $production)
-            ->with('success', 'Geräte aus Vorlage übernommen.');
+            ->with('success', $result['imported'].' Position(en) aus Vorlage übernommen.')
+            ->with('warning', $result['skipped'] ? 'Nicht übernommen: '.implode(', ', $result['skipped']) : null);
     }
 }

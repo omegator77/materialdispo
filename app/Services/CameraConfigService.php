@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CameraConfig;
 use App\Models\Item;
 use App\Models\Production;
+use Illuminate\Support\Facades\DB;
 
 class CameraConfigService
 {
@@ -16,6 +17,13 @@ class CameraConfigService
      */
     public function create(Production $production, array $validated): array
     {
+        return DB::transaction(fn () => $this->createLocked($production, $validated));
+    }
+
+    private function createLocked(Production $production, array $validated): array
+    {
+        $this->availability->lockItems($this->slotItemIds($validated));
+
         $conflict = $this->checkSlotAvailability($production, $validated);
 
         if ($conflict) {
@@ -42,6 +50,13 @@ class CameraConfigService
      */
     public function update(CameraConfig $config, array $validated): array
     {
+        return DB::transaction(fn () => $this->updateLocked($config, $validated));
+    }
+
+    private function updateLocked(CameraConfig $config, array $validated): array
+    {
+        $this->availability->lockItems($this->slotItemIds($validated));
+
         $production = Production::findOrFail($config->production_id);
 
         $conflict = $this->checkSlotAvailability($production, $validated, $config);
@@ -68,17 +83,7 @@ class CameraConfigService
      */
     private function checkSlotAvailability(Production $production, array $validated, ?CameraConfig $ignoreConfig = null): ?string
     {
-        $selectedItemIds = collect([
-            $validated['camera'],
-            $validated['lens'] ?? null,
-            $validated['tripod'] ?? null,
-            $validated['tripod_head'] ?? null,
-            $validated['large_lens_adapter'] ?? null,
-        ])
-            ->filter()
-            ->unique();
-
-        foreach ($selectedItemIds as $itemId) {
+        foreach ($this->slotItemIds($validated) as $itemId) {
             $item = Item::findOrFail($itemId);
 
             $availability = $this->availability->check($item, $production, $ignoreConfig);
@@ -89,5 +94,21 @@ class CameraConfigService
         }
 
         return null;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function slotItemIds(array $validated)
+    {
+        return collect([
+            $validated['camera'],
+            $validated['lens'] ?? null,
+            $validated['tripod'] ?? null,
+            $validated['tripod_head'] ?? null,
+            $validated['large_lens_adapter'] ?? null,
+        ])
+            ->filter()
+            ->unique();
     }
 }
