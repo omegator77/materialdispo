@@ -41,11 +41,7 @@
             locked: @json($checklistLocked)
          })'>
 
-        @if(session('success'))
-        <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
-            {{ session('success') }}
-        </div>
-        @endif
+        <x-flash-messages />
 
         @if($readonly)
         <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded">

@@ -13,6 +13,10 @@
     </div>
     </x-slot>
 
+<div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-3 empty:hidden">
+    <x-flash-messages />
+</div>
+
 @include('productions._table')
 
 

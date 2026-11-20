@@ -11,6 +11,7 @@ use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
 use App\Services\ProductionImportService;
 use App\Services\SlackVorgangSync;
+use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -258,6 +259,8 @@ class ProductionController extends Controller
                 ->route('productions.index')
                 ->with('error', 'Produktion oder Item nicht gefunden.');
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()
                 ->route('productions.index')
                 ->with('error', 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
@@ -303,7 +306,7 @@ class ProductionController extends Controller
 
         $pdf = Pdf::loadView('pdf.production_items', $data);
 
-        return $pdf->download("{$production->bezeichnung}.pdf");
+        return $pdf->download(PdfFilename::make($production->bezeichnung));
     }
 
     public function importFrom(Production $production, Production $source)
