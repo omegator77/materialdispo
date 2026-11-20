@@ -107,8 +107,9 @@ class AttentionService
                     'detail' => count($plan['items']).' davon sofort zuordenbar'.($plan['missing'] ? ", {$plan['missing']} nicht verfügbar" : '')." · Start {$when}",
                     'url' => $url,
                     'action' => $plan['items'] ? [
-                        'label' => count($plan['items']).' Geräte automatisch zuordnen',
-                        'url' => route('productions.autoFill', $production),
+                        'label' => 'Packliste vorschlagen',
+                        'url' => route('productions.vbVorschlag', $production),
+                        'method' => 'GET',
                         'confirm' => null,
                     ] : null,
                 ];
