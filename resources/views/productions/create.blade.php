@@ -79,7 +79,7 @@
                                    value="{{ old('booking_start') }}">
                         </div>
                         <div>
-                            <label for="booking_end" class="form-label">Produktionsende</label>
+                            <label for="booking_end" class="form-label">Produktionsende <span class="font-normal text-gray-400">(leer = eintägig)</span></label>
                             <input type="text" name="booking_end" id="booking_end"
                                    class="form-control w-full datepicker"
                                    placeholder="TT.MM.JJJJ"

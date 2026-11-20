@@ -76,7 +76,7 @@ class ProductionController extends Controller
     public function store(ProductionRequest $request)
     {
         $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end ?: $request->booking_start)->format('Y-m-d');
 
         $production = Production::create([
             'bezeichnung' => $request->input('bezeichnung'),
@@ -94,7 +94,7 @@ class ProductionController extends Controller
             }
         }
 
-        return redirect('/productions');
+        return redirect()->route('productions.show', $production)->with('focus_quick_add', true);
     }
 
     public function show($id, Request $request)
@@ -154,7 +154,7 @@ class ProductionController extends Controller
     public function update(ProductionRequest $request, Production $production)
     {
         $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end ?: $request->booking_start)->format('Y-m-d');
 
         $production->update([
             'bezeichnung' => $request->input('bezeichnung'),
