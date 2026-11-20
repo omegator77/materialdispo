@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CameraConfig;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\ProductionItemPack;
@@ -28,6 +29,18 @@ function listProduction(string $name, int $items = 0, int $packed = 0, array $at
     }
 
     return $p->fresh();
+}
+
+function listCameraConfig(Production $p): void
+{
+    $unit = Unit::firstOrCreate(['bezeichnung' => 'Kameras']);
+    $mk = fn (string $n) => Item::create(['units_id' => $unit->id, 'bezeichnung' => "{$p->bezeichnung} {$n}"])->id;
+
+    CameraConfig::create([
+        'production_id' => $p->id, 'item_id' => $mk('Kamera'), 'cam_number' => 1,
+        'lens' => $mk('Objektiv'), 'tripod' => $mk('Stativ'),
+        'tripod_head' => $mk('Kopf'), 'large_lens_adapter' => $mk('Adapter'),
+    ]);
 }
 
 function listQueryCount(User $user): int
@@ -81,12 +94,14 @@ test('Die Abfragezahl der Liste wächst nicht mit der Zahl der Produktionen', fu
     $user = User::factory()->create(['role' => 'user']);
     foreach (range(1, 2) as $i) {
         $p = listProduction("Klein {$i}", 2, 1);
+        listCameraConfig($p);
         VbProtokoll::create(['production_id' => $p->id, 'created_by' => $user->id]);
     }
     $small = listQueryCount($user);
 
     foreach (range(1, 8) as $i) {
         $p = listProduction("Gross {$i}", 2, 1);
+        listCameraConfig($p);
         VbProtokoll::create(['production_id' => $p->id, 'created_by' => $user->id]);
     }
     $large = listQueryCount($user);
@@ -96,6 +111,7 @@ test('Die Abfragezahl der Liste wächst nicht mit der Zahl der Produktionen', fu
 
 test('stepStatus löst mit vorgeladenen Relationen keine weiteren Abfragen aus', function () {
     $p = listProduction('Alpha', 3, 2);
+    listCameraConfig($p);
     $p->load(Production::LIST_RELATIONS);
 
     DB::flushQueryLog();
@@ -104,7 +120,7 @@ test('stepStatus löst mit vorgeladenen Relationen keine weiteren Abfragen aus',
     $count = count(DB::getQueryLog());
     DB::disableQueryLog();
 
-    expect($count)->toBe(0)->and($status['packliste'])->toBe(3)->and($status['packed'])->toBe(2);
+    expect($count)->toBe(0)->and($status['packliste'])->toBe(8)->and($status['packed'])->toBe(2);
 });
 
 test('Liste: Admin und User behalten Details- und VB-Anlegen-Link, Viewer nicht', function () {
