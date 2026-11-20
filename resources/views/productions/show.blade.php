@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Materialzuordnung">
+        <x-page-header title="Packliste">
             <x-slot name="actions">
                 <div class="flex flex-wrap items-center gap-2">
                 @php
@@ -43,6 +43,8 @@
     </x-slot>
 
     <div class="page">
+        <x-production-steps :production="$production" active="packliste" />
+
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">

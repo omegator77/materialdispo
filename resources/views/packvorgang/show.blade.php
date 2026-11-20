@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Packvorgang: {{ $production->bezeichnung }}">
+        <x-page-header title="Packen: {{ $production->bezeichnung }}">
             <x-slot name="actions">
                 <div class="flex gap-2">
                 <a href="{{ route('packvorgang.pdf', $production->id) }}"
@@ -38,6 +38,8 @@
             toggleUrlBase: "{{ url('productions/'.$production->id.'/packvorgang/toggle') }}",
             locked: @json($checklistLocked)
          })'>
+        <x-production-steps :production="$production" active="packen" />
+
 
         <x-flash />
 
