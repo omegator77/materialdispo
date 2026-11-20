@@ -67,3 +67,18 @@ test('Erfolgreicher Login setzt beide Zähler zurück', function () {
         expect(session('errors')->first('email'))->toBe(trans('auth.failed'));
     }
 });
+
+test('TRUSTED_PROXIES wird aus der Konfiguration gelesen (wirkt auch bei config:cache)', function () {
+    config(['trustedproxy.proxies' => '203.0.113.5']);
+
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.5'])
+        ->withHeader('X-Forwarded-For', '198.51.100.9')
+        ->get('/__ip')
+        ->assertSee('198.51.100.9');
+
+    // Ein privater Absender gehört dann NICHT mehr zu den vertrauten Proxys.
+    $this->withServerVariables(['REMOTE_ADDR' => '172.18.0.2'])
+        ->withHeader('X-Forwarded-For', '198.51.100.9')
+        ->get('/__ip')
+        ->assertSee('172.18.0.2');
+});
