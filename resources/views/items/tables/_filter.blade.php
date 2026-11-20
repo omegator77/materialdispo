@@ -15,6 +15,17 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div class="w-full sm:w-52">
+                    <label for="herkunftFilter" class="form-label">
+                        Herkunft
+                    </label>
+                    <select id="herkunftFilter" name="herkunft" class="form-control w-full" onchange="this.form.submit()">
+                        <option value="" {{ request('herkunft') ? '' : 'selected' }}>Alle</option>
+                        <option value="gemietet" {{ request('herkunft') === 'gemietet' ? 'selected' : '' }}>Nur Gemietetes</option>
+                        <option value="eigen" {{ request('herkunft') === 'eigen' ? 'selected' : '' }}>Nur Eigenes</option>
+                    </select>
+                </div>
             </form>
 
             <div class="w-full sm:flex-1">
@@ -32,7 +43,7 @@
                 >
             </div>
 
-            @if(request('unit_id'))
+            @if(request('unit_id') || in_array(request('herkunft'), ['gemietet', 'eigen'], true))
                 <a href="{{ route('items.index') }}"
                    class="btn btn-secondary">
                     Filter zurücksetzen
