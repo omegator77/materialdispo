@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CameraConfig;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\VbProtokollAnforderung;
@@ -27,6 +28,9 @@ class VbVorschlagService
         private ItemAvailabilityService $availability,
         private SmartAssignmentService $smart,
         private CameraSetupService $cameraSetup,
+        private CameraConfigService $cameraConfigs,
+        private ProductionAssignmentService $assignments,
+        private SlackVorgangSync $slack,
     ) {}
 
     /**
@@ -52,6 +56,61 @@ class VbVorschlagService
         $needs = $this->needs($production, $pool, $taken);
 
         return ['rigs' => $rigs, 'needs' => $needs, 'empty' => ! $rigs && ! $needs];
+    }
+
+    /**
+     * Übernimmt die gewählten Züge und das Material. Jeder Zug ganz oder gar nicht;
+     * Fehlschläge landen in 'skipped', der Rest läuft weiter. Die Geräte werden von den
+     * Services erneut geprüft, die Struktur nicht aus dem VB-Protokoll neu abgeleitet.
+     *
+     * @param  array{rigs?: list<array<string, mixed>>, items?: list<int>}  $auswahl
+     * @return array{created: list<CameraConfig>, attached: list<Item>, skipped: list<string>, warnings: list<string>}
+     */
+    public function apply(Production $production, array $auswahl): array
+    {
+        $created = [];
+        $skipped = [];
+        $warnings = [];
+        $next = $this->cameraSetup->nextCamNumber($production);
+
+        foreach ($auswahl['rigs'] ?? [] as $rig) {
+            if (empty($rig['take']) || empty($rig['camera'])) {
+                continue;
+            }
+
+            $result = $this->cameraConfigs->create($production, [
+                'camera' => (int) $rig['camera'],
+                'lens' => $rig['lens'] ?? null,
+                'tripod' => $rig['tripod'] ?? null,
+                'tripod_head' => $rig['tripod_head'] ?? null,
+                'large_lens_adapter' => $rig['large_lens_adapter'] ?? null,
+                'cam_number' => 'Cam '.$next,
+            ]);
+
+            if ($result['success']) {
+                $created[] = $result['config'];
+                $next++;
+            } else {
+                $skipped[] = 'Kamerazug: '.$result['error'];
+            }
+        }
+
+        $attached = [];
+        $ids = collect($auswahl['items'] ?? [])->filter()->unique()->values();
+        if ($ids->isNotEmpty()) {
+            $result = $this->assignments->attachMany($production, Item::whereIn('id', $ids)->get(), notifySlack: false);
+            $attached = $result['added'];
+            foreach ($result['skipped'] as $row) {
+                $skipped[] = $row['item']->bezeichnung.': '.$row['reason'];
+            }
+            $warnings = $result['warnings'];
+        }
+
+        if ($created || $attached) {
+            $this->slack->syncProduction($production);
+        }
+
+        return ['created' => $created, 'attached' => $attached, 'skipped' => $skipped, 'warnings' => $warnings];
     }
 
     /**
