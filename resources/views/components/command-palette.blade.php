@@ -5,7 +5,7 @@
         ['Dashboard', route('dashboard'), 'dashboard start übersicht'],
         ['Geräte', route('items.index'), 'geräte inventar liste'],
         ['Produktionen', route('productions.index'), 'produktionen projekte'],
-        ['Packliste', route('itemprods'), 'packliste packen'],
+        ['Packen', route('itemprods'), 'packen packliste'],
         ['Timeline', route('timeline.items'), 'timeline zeitstrahl belegung gantt'],
         ['Mietvorgänge', route('mietvorgaenge.index'), 'miete mietvorgänge eingehend'],
         ['Vermietvorgänge', route('vermietvorgaenge.index'), 'verleih vermietvorgänge ausgehend'],

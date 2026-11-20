@@ -121,7 +121,7 @@ class AttentionService
                 $findings[] = [
                     'severity' => 'gelb',
                     'kind' => 'pack_offen',
-                    'title' => "{$production->bezeichnung}: Packvorgang offen ({$packed}/{$total})",
+                    'title' => "{$production->bezeichnung}: Packen offen ({$packed}/{$total})",
                     'detail' => "Start {$when}",
                     'url' => route('packvorgang.show', $production),
                     'action' => null,

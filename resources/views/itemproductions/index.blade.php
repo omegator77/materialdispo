@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Packliste"></x-page-header>
+        <x-page-header title="Packen"></x-page-header>
     </x-slot>
 
     {{-- Filter --}}

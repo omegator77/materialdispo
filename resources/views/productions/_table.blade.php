@@ -56,7 +56,7 @@
                                 @if(Auth::user()->isUser())
                                 <a href="{{ route('productions.show', $production->id) }}"
                                    class="btn btn-primary btn-sm">
-                                    Zuordnen
+                                    Packliste
                                 </a>
 
                                 <a href="{{ route('productions.edit', $production->id) }}"
@@ -114,7 +114,7 @@
                     @if(Auth::user()->isUser())
                     <a href="{{ route('productions.show', $production->id) }}"
                        class="btn btn-primary text-center">
-                        Zuordnen
+                        Packliste
                     </a>
 
                     <a href="{{ route('productions.edit', $production->id) }}"

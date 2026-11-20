@@ -48,7 +48,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
         <div class="flex flex-wrap justify-end gap-2 border-b pb-4">
             <a href="{{ route('packvorgang.show', $production->id) }}"
                 class="btn btn-secondary gap-2">
-                Packvorgang
+                Packen
                 @if($packlistCount > 0)
                 <span class="text-xs px-1.5 py-0.5 rounded-full {{ $production->packvorgang_confirmed_at ? 'bg-green-500' : ($packedCount > 0 ? 'bg-yellow-500' : 'bg-gray-500') }}">
                     {{ $packedCount }}/{{ $packlistCount }}
@@ -70,7 +70,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
                 Abgleich-Report
             </a>
             @else
-            <span title="Erst verfügbar, wenn der Packvorgang abgeschlossen ist"
+            <span title="Erst verfügbar, wenn das Packen abgeschlossen ist"
                 class="btn btn-secondary cursor-not-allowed opacity-60">
                 Abgleich-Report
             </span>

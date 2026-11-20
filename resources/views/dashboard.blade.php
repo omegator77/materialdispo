@@ -79,15 +79,15 @@
                             <strong>VB-Protokoll erfassen</strong> — Kunde, Crew, benötigte Geräte/Kamerakonfigurationen. Hier geht es nur um die Anforderungen, noch nicht um die tatsächliche Zuordnung.
                         </li>
                         <li>
-                            <strong>Materialzuordnung</strong> — konkrete Geräte und Kamerazüge der Produktion zuweisen. Ein Live-Abgleich zeigt direkt, was vom VB-Protokoll noch fehlt.
+                            <strong>Packliste</strong> — konkrete Geräte und Kamerazüge der Produktion zuweisen. Ein Live-Abgleich zeigt direkt, was vom VB-Protokoll noch fehlt.
                         </li>
                         <li>
-                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="link">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
+                            <strong>Packen</strong> — unter <a href="{{ route('itemprods') }}" class="link">Packen</a> den Button "Packen" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
                         </li>
                     </ol>
 
                     <p class="text-gray-500">
-                        PDF-Export ist an jeder Stelle verfügbar: Packliste, VB-Protokoll, Abgleich-Report und Packvorgang-Checkliste zum Ausdrucken.
+                        PDF-Export ist an jeder Stelle verfügbar: Packliste, VB-Protokoll, Abgleich-Report und Packen-Checkliste zum Ausdrucken.
                     </p>
                 </div>
             </details>
