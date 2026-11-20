@@ -77,12 +77,60 @@ MAIL_MAILER=smtp
 MAIL_FROM_ADDRESS="dispo@<deine-domain>"
 
 # Nur setzen, wenn dein Reverse-Proxy NICHT in einem privaten Netz hängt
-# (Standard: PRIVATE_SUBNETS, siehe .env.example):
+# (Standard: PRIVATE_SUBNETS, siehe .env.example und Abschnitt "Reverse-Proxy"):
 # TRUSTED_PROXIES=<proxy-ip>
 ```
 
 `APP_DEBUG=true` in Produktion gibt Stacktraces, Konfiguration und Zugangsdaten
 an Besucher preis.
+
+## Reverse-Proxy (nginx)
+
+Die App läuft hinter einem nginx-Reverse-Proxy. Damit Client-IP, HTTPS und
+Uploads richtig ankommen:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name dispo.example.de;
+
+    # VB-Protokoll-Fotos sind bis 8 MB erlaubt (nginx-Standard: 1 MB -> Fehler 413).
+    client_max_body_size 10m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;   # Port des App-Containers
+
+        proxy_set_header Host              $host;
+        # $remote_addr statt $proxy_add_x_forwarded_for: ein vom Client mitgeschickter
+        # X-Forwarded-For wird verworfen, die IP lässt sich nicht fälschen
+        # (wichtig für das Login-Rate-Limit).
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+
+        # PDF-Export (dompdf) kann bei vielen Fotos länger dauern.
+        proxy_read_timeout 120s;
+    }
+}
+```
+
+- **Den App-Port nur lokal veröffentlichen** (`127.0.0.1:8080:80` in der
+  `docker-compose.yml`, nicht `8080:80`). Sonst ist die App an nginx vorbei direkt
+  aus dem Internet erreichbar, und ein Client könnte `X-Forwarded-For` selbst
+  setzen (Docker zeigt der App dann eine private Absenderadresse, der die App
+  vertraut).
+- `/slack/interactions` muss von außen erreichbar bleiben (Slack ruft es auf).
+  Es ist durch die Slack-Signatur geschützt, nicht durch ein Login.
+- **TLS endet am nginx**, die App spricht intern HTTP. Deshalb
+  `SESSION_SECURE_COOKIE=true` und `APP_URL=https://...` setzen; die App erkennt
+  HTTPS über `X-Forwarded-Proto`.
+- `TRUSTED_PROXIES` ist nur nötig, wenn der nginx **nicht** in einem privaten Netz
+  steht (z. B. auf einem anderen Server mit öffentlicher IP).
+
+Prüfen, ob die App die richtige Client-IP sieht: Im Login-Fehlerfall oder in
+`storage/logs/laravel.log` darf nicht die Docker-Gateway-Adresse (`172.x.x.x`)
+stehen, sondern die echte Client-IP.
 
 ## Slack-Anbindung
 
