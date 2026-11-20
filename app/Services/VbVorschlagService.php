@@ -137,10 +137,26 @@ class VbVorschlagService
 
         $lines = $production->vbProtokoll->anforderungen->filter(fn (VbProtokollAnforderung $a) => $a->cam_number !== null);
 
+        // Zeilen ohne Typ deckt, was nach dem Abgleich der getypten Zeilen an Zügen übrig bleibt.
+        $remaining = $skip;
+        $consumed = 0;
+        foreach ($lines as $line) {
+            if ($line->geraetetyp_id && ($remaining[$line->geraetetyp_id] ?? 0) > 0) {
+                $remaining[$line->geraetetyp_id]--;
+                $consumed++;
+            }
+        }
+        $leftover = $production->cameraConfigs->count() - $consumed;
+
         foreach ($lines as $line) {
             $typeId = $line->geraetetyp_id;
             if ($typeId && ($skip[$typeId] ?? 0) > 0) {
                 $skip[$typeId]--;
+
+                continue;
+            }
+            if (! $typeId && $leftover > 0) {
+                $leftover--;
 
                 continue;
             }

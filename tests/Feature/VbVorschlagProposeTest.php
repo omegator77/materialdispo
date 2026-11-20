@@ -214,3 +214,35 @@ test('ein Zug ohne freie Kamera reserviert kein Zubehör', function () {
         ->and($out['rigs'][1]['slots']['lens']['item']->id)->toBe($lens->id)
         ->and($out['rigs'][1]['slots']['lens']['gap'])->toBeFalse();
 });
+
+test('Zeile ohne Typ wird von einem übrigen vorhandenen Zug gedeckt', function () {
+    $cam = ($this->mk)($this->camT, '1');
+    CameraConfig::create(['production_id' => $this->prod->id, 'cam_number' => 'Cam 1', 'item_id' => $cam->id]);
+    ($this->camLine)(['geraetetyp_id' => null]);
+
+    $out = ($this->propose)();
+
+    expect($out['rigs'])->toBe([])->and($out['empty'])->toBeTrue();
+});
+
+test('zwei Zeilen ohne Typ und ein übriger Zug lassen genau einen Eintrag', function () {
+    $cam = ($this->mk)($this->camT, '1');
+    CameraConfig::create(['production_id' => $this->prod->id, 'cam_number' => 'Cam 1', 'item_id' => $cam->id]);
+    ($this->camLine)(['geraetetyp_id' => null, 'cam_number' => '1']);
+    ($this->camLine)(['geraetetyp_id' => null, 'cam_number' => '2']);
+
+    $out = ($this->propose)();
+
+    expect($out['rigs'])->toHaveCount(1)->and($out['rigs'][0]['no_type'])->toBeTrue();
+});
+
+test('ein für eine getypte Zeile verbrauchter Zug deckt keine Zeile ohne Typ', function () {
+    $cam = ($this->mk)($this->camT, '1');
+    CameraConfig::create(['production_id' => $this->prod->id, 'cam_number' => 'Cam 1', 'item_id' => $cam->id]);
+    ($this->camLine)(['cam_number' => '1']);
+    ($this->camLine)(['geraetetyp_id' => null, 'cam_number' => '2']);
+
+    $out = ($this->propose)();
+
+    expect($out['rigs'])->toHaveCount(1)->and($out['rigs'][0]['no_type'])->toBeTrue();
+});

@@ -148,3 +148,25 @@ test('POST mit doppelt gewähltem Gerät meldet doppelt ausgewählt', function (
 
     expect(DB::table('item_production')->where('production_id', $this->prod->id)->count())->toBe(1);
 });
+
+test('nur nicht übernehmbarer Zug zeigt keinen Übernehmen-Button', function () {
+    ($this->camLine)();
+
+    $this->actingAs($this->admin)->get($this->url)
+        ->assertOk()
+        ->assertSee('keine Kamera frei')
+        ->assertSee('Nichts zum Übernehmen.')
+        ->assertDontSee('type="submit"', false);
+});
+
+test('übernehmbarer Zug oder Bedarf zeigt den Übernehmen-Button', function () {
+    ($this->mk)($this->camT, 'K-1');
+    ($this->camLine)();
+    $this->actingAs($this->admin)->get($this->url)->assertOk()->assertSee('type="submit"', false)->assertDontSee('Nichts zum Übernehmen.');
+
+    $kabelT = ($this->typ)('Kabelrolle');
+    ($this->mk)($kabelT, 'KR-1');
+    $this->vb->anforderungen()->create(['geraetetyp_id' => $kabelT->id, 'anzahl' => 1]);
+    $this->vb->anforderungen()->where('cam_number', '1')->delete();
+    $this->actingAs($this->admin)->get($this->url)->assertOk()->assertSee('type="submit"', false);
+});

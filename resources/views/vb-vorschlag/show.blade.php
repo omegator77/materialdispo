@@ -11,6 +11,7 @@
         $label = fn ($i) => $i->bezeichnung.($i->nummer ? ' ('.$i->nummer.')' : '');
         $rigs = $proposal['rigs'];
         $needs = $proposal['needs'];
+        $canApply = (bool) $needs || collect($rigs)->contains(fn ($r) => $r['takeable']);
     @endphp
 
     <div class="page">
@@ -122,7 +123,11 @@
 
                 <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
                     <a href="{{ route('productions.show', $production) }}" class="btn btn-secondary">Abbrechen</a>
-                    <button type="submit" class="btn btn-primary">Übernehmen</button>
+                    @if($canApply)
+                        <button type="submit" class="btn btn-primary">Übernehmen</button>
+                    @else
+                        <span class="text-sm text-gray-500">Nichts zum Übernehmen.</span>
+                    @endif
                 </div>
             </form>
         @endif
