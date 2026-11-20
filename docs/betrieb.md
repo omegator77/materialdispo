@@ -243,3 +243,11 @@ Ein Backup, das nie eingespielt wurde, ist nicht bewiesen.
 müssen gebaut sein: `npm run build`). Der CI-Workflow `.github/workflows/ci.yml`
 führt Pint, die Tests, einen MySQL-Lauf (noch informativ) und
 `composer audit`/`npm audit` aus.
+
+## Bekannte Sicherheitsmeldungen (Abhängigkeiten)
+
+`composer audit` meldet fünf Einträge in `laravel/framework` 11.x, deren Fix nur in Laravel 12
+existiert. Sie sind in `composer.json` unter `config.audit.ignore` **mit Begründung**
+eingetragen (warum sie in dieser App keine Wirkung haben), damit der CI-Job nur bei
+**neuen** Meldungen rot wird. Das Upgrade auf Laravel 12 ist offen und löst den Eintrag
+auf; danach die Einträge entfernen.

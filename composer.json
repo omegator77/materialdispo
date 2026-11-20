@@ -2,7 +2,10 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
@@ -68,6 +71,15 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "ignore": {
+                "PKSA-3r5d-mb8f-1qw9": "Bekannt und akzeptiert bis zum Upgrade auf Laravel 12 (Fix existiert nur ab 12.x, siehe docs/betrieb.md). CRLF-Injection in der Standard-E-Mail-Regel; Mails laufen über Symfony Mailer, dessen Address-Klasse CR/LF ablehnt (geprüft).",
+                "PKSA-mdq4-51ck-6kdq": "Bekannt und akzeptiert bis zum Upgrade auf Laravel 12 (Fix existiert nur ab 12.x, siehe docs/betrieb.md). Dieselbe Lücke wie PKSA-3r5d-mb8f-1qw9 (CVE-2026-48019).",
+                "PKSA-m5cs-t1y6-qpcs": "Bekannt und akzeptiert bis zum Upgrade auf Laravel 12 (Fix existiert nur ab 12.x, siehe docs/betrieb.md). Die einzige Route mit signed-Middleware ist die Breeze-Route verification.verify; E-Mail-Bestätigung wird nicht erzwungen (User implementiert MustVerifyEmail nicht, keine verified-Middleware).",
+                "PKSA-d5tc-s1qs-h781": "Bekannt und akzeptiert bis zum Upgrade auf Laravel 12 (Fix existiert nur ab 12.x, siehe docs/betrieb.md). XSS auf der Debug-Seite; APP_DEBUG ist in Produktion aus.",
+                "PKSA-yxbx-3c9s-cjt9": "Bekannt und akzeptiert bis zum Upgrade auf Laravel 12 (Fix existiert nur ab 12.x, siehe docs/betrieb.md). Betrifft die Concurrency-Fassade, die in dieser App nicht verwendet wird."
+            }
         }
     },
     "minimum-stability": "stable",

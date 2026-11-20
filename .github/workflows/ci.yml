@@ -114,8 +114,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Bekannte, bis zum Laravel-12-Upgrade nicht behebbare Meldungen stehen mit Begründung in
+      # composer.json (config.audit.ignore). Jede NEUE Meldung lässt diesen Job rot werden.
       - name: composer audit
         run: composer audit --locked
 
+      # Läuft auch, wenn composer audit rot ist, damit beide Ergebnisse sichtbar sind.
       - name: npm audit (nur Produktionsabhängigkeiten)
+        if: always()
         run: npm audit --omit=dev --audit-level=high
