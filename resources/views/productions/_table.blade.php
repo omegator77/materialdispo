@@ -63,6 +63,11 @@
                                    class="btn btn-secondary btn-sm">
                                     Bearbeiten
                                 </a>
+
+                                <a href="{{ route('productions.create', ['from' => $production->id]) }}"
+                                   class="btn btn-secondary btn-sm">
+                                    Duplizieren
+                                </a>
                                 @endif
                             </div>
                         </td>
@@ -115,6 +120,11 @@
                     <a href="{{ route('productions.edit', $production->id) }}"
                        class="btn btn-secondary text-center">
                         Bearbeiten
+                    </a>
+
+                    <a href="{{ route('productions.create', ['from' => $production->id]) }}"
+                       class="btn btn-secondary text-center">
+                        Duplizieren
                     </a>
                     @endif
                 </div>

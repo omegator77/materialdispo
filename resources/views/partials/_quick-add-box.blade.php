@@ -7,7 +7,7 @@
 
     <form method="POST" action="{{ $storeUrl }}" class="space-y-3">
         @csrf
-        <textarea name="text" x-model="text" @input.debounce.350ms="preview()" rows="2" required
+        <textarea name="text" x-model="text" @input.debounce.350ms="preview()" rows="2" required @if(session('focus_quick_add')) autofocus @endif
                   placeholder="3x LDX, 2 Stativ, 4x Funkstrecke" class="form-control w-full text-sm"
                   @keydown.ctrl.enter.prevent="$el.form.submit()" @keydown.meta.enter.prevent="$el.form.submit()"></textarea>
 

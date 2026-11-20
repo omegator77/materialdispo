@@ -59,9 +59,11 @@ class ProductionController extends Controller
     public function searchTemplates(Request $request)
     {
         $query = trim((string) $request->get('q', ''));
+        $exclude = array_values(array_filter(array_map('intval', explode(',', (string) $request->get('exclude', '')))));
 
         $productions = Production::query()
             ->when($query !== '', fn ($q) => $q->where('bezeichnung', 'like', "%{$query}%"))
+            ->when($exclude !== [], fn ($q) => $q->whereNotIn('id', $exclude))
             ->orderBy('booking_start', 'desc')
             ->limit(20)
             ->get(['id', 'bezeichnung', 'booking_start']);
@@ -76,7 +78,7 @@ class ProductionController extends Controller
     public function store(ProductionRequest $request)
     {
         $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end ?: $request->booking_start)->format('Y-m-d');
 
         $production = Production::create([
             'bezeichnung' => $request->input('bezeichnung'),
@@ -94,7 +96,7 @@ class ProductionController extends Controller
             }
         }
 
-        return redirect('/productions');
+        return redirect()->route('productions.show', $production)->with('focus_quick_add', true);
     }
 
     public function show($id, Request $request)
@@ -154,7 +156,7 @@ class ProductionController extends Controller
     public function update(ProductionRequest $request, Production $production)
     {
         $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end ?: $request->booking_start)->format('Y-m-d');
 
         $production->update([
             'bezeichnung' => $request->input('bezeichnung'),

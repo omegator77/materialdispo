@@ -1,6 +1,6 @@
 {{-- Schnell-Hinzufügen per Text + intelligente Vorschläge --}}
 {{-- Erwartet: $production, $suggestions, $similarProduction, $openNeeds --}}
-<div class="card card-pad space-y-4 border-orange-300">
+<div id="schnelleingabe" class="card card-pad space-y-4 border-orange-300">
 
     @include('partials._quick-add-box', ['previewUrl' => route('productions.quickAdd.preview', $production), 'storeUrl' => route('productions.quickAdd', $production)])
 

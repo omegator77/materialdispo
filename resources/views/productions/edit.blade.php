@@ -25,7 +25,7 @@
                                    value="{{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '' }}">
                         </div>
                         <div>
-                            <label for="booking_end" class="form-label">Produktionsende</label>
+                            <label for="booking_end" class="form-label">Produktionsende <span class="font-normal text-gray-400">(leer = eintägig)</span></label>
                             <input type="text" name="booking_end" id="booking_end"
                                    class="form-control w-full datepicker"
                                    value="{{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '' }}">
