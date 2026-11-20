@@ -6,8 +6,10 @@ use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Setting;
 use App\Models\Vermietvorgang;
+use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -139,7 +141,7 @@ class SlackVorgangSync
             : '<'.route('vb-protokoll.create', $production).'|VB-Protokoll anlegen>';
 
         $lines = [
-            ['label' => 'Zeitraum', 'value' => \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y').' – '.\Carbon\Carbon::parse($production->booking_end)->format('d.m.Y')],
+            ['label' => 'Zeitraum', 'value' => Carbon::parse($production->booking_start)->format('d.m.Y').' – '.Carbon::parse($production->booking_end)->format('d.m.Y')],
             ['label' => 'Kunde', 'value' => self::escape($production->vbProtokoll?->kunde ?: '–')],
             ['label' => 'Ort', 'value' => self::escape($production->vbProtokoll?->produktionsort ?: '–')],
             ['label' => 'Zuordnungsstatus', 'value' => "{$ampel} {$status['label']}"],
@@ -274,7 +276,7 @@ class SlackVorgangSync
     }
 
     /** Kommagetrennte, maskierte Liste; "–" wenn leer. */
-    private function escapedList(\Illuminate\Support\Collection $values): string
+    private function escapedList(Collection $values): string
     {
         return $values->map(fn ($v) => self::escape($v))->implode(', ') ?: '–';
     }

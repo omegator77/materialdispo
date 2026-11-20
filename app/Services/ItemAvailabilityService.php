@@ -7,6 +7,8 @@ use App\Models\Item;
 use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Vermietvorgang;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class ItemAvailabilityService
 {
@@ -224,9 +226,9 @@ class ItemAvailabilityService
      * Bedarf selbst (claimConflict() blendet Abgeschlossene aus, check()
      * Fall 2 bewusst nicht).
      *
-     * @param  \Illuminate\Database\Eloquent\Relations\BelongsToMany  $relation
+     * @param  BelongsToMany  $relation
      */
-    private function overlappingVorgaenge($relation, string $periodStart, string $periodEnd, ?int $excludeId, string $relatedTable): \Illuminate\Support\Collection
+    private function overlappingVorgaenge($relation, string $periodStart, string $periodEnd, ?int $excludeId, string $relatedTable): Collection
     {
         return $relation
             ->when($excludeId, fn ($q) => $q->where("{$relatedTable}.id", '!=', $excludeId))
@@ -292,7 +294,7 @@ class ItemAvailabilityService
      * jedes Gerät mit is_available/availability_reason und blendet nicht
      * verfügbare Geräte aus, sofern $showUnavailable nicht gesetzt ist.
      */
-    public function assignableItemsFor(Production $production, ?string $unitFilter, bool $showUnavailable): \Illuminate\Support\Collection
+    public function assignableItemsFor(Production $production, ?string $unitFilter, bool $showUnavailable): Collection
     {
         $itemsQuery = Item::query()
             ->whereDoesntHave('productions', function ($query) use ($production) {

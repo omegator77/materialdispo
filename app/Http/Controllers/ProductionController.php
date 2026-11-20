@@ -12,6 +12,7 @@ use App\Services\ItemAvailabilityService;
 use App\Services\ProductionImportService;
 use App\Services\SlackVorgangSync;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,14 +64,14 @@ class ProductionController extends Controller
         return response()->json($productions->map(fn ($p) => [
             'id' => $p->id,
             'bezeichnung' => $p->bezeichnung,
-            'booking_start' => $p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : null,
+            'booking_start' => $p->booking_start ? Carbon::parse($p->booking_start)->format('d.m.Y') : null,
         ]));
     }
 
     public function store(ProductionRequest $request)
     {
-        $bookingStart = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
 
         $production = Production::create([
             'bezeichnung' => $request->input('bezeichnung'),
@@ -136,8 +137,8 @@ class ProductionController extends Controller
 
     public function update(ProductionRequest $request, Production $production)
     {
-        $bookingStart = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
-        $bookingEnd = \Carbon\Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
+        $bookingStart = Carbon::createFromFormat('d.m.Y', $request->booking_start)->format('Y-m-d');
+        $bookingEnd = Carbon::createFromFormat('d.m.Y', $request->booking_end)->format('Y-m-d');
 
         $production->update([
             'bezeichnung' => $request->input('bezeichnung'),

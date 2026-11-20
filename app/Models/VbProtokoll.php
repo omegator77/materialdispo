@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasReadableActivityDescription;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -83,7 +84,7 @@ class VbProtokoll extends Model
      * Kamerakonfigurationen werden in ihre Einzeltypen aufgedröselt, damit jede
      * Rolle (Kamera/Objektiv/Stativ/Kopf/Adapter) einzeln mit der Packliste verglichen wird.
      */
-    public function abgleich(): \Illuminate\Support\Collection
+    public function abgleich(): Collection
     {
         return $this->anforderungen->flatMap(function (VbProtokollAnforderung $anforderung) {
             if ($anforderung->cam_number !== null) {
@@ -171,7 +172,7 @@ class VbProtokoll extends Model
      * Anders als abgleich() gilt eine Anforderung erst als erfüllt, wenn
      * genug passende Geräte tatsächlich im Packvorgang abgehakt sind.
      */
-    public function abgleichMitPackstatus(): \Illuminate\Support\Collection
+    public function abgleichMitPackstatus(): Collection
     {
         $packedIds = $this->production->packedItemIds();
 
@@ -207,7 +208,7 @@ class VbProtokoll extends Model
         });
     }
 
-    private function kameraAbgleichMitPackstatus(VbProtokollAnforderung $anforderung, \Illuminate\Support\Collection $packedIds): array
+    private function kameraAbgleichMitPackstatus(VbProtokollAnforderung $anforderung, Collection $packedIds): array
     {
         $komponenten = [
             'Kamera' => $anforderung->geraetetyp,

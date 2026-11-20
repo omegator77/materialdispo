@@ -1,29 +1,29 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\ProductionController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\BookingController;
-use App\Http\Controllers\ItemproductionController;
-use App\Http\Controllers\CameraConfigController;
-use App\Http\Controllers\TimelineController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\VbProtokollController;
-use App\Http\Controllers\GeraetetypController;
-use App\Http\Controllers\PackvorgangController;
-use App\Http\Controllers\MailingListController;
-use App\Http\Controllers\MietvorgangController;
-use App\Http\Controllers\MieterController;
-use App\Http\Controllers\VermietvorgangController;
-use App\Http\Controllers\TestMailController;
-use App\Http\Controllers\SlackInteractionController;
-use App\Http\Controllers\SettingController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CameraConfigController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\GeraetetypController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemproductionController;
+use App\Http\Controllers\MailingListController;
+use App\Http\Controllers\MieterController;
+use App\Http\Controllers\MietvorgangController;
+use App\Http\Controllers\PackvorgangController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SlackInteractionController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TestMailController;
+use App\Http\Controllers\TimelineController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VbProtokollController;
+use App\Http\Controllers\VermietvorgangController;
+use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
 

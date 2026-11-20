@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasReadableActivityDescription;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
@@ -47,8 +48,8 @@ class Vermietvorgang extends Model
     private function fallbackLabel(): string
     {
         $mieter = $this->mieter?->bezeichnung ?? 'unbekannter Mieter';
-        $start = $this->rent_start ? \Carbon\Carbon::parse($this->rent_start)->format('d.m.Y') : '?';
-        $end = $this->rent_end ? \Carbon\Carbon::parse($this->rent_end)->format('d.m.Y') : '?';
+        $start = $this->rent_start ? Carbon::parse($this->rent_start)->format('d.m.Y') : '?';
+        $end = $this->rent_end ? Carbon::parse($this->rent_end)->format('d.m.Y') : '?';
 
         return "{$mieter}, {$start}–{$end}";
     }
@@ -171,7 +172,7 @@ class Vermietvorgang extends Model
      * spätere der beiden für isComplete() nötigen Zeitstempel. Null, solange
      * der Vorgang noch nicht abgeschlossen ist.
      */
-    public function completedAt(): ?\Carbon\Carbon
+    public function completedAt(): ?Carbon
     {
         if (! $this->isComplete()) {
             return null;

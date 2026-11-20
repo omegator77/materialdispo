@@ -8,6 +8,7 @@ use App\Models\ProductionItemPack;
 use App\Services\SlackVorgangSync;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class PackvorgangController extends Controller
 {
@@ -30,7 +31,7 @@ class PackvorgangController extends Controller
      * oft gemeinsam auf einen Rollwagen gepackt), restliche Geräte nach
      * Gerätegruppe (Einheit).
      */
-    private function groupEntries(\Illuminate\Support\Collection $entries): array
+    private function groupEntries(Collection $entries): array
     {
         $cameraGroups = $entries
             ->where('source', 'kamera')

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CameraConfig;
 use App\Models\Item;
 use App\Models\Production;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CameraConfigService
@@ -97,7 +98,7 @@ class CameraConfigService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, mixed>
+     * @return Collection<int, mixed>
      */
     private function slotItemIds(array $validated)
     {

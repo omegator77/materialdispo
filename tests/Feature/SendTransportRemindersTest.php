@@ -1,6 +1,7 @@
 <?php
 
 use App\Mail\TransportReminderMail;
+use App\Mail\VerleihReminderMail;
 use App\Models\Item;
 use App\Models\MailingList;
 use App\Models\Mieter;
@@ -9,6 +10,8 @@ use App\Models\MietvorgangReminderLog;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\Vermietvorgang;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
@@ -93,7 +96,7 @@ test('Vermietvorgang wird ebenfalls erinnert', function () {
 
     $this->artisan('reminders:send-transport')->assertSuccessful();
 
-    Mail::assertSent(\App\Mail\VerleihReminderMail::class, 1);
+    Mail::assertSent(VerleihReminderMail::class, 1);
 });
 
 test('der Erinnerungseintrag existiert schon, während die Mail versendet wird', function () {
@@ -119,7 +122,7 @@ test('scheitern alle Mails, endet der Command mit Fehler und der Termin wird ern
     expect(MietvorgangReminderLog::where('mietvorgang_id', $mv->id)->count())->toBe(0);
 
     Mockery::close();
-    Mail::swap(new Illuminate\Mail\MailManager(app()));
+    Mail::swap(new MailManager(app()));
     Mail::fake();
 
     $this->artisan('reminders:send-transport')->assertSuccessful();
@@ -128,7 +131,7 @@ test('scheitern alle Mails, endet der Command mit Fehler und der Termin wird ern
 });
 
 test('der Scheduler führt die Erinnerungen höchstens stündlich aus und enthält keinen inspire-Eintrag', function () {
-    $events = collect(app(Illuminate\Console\Scheduling\Schedule::class)->events());
+    $events = collect(app(Schedule::class)->events());
 
     $reminder = $events->first(fn ($e) => str_contains($e->command, 'reminders:send-transport'));
 
