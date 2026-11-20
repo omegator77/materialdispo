@@ -36,17 +36,17 @@
     $colIndicator = fn (string $col) => $sortBy === $col ? ($sortDir === 'desc' ? '↓' : '↑') : '';
 @endphp
 
-<div class="max-w-7xl w-11/12 mx-auto mt-6">
+<div class="page">
 
     {{-- Desktop --}}
-    <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-100 border-b">
+    <div class="hidden md:block card overflow-hidden">
+        <table class="data-table">
+            <thead>
                 <tr>
                     @if(Auth::user()->isUser())
-                    <th class="px-3 py-3 w-8"><input type="checkbox" class="bulk-select-all rounded border-gray-300" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
+                    <th class="w-8"><input type="checkbox" class="bulk-select-all rounded border-gray-300" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
                     @endif
-                    <th class="text-left px-4 py-3">
+                    <th>
                         <a href="{{ $colLink('group', $nextGroupDir) }}"
                            class="hover:text-orange-500 {{ $sortBy === 'group' ? 'text-orange-500' : '' }}"
                            title="Sortierung wechseln: Gruppen-Reihenfolge → A–Z → Z–A">
@@ -56,43 +56,43 @@
                             <span class="block text-[11px] font-normal text-gray-400">{{ $groupModeLabel }}</span>
                         @endif
                     </th>
-                    <th class="text-left px-4 py-3">
+                    <th>
                         <a href="{{ $colLink('nummer', $colToggle('nummer')) }}"
                            class="hover:text-orange-500 {{ $sortBy === 'nummer' ? 'text-orange-500' : '' }}">
                             Nr. <span class="text-xs">{{ $colIndicator('nummer') }}</span>
                         </a>
                     </th>
-                    <th class="text-left px-4 py-3">
+                    <th>
                         <a href="{{ $colLink('bezeichnung', $colToggle('bezeichnung')) }}"
                            class="hover:text-orange-500 {{ $sortBy === 'bezeichnung' ? 'text-orange-500' : '' }}">
                             Bezeichnung <span class="text-xs">{{ $colIndicator('bezeichnung') }}</span>
                         </a>
                     </th>
-                    <th class="text-left px-4 py-3">Beschreibung</th>
-                    <th class="text-left px-4 py-3">Vermieter</th>
-                    <th class="text-right px-4 py-3">Aktionen</th>
+                    <th>Beschreibung</th>
+                    <th>Vermieter</th>
+                    <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($items as $item)
                 <tr class="border-b hover:bg-gray-50" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
                     @if(Auth::user()->isUser())
-                    <td class="px-3 py-3"><input type="checkbox" class="bulk-select rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
+                    <td><input type="checkbox" class="bulk-select rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
                     @endif
-                    <td class="px-4 py-3">{{ $item->unit->bezeichnung ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->nummer ?: '—' }}</td>
-                    <td class="px-4 py-3 font-medium">
+                    <td>{{ $item->unit->bezeichnung ?? '—' }}</td>
+                    <td>{{ $item->nummer ?: '—' }}</td>
+                    <td class="font-medium">
                         <a href="{{ route('items.show', $item->id) }}" class="text-gray-900 hover:text-orange-500">
                             {{ $item->bezeichnung }}
                         </a>
                     </td>
-                    <td class="px-4 py-3 text-gray-700">{{ $item->description ?: '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
-                    <td class="px-4 py-3">@include('items.tables._actions')</td>
+                    <td>{{ $item->description ?: '—' }}</td>
+                    <td>{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
+                    <td>@include('items.tables._actions')</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-6 text-gray-500">Keine Geräte gefunden.</td>
+                    <td colspan="7" class="empty-state">Keine Geräte gefunden.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -107,7 +107,7 @@
     @endif
     <div class="md:hidden space-y-3">
         @forelse($items as $item)
-        <div class="relative bg-white border border-gray-300 rounded-lg shadow-md p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
+        <div class="relative card p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
             @if(Auth::user()->isUser())
             <input type="checkbox" class="bulk-select absolute top-3 right-3 w-6 h-6 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
             @endif

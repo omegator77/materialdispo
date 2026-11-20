@@ -71,10 +71,7 @@
     margin-bottom: 5px; /* Abstand zwischen Label und Dropdown */
 }
 
-select {
-    text-align: center;
-    text-align-last: center; /* Zentriert den Standard- und ausgewählten Text */
-}
+/* Die frühere globale Regel, die alle select-Felder zentriert hat, ist entfernt (jetzt .form-control). */
 .errors{
     margin: auto;
     margin-top: 5px;

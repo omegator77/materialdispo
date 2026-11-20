@@ -1,9 +1,9 @@
 @php
 $statusStyles = [
-    'laufend' => ['border' => 'border-green-400', 'badge' => 'bg-green-100 text-green-800', 'label' => 'Laufend'],
-    'kommend' => ['border' => 'border-blue-400', 'badge' => 'bg-blue-100 text-blue-800', 'label' => 'Kommend'],
-    'vergangen' => ['border' => 'border-gray-300', 'badge' => 'bg-gray-100 text-gray-600', 'label' => 'Vergangen'],
-    'archiv' => ['border' => 'border-gray-300', 'badge' => 'bg-gray-100 text-gray-500', 'label' => 'Archiv'],
+    'laufend' => ['border' => 'border-green-400', 'badge' => 'badge-green', 'label' => 'Laufend'],
+    'kommend' => ['border' => 'border-blue-400', 'badge' => 'badge-blue', 'label' => 'Kommend'],
+    'vergangen' => ['border' => 'border-gray-300', 'badge' => 'badge-gray', 'label' => 'Vergangen'],
+    'archiv' => ['border' => 'border-gray-300', 'badge' => 'badge-gray', 'label' => 'Archiv'],
 ];
 $style = $statusStyles[$status] ?? $statusStyles['vergangen'];
 
@@ -12,13 +12,13 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
 });
 @endphp
 
-<details class="bg-white border-l-4 {{ $style['border'] }} border border-gray-300 rounded-lg shadow-md overflow-hidden">
-    <summary class="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-4">
+<details class="card border-l-4 {{ $style['border'] }} overflow-hidden">
+    <summary class="cursor-pointer bg-gray-50 px-5 py-4 hover:bg-gray-100">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-                <div class="font-bold text-lg text-gray-900 flex items-center gap-2">
+                <div class="flex items-center gap-2 text-base font-semibold text-gray-900">
                     {{ $production->bezeichnung ?? 'Unbekannte Produktion' }}
-                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $style['badge'] }}">
+                    <span class="badge {{ $style['badge'] }}">
                         {{ $style['label'] }}
                     </span>
                 </div>
@@ -47,7 +47,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
         @endphp
         <div class="flex flex-wrap justify-end gap-2 border-b pb-4">
             <a href="{{ route('packvorgang.show', $production->id) }}"
-                class="inline-flex items-center gap-2 justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                class="btn btn-secondary gap-2">
                 Packvorgang
                 @if($packlistCount > 0)
                 <span class="text-xs px-1.5 py-0.5 rounded-full {{ $production->packvorgang_confirmed_at ? 'bg-green-500' : ($packedCount > 0 ? 'bg-yellow-500' : 'bg-gray-500') }}">
@@ -60,18 +60,18 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
             </a>
 
             <a href="{{ route('productions.pdf', $production->id) }}"
-                class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                class="btn btn-danger">
                 PDF exportieren
             </a>
 
             @if($production->packvorgang_confirmed_at)
             <a href="{{ $production->vbProtokoll ? route('vb-protokoll.pdf-abgleich', $production->id) : route('packvorgang.pdf', $production->id) }}"
-                class="inline-flex justify-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded">
+                class="btn btn-secondary">
                 Abgleich-Report
             </a>
             @else
             <span title="Erst verfügbar, wenn der Packvorgang abgeschlossen ist"
-                class="inline-flex justify-center bg-gray-200 text-gray-400 font-semibold py-2 px-4 rounded cursor-not-allowed">
+                class="btn btn-secondary cursor-not-allowed opacity-60">
                 Abgleich-Report
             </span>
             @endif
@@ -158,7 +158,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
 
                     {{-- Desktop --}}
                     <div class="hidden md:block">
-                        <table class="w-full text-sm">
+                        <table class="data-table">
                             <tbody>
                                 @foreach($rows as $row)
                                 <tr class="border-t hover:bg-gray-50">

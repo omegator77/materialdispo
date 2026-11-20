@@ -168,7 +168,7 @@
                     <div>
                         {{ $item->bezeichnung }} @if($item->nummer)<span class="text-gray-400">({{ $item->nummer }})</span>@endif
                         @if($item->pivot->manual)
-                        <span class="ml-2 inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">Manuell</span>
+                        <span class="ml-2 badge badge-blue">Manuell</span>
                         @endif
                     </div>
 

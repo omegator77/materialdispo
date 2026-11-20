@@ -1,20 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Gerätetypen
-            </h2>
-
-            @if(Auth::user()->isUser())
+        <x-page-header title="Gerätetypen">
+            <x-slot name="actions">
+                @if(Auth::user()->isUser())
             <a href="{{ route('geraetetypen.create') }}"
-               class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+               class="btn btn-primary">
                 Neuer Gerätetyp
             </a>
             @endif
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6" x-data="geraetetypSearch()">
+    <div class="page" x-data="geraetetypSearch()">
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded mb-4">
@@ -29,7 +27,7 @@
         @endif
 
         {{-- Suche & Filter --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4 mb-4">
+        <div class="card p-4 mb-4">
             <div class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <div class="w-full sm:w-72">
                     <label for="geraetetypUnitFilter" class="block text-sm font-medium text-gray-700 mb-1">
@@ -61,15 +59,15 @@
         </div>
 
         {{-- Desktop / Tablet --}}
-        <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-100 border-b">
+        <div class="hidden md:block card overflow-hidden">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="text-left px-4 py-3">Bezeichnung</th>
-                        <th class="text-left px-4 py-3">Gruppe</th>
-                        <th class="text-left px-4 py-3">Bemerkung</th>
-                        <th class="text-left px-4 py-3">Geräte</th>
-                        <th class="text-right px-4 py-3">Aktionen</th>
+                        <th>Bezeichnung</th>
+                        <th>Gruppe</th>
+                        <th>Bemerkung</th>
+                        <th>Geräte</th>
+                        <th class="text-right">Aktionen</th>
                     </tr>
                 </thead>
 
@@ -81,20 +79,20 @@
                             <td class="px-4 py-3 font-medium text-gray-900">
                                 {{ $geraetetyp->bezeichnung }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $geraetetyp->unit->bezeichnung ?? '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $geraetetyp->description ?: '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 {{ $geraetetyp->items_count }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 @if(Auth::user()->isUser())
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ route('geraetetypen.edit', $geraetetyp->id) }}"
-                                       class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
+                                       class="btn btn-primary btn-sm">
                                         Bearbeiten
                                     </a>
 
@@ -104,7 +102,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="bg-red-600 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded">
+                                                class="btn btn-danger btn-sm">
                                             Löschen
                                         </button>
                                     </form>
@@ -114,7 +112,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-6 text-gray-500">
+                            <td colspan="5" class="empty-state">
                                 Noch keine Gerätetypen angelegt.
                             </td>
                         </tr>
@@ -130,7 +128,7 @@
         {{-- Handy --}}
         <div class="md:hidden space-y-3">
             @forelse($geraetetypen as $geraetetyp)
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4"
+                <div class="card p-4"
                      data-search="{{ $geraetetyp->bezeichnung }} {{ $geraetetyp->description }}"
                      data-unit-id="{{ $geraetetyp->units_id }}">
                     <div class="font-semibold text-gray-900">
@@ -148,7 +146,7 @@
                     @if(Auth::user()->isUser())
                     <div class="flex gap-2 mt-3">
                         <a href="{{ route('geraetetypen.edit', $geraetetyp->id) }}"
-                           class="flex-1 text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1.5 px-3 rounded">
+                           class="btn btn-primary btn-sm flex-1 text-center">
                             Bearbeiten
                         </a>
                         <form action="{{ route('geraetetypen.destroy', $geraetetyp->id) }}"
@@ -158,7 +156,7 @@
                             @csrf
                             @method('DELETE')
                             <button type="submit"
-                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-1.5 px-3 rounded">
+                                    class="btn btn-danger btn-sm w-full">
                                 Löschen
                             </button>
                         </form>
@@ -166,12 +164,12 @@
                     @endif
                 </div>
             @empty
-                <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-500">
+                <div class="card card-pad text-center text-gray-500">
                     Noch keine Gerätetypen angelegt.
                 </div>
             @endforelse
 
-            <div data-search-empty class="hidden bg-white border border-gray-300 rounded-lg shadow-md p-6 text-center text-gray-500">
+            <div data-search-empty class="hidden card card-pad text-center text-gray-500">
                 Keine Gerätetypen gefunden.
             </div>
         </div>

@@ -108,11 +108,11 @@
                             <td class="py-2">{{ $row['gepackt'] ?? '—' }}</td>
                             <td class="py-2">
                                 @if(is_null($row['erfuellt']))
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">—</span>
+                                <span class="badge badge-gray">—</span>
                                 @elseif($row['erfuellt'])
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">✓ erfüllt</span>
+                                <span class="badge badge-green">✓ erfüllt</span>
                                 @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">⚠ fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>
+                                <span class="badge badge-red">⚠ fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>
                                 @endif
                             </td>
                             <td class="py-2 text-gray-500">{{ $row['notiz'] ?: '—' }}</td>

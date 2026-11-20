@@ -98,14 +98,14 @@
                         &middot; {{ $production->items->filter(fn ($item) => $item->mietvorgaenge->contains('id', $mietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Hinweg: {{ $mietvorgang->transport_type_start ?: 'offen' }}
                             </span>
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Rückweg: {{ $mietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($mietvorgang->notify_supplier)
-                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-blue">
                                 Lieferant wird benachrichtigt
                             </span>
                             @endif
@@ -137,14 +137,14 @@
                         &middot; {{ $production->items->filter(fn ($item) => $item->vermietvorgaenge->contains('id', $vermietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
 
                         <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Hinweg: {{ $vermietvorgang->transport_type_start ?: 'offen' }}
                             </span>
-                            <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-gray">
                                 Rückweg: {{ $vermietvorgang->transport_type_end ?: 'offen' }}
                             </span>
                             @if($vermietvorgang->notify_mieter)
-                            <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+                            <span class="badge badge-blue">
                                 Mieter wird benachrichtigt
                             </span>
                             @endif

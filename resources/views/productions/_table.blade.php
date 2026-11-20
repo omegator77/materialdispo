@@ -1,25 +1,25 @@
 @isset($selectedProduction)
     @if ($selectedProduction)
-        <div class="max-w-7xl w-11/12 mx-auto mt-6">
+        <div class="page">
             <a href="{{ route('productions.index') }}"
-               class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+               class="btn btn-secondary">
                 Alle Produktionen anzeigen
             </a>
         </div>
     @endif
 @endisset
 
-<div class="max-w-7xl w-11/12 mx-auto mt-6">
+<div class="page">
 
     {{-- Desktop / Tablet --}}
-    <div class="hidden md:block bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-100 border-b">
+    <div class="hidden md:block card overflow-hidden">
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <th class="text-left px-4 py-3">Produktion</th>
-                    <th class="text-left px-4 py-3">Beginn</th>
-                    <th class="text-left px-4 py-3">Ende</th>
-                    <th class="text-right px-4 py-3">Aktionen</th>
+                    <th>Produktion</th>
+                    <th>Beginn</th>
+                    <th>Ende</th>
+                    <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
 
@@ -30,37 +30,37 @@
                             ? route('vb-protokoll.show', $production->id)
                             : route('vb-protokoll.create', $production->id);
                     @endphp
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium">
+                    <tr>
+                        <td class="font-medium">
                             <a href="{{ $vbProtokollRoute }}"
                                class="text-gray-900 hover:text-orange-500">
                                 {{ $production->bezeichnung }}
                             </a>
                         </td>
 
-                        <td class="px-4 py-3">
+                        <td>
                             {{ $production->booking_start ? \Carbon\Carbon::parse($production->booking_start)->format('d.m.Y') : '—' }}
                         </td>
 
-                        <td class="px-4 py-3">
+                        <td>
                             {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}
                         </td>
 
-                        <td class="px-4 py-3">
+                        <td>
                             <div class="flex justify-end gap-2">
                                 <a href="{{ $vbProtokollRoute }}"
-                                   class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
+                                   class="btn btn-secondary btn-sm">
                                     VB-Protokoll
                                 </a>
 
                                 @if(Auth::user()->isUser())
                                 <a href="{{ route('productions.show', $production->id) }}"
-                                   class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-1 px-3 rounded">
+                                   class="btn btn-primary btn-sm">
                                     Zuordnen
                                 </a>
 
                                 <a href="{{ route('productions.edit', $production->id) }}"
-                                   class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded">
+                                   class="btn btn-secondary btn-sm">
                                     Bearbeiten
                                 </a>
                                 @endif
@@ -69,7 +69,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center py-6 text-gray-500">
+                        <td colspan="4" class="empty-state">
                             Keine Produktionen gefunden.
                         </td>
                     </tr>
@@ -86,7 +86,7 @@
                     ? route('vb-protokoll.show', $production->id)
                     : route('vb-protokoll.create', $production->id);
             @endphp
-            <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
+            <div class="card p-4">
                 <div>
                     <a href="{{ $vbProtokollRoute }}"
                        class="text-lg font-semibold text-gray-900 hover:text-orange-500">
@@ -102,18 +102,18 @@
 
                 <div class="mt-4 grid grid-cols-1 gap-2">
                     <a href="{{ $vbProtokollRoute }}"
-                       class="text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                       class="btn btn-secondary text-center">
                         VB-Protokoll
                     </a>
 
                     @if(Auth::user()->isUser())
                     <a href="{{ route('productions.show', $production->id) }}"
-                       class="text-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-3 rounded">
+                       class="btn btn-primary text-center">
                         Zuordnen
                     </a>
 
                     <a href="{{ route('productions.edit', $production->id) }}"
-                       class="text-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded">
+                       class="btn btn-secondary text-center">
                         Bearbeiten
                     </a>
                     @endif

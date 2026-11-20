@@ -1,30 +1,30 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Aktivitätsprotokoll</h2>
+        <x-page-header title="Aktivitätsprotokoll"></x-page-header>
     </x-slot>
 
-    <div class="max-w-6xl w-11/12 mx-auto mt-6">
+    <div class="page">
 
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-100 border-b">
+        <div class="card overflow-hidden">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <th class="text-left px-4 py-3">Zeitpunkt</th>
-                        <th class="text-left px-4 py-3">Benutzer</th>
-                        <th class="text-left px-4 py-3">Aktion</th>
-                        <th class="text-left px-4 py-3">Details</th>
+                        <th>Zeitpunkt</th>
+                        <th>Benutzer</th>
+                        <th>Aktion</th>
+                        <th>Details</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($activities as $activity)
-                    <tr class="border-b hover:bg-gray-50 align-top">
+                    <tr class="align-top">
                         <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
                             {{ $activity->created_at->format('d.m.Y H:i') }}
                         </td>
-                        <td class="px-4 py-3 font-medium">
+                        <td class="font-medium">
                             {{ $activity->causer?->name ?? 'System' }}
                         </td>
-                        <td class="px-4 py-3">
+                        <td>
                             @php
                                 $eventBadge = match($activity->event) {
                                     'created'  => ['bg-green-100 text-green-700', 'Angelegt'],
@@ -39,7 +39,7 @@
                                 {{ $eventBadge[1] }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-700">
+                        <td>
                             {{ $activity->description }}
 
                             @if($activity->event === 'updated' && $activity->properties->has('attributes'))
@@ -57,7 +57,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="text-center py-6 text-gray-500">Noch keine Aktivitäten erfasst.</td>
+                        <td colspan="4" class="empty-state">Noch keine Aktivitäten erfasst.</td>
                     </tr>
                     @endforelse
                 </tbody>
