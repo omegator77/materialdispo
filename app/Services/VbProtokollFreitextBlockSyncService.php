@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\VbProtokoll;
+use Illuminate\Support\Facades\DB;
 
 class VbProtokollFreitextBlockSyncService
 {
@@ -12,20 +13,23 @@ class VbProtokollFreitextBlockSyncService
      */
     public function sync(VbProtokoll $vbProtokoll, array $bloecke): void
     {
-        $vbProtokoll->freitextBloecke()->delete();
+        // Atomar: scheitert ein Block, bleiben die bisherigen Blöcke erhalten.
+        DB::transaction(function () use ($vbProtokoll, $bloecke) {
+            $vbProtokoll->freitextBloecke()->delete();
 
-        $sortOrder = 0;
+            $sortOrder = 0;
 
-        foreach ($bloecke as $block) {
-            if (empty($block['ueberschrift']) && empty($block['text'])) {
-                continue;
+            foreach ($bloecke as $block) {
+                if (empty($block['ueberschrift']) && empty($block['text'])) {
+                    continue;
+                }
+
+                $vbProtokoll->freitextBloecke()->create([
+                    'ueberschrift' => $block['ueberschrift'] ?? null,
+                    'text' => $block['text'] ?? null,
+                    'sort_order' => $sortOrder++,
+                ]);
             }
-
-            $vbProtokoll->freitextBloecke()->create([
-                'ueberschrift' => $block['ueberschrift'] ?? null,
-                'text' => $block['text'] ?? null,
-                'sort_order' => $sortOrder++,
-            ]);
-        }
+        });
     }
 }

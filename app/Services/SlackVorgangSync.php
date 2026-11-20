@@ -6,6 +6,8 @@ use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Setting;
 use App\Models\Vermietvorgang;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -172,13 +174,13 @@ class SlackVorgangSync
             return;
         }
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.postMessage', [
+        $response = $this->slackApi($token, 'chat.postMessage', [
             'channel' => $vorgang->slack_channel,
             'thread_ts' => $vorgang->slack_message_ts,
             'text' => $text,
         ]);
 
-        if (! $response->json('ok')) {
+        if ($response && ! $response->json('ok')) {
             Log::warning('Slack-Thread-Reply konnte nicht gesendet werden: '.$response->json('error'));
         }
     }
@@ -208,9 +210,9 @@ class SlackVorgangSync
         }
 
         $label = match (true) {
-            $vorgang instanceof Mietvorgang => 'MIETE — '.($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt'),
-            $vorgang instanceof Vermietvorgang => 'VERMIETUNG — '.($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt'),
-            default => 'PRODUKTION — '.($vorgang->bezeichnung ?? 'unbekannt'),
+            $vorgang instanceof Mietvorgang => 'MIETE — '.self::escape($vorgang->bezeichnung ?? $vorgang->supplier?->bezeichnung ?? 'unbekannt'),
+            $vorgang instanceof Vermietvorgang => 'VERMIETUNG — '.self::escape($vorgang->bezeichnung ?? $vorgang->mieter?->bezeichnung ?? 'unbekannt'),
+            default => 'PRODUKTION — '.self::escape($vorgang->bezeichnung ?? 'unbekannt'),
         };
 
         $url = match (true) {
@@ -221,7 +223,7 @@ class SlackVorgangSync
 
         $text = "✅ {$label} abgeschlossen. <{$url}|Zum Vorgang>";
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.update', [
+        $response = $this->slackApi($token, 'chat.update', [
             'channel' => $vorgang->slack_channel,
             'ts' => $vorgang->slack_message_ts,
             'text' => $text,
@@ -230,8 +232,10 @@ class SlackVorgangSync
             ],
         ]);
 
-        if (! $response->json('ok')) {
-            Log::warning('Slack-Nachricht konnte nicht kompaktiert werden: '.$response->json('error'));
+        if (! $response?->json('ok')) {
+            if ($response) {
+                Log::warning('Slack-Nachricht konnte nicht kompaktiert werden: '.$response->json('error'));
+            }
 
             return;
         }
@@ -250,6 +254,23 @@ class SlackVorgangSync
         $key = $vorgang instanceof Production ? 'slack_production_enabled' : 'slack_reminder_enabled';
 
         return Setting::get($key, '1') === '1';
+    }
+
+    /**
+     * Ruft die Slack-Web-API mit kurzem Timeout auf. Ein Netzwerkfehler oder
+     * Slack-Ausfall wird nur geloggt (null zurück) — die Geschäftsaktion, die
+     * den Sync ausgelöst hat, ist dann längst committed und darf nicht mit
+     * einem 500er enden.
+     */
+    private function slackApi(string $token, string $method, array $payload): ?Response
+    {
+        try {
+            return Http::withToken($token)->timeout(5)->post("https://slack.com/api/{$method}", $payload);
+        } catch (ConnectionException $e) {
+            Log::warning("Slack {$method} nicht erreichbar: ".$e->getMessage());
+
+            return null;
+        }
     }
 
     /** Kommagetrennte, maskierte Liste; "–" wenn leer. */
@@ -358,9 +379,9 @@ class SlackVorgangSync
         $payload = ['channel' => $channel, 'text' => $headline, 'blocks' => $blocks];
 
         if ($vorgang->slack_message_ts) {
-            $response = Http::withToken($token)->post('https://slack.com/api/chat.update', $payload + ['ts' => $vorgang->slack_message_ts]);
+            $response = $this->slackApi($token, 'chat.update', $payload + ['ts' => $vorgang->slack_message_ts]);
 
-            if ($response->json('ok')) {
+            if (! $response || $response->json('ok')) {
                 return;
             }
 
@@ -373,10 +394,12 @@ class SlackVorgangSync
             // Nachricht wurde in Slack manuell gelöscht -> defensiv neu anlegen.
         }
 
-        $response = Http::withToken($token)->post('https://slack.com/api/chat.postMessage', $payload);
+        $response = $this->slackApi($token, 'chat.postMessage', $payload);
 
-        if (! $response->json('ok')) {
-            Log::warning('Slack-Nachricht konnte nicht gepostet werden: '.$response->json('error'));
+        if (! $response?->json('ok')) {
+            if ($response) {
+                Log::warning('Slack-Nachricht konnte nicht gepostet werden: '.$response->json('error'));
+            }
 
             return;
         }

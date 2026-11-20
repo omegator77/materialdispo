@@ -1,12 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
-
-Schedule::command('reminders:send-transport')->everyMinute()->withoutOverlapping();
+// Erinnerungen sind tagesgenau fällig: stündlich genügt (und wiederholt
+// fehlgeschlagene Versuche), nachts (App-Zeitzone) wird nichts verschickt.
+Schedule::command('reminders:send-transport')->hourly()->between('07:00', '19:00')->withoutOverlapping();
 Schedule::command('slack:compact-completed')->hourly()->withoutOverlapping();

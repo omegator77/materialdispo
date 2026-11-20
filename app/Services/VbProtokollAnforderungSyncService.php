@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Geraetetyp;
 use App\Models\VbProtokoll;
+use Illuminate\Support\Facades\DB;
 
 class VbProtokollAnforderungSyncService
 {
@@ -14,19 +15,22 @@ class VbProtokollAnforderungSyncService
      */
     public function sync(VbProtokoll $vbProtokoll, array $anforderungen): void
     {
-        $vbProtokoll->anforderungen()->delete();
+        // Atomar: scheitert eine Zeile, bleiben die bisherigen Anforderungen erhalten.
+        DB::transaction(function () use ($vbProtokoll, $anforderungen) {
+            $vbProtokoll->anforderungen()->delete();
 
-        foreach ($anforderungen as $anforderung) {
-            $mode = $anforderung['mode'] ?? 'typ';
+            foreach ($anforderungen as $anforderung) {
+                $mode = $anforderung['mode'] ?? 'typ';
 
-            if ($mode === 'kamera') {
-                $this->createKamera($vbProtokoll, $anforderung);
+                if ($mode === 'kamera') {
+                    $this->createKamera($vbProtokoll, $anforderung);
 
-                continue;
+                    continue;
+                }
+
+                $this->createTyp($vbProtokoll, $anforderung);
             }
-
-            $this->createTyp($vbProtokoll, $anforderung);
-        }
+        });
     }
 
     private function createKamera(VbProtokoll $vbProtokoll, array $anforderung): void

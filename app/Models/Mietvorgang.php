@@ -237,7 +237,13 @@ class Mietvorgang extends Model
         $now = now();
         $seq = static::whereYear('created_at', $now->year)->whereMonth('created_at', $now->month)->count() + 1;
 
-        return 'M-'.$now->format('ym').sprintf('%02d', $seq);
+        // count()+1 kollidiert nach Löschungen mit einem noch vergebenen Code:
+        // hochzählen, bis kein bestehender Vorgang den Code in der Bezeichnung trägt.
+        do {
+            $code = 'M-'.$now->format('ym').sprintf('%02d', $seq++);
+        } while (static::where('bezeichnung', 'like', '%'.$code)->exists());
+
+        return $code;
     }
 
     /**
