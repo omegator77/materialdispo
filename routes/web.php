@@ -25,6 +25,7 @@ use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VbProtokollController;
+use App\Http\Controllers\VbVorschlagController;
 use App\Http\Controllers\VermietvorgangController;
 use App\Http\Controllers\VorgangQuickAddController;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
     Route::post('productions/{production}/quick-add/preview', [SmartProductionController::class, 'preview'])->name('productions.quickAdd.preview');
     Route::post('productions/{production}/quick-add', [SmartProductionController::class, 'store'])->name('productions.quickAdd');
+    Route::get('productions/{production}/vb-vorschlag', [VbVorschlagController::class, 'show'])->name('productions.vbVorschlag');
+    Route::post('productions/{production}/vb-vorschlag', [VbVorschlagController::class, 'store'])->name('productions.vbVorschlag.apply');
     Route::post('productions/{production}/auto-fill', [SmartProductionController::class, 'autoFill'])->name('productions.autoFill');
     Route::post('productions/{production}/replace-item/{item}', [SmartProductionController::class, 'replaceItem'])->name('productions.replaceItem');
     Route::get('productions/{production}/import-from/{source}', [ProductionController::class, 'importFrom'])->name('productions.importFrom');

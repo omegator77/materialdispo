@@ -89,6 +89,7 @@ dataset('seiten', [
     'Mietvorgang Details' => [fn ($f) => route('mietvorgaenge.show', $f['miet'])],
     'Vermietvorgang Details' => [fn ($f) => route('vermietvorgaenge.show', $f['verm'])],
     'VB-Protokoll Details' => [fn ($f) => route('vb-protokoll.show', $f['production'])],
+    'VB-Vorschlag' => [fn ($f) => route('productions.vbVorschlag', $f['production'])],
     'Packvorgang' => [fn ($f) => route('packvorgang.show', $f['production'])],
     'Produktion aus Vorlage' => [fn ($f) => route('productions.importFrom', [$f['production'], $f['other']])],
     // Übrige
