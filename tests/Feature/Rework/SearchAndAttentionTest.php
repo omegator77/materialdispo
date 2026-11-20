@@ -68,7 +68,8 @@ test('dashboard surfaces conflicts with a one-click swap and open VB needs with 
         ->and($conflict['action']['url'])->toContain('replace-item');
 
     $vbOpen = $findings->firstWhere('kind', 'vb_offen');
-    expect($vbOpen['action']['url'])->toContain('auto-fill');
+    expect($vbOpen['action']['url'])->toBe(route('productions.vbVorschlag', $p1))
+        ->and($vbOpen['action']['method'])->toBe('GET');
 
     $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Handlungsbedarf')->assertSee('Konflikt');
 });

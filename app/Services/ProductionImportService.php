@@ -166,6 +166,12 @@ class ProductionImportService
      */
     private function attach(Production $target, Item $item, ?string $notes, array &$skipped): bool
     {
+        if ($overlap = $this->availability->productionOverlap($item, $target)) {
+            $skipped[] = "{$item->bezeichnung} ({$overlap})";
+
+            return false;
+        }
+
         $check = $this->availability->check($item, $target);
 
         if (! $check['available']) {
@@ -185,6 +191,10 @@ class ProductionImportService
         foreach ([$config->item_id, $config->lens, $config->tripod, $config->tripod_head, $config->large_lens_adapter] as $id) {
             if (! $id || ! ($item = Item::find($id))) {
                 continue;
+            }
+
+            if ($overlap = $this->availability->productionOverlap($item, $target)) {
+                return "{$item->bezeichnung}: {$overlap}";
             }
 
             $check = $this->availability->check($item, $target);

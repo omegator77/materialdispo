@@ -87,6 +87,10 @@ class CameraConfigService
         foreach ($this->slotItemIds($validated) as $itemId) {
             $item = Item::findOrFail($itemId);
 
+            if ($overlap = $this->availability->productionOverlap($item, $production, $ignoreConfig)) {
+                return $item->bezeichnung.': '.$overlap;
+            }
+
             $availability = $this->availability->check($item, $production, $ignoreConfig);
 
             if (! $availability['available']) {

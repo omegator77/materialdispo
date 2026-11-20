@@ -41,6 +41,13 @@ class ProductionAssignmentService
                     continue;
                 }
 
+                // Schon in einem Kamerazug dieser Produktion? Dann nicht zusätzlich einzeln.
+                if ($overlap = $this->availability->productionOverlap($item, $production)) {
+                    $skipped[] = ['item' => $item, 'reason' => $overlap];
+
+                    continue;
+                }
+
                 $check = $this->availability->check($item, $production);
                 if (! $check['available']) {
                     $skipped[] = ['item' => $item, 'reason' => $check['reason']];

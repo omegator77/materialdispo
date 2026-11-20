@@ -1,5 +1,5 @@
 {{-- Schnell-Hinzufügen per Text + intelligente Vorschläge --}}
-{{-- Erwartet: $production, $suggestions, $similarProduction, $openNeeds --}}
+{{-- Erwartet: $production, $suggestions, $similarProduction, $hasVbAnforderungen --}}
 <div id="schnelleingabe" class="card card-pad space-y-4 border-orange-300">
 
     @include('partials._quick-add-box', ['previewUrl' => route('productions.quickAdd.preview', $production), 'storeUrl' => route('productions.quickAdd', $production)])
@@ -19,16 +19,11 @@
     </form>
     @endif
 
-    @if($openNeeds)
-    <form method="POST" action="{{ route('productions.autoFill', $production) }}" class="border-t pt-3">
-        @csrf
-        <p class="text-sm text-gray-700 mb-2">
-            Das VB-Protokoll verlangt noch <strong>{{ array_sum(array_column($openNeeds, 'anzahl')) }}</strong> Position(en) mehr.
-        </p>
-        <button type="submit" class="btn btn-secondary">
-            Offenen Bedarf automatisch zuordnen
-        </button>
-    </form>
+    @if($hasVbAnforderungen)
+    <div class="border-t pt-3">
+        <p class="text-sm text-gray-700 mb-2">Das VB-Protokoll enthält Anforderungen für diese Produktion.</p>
+        <a href="{{ route('productions.vbVorschlag', $production) }}" class="btn btn-secondary">Packliste aus VB-Protokoll vorschlagen</a>
+    </div>
     @endif
 
     @if($suggestions)

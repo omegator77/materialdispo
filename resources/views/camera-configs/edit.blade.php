@@ -26,9 +26,8 @@
                     <label for="camera" class="form-label">Kamera</label>
                     <select name="camera" id="camera" class="form-control w-full p-2" required>
                         @foreach ($cameras as $camera)
-                            <option value="{{ $camera->id }}" @selected(old('camera', $config->item_id) == $camera->id)>
-                                {{ $camera->bezeichnung }} ({{ $camera->nummer }})
-                            </option>
+                            <option value="{{ $camera->id }}" @selected(old('camera', $config->item_id) == $camera->id) @disabled(isset($blocked[$camera->id]))>
+                                {{ $camera->bezeichnung }} ({{ $camera->nummer }}) @if(isset($blocked[$camera->id])) — {{ $blocked[$camera->id] }}@endif</option>
                         @endforeach
                     </select>
                 </div>
@@ -38,9 +37,8 @@
                     <select name="lens" id="lens" class="form-control w-full p-2">
                         <option value="">— kein Objektiv —</option>
                         @foreach ($lenses as $lens)
-                            <option value="{{ $lens->id }}" @selected(old('lens', $config->lens) == $lens->id)>
-                                {{ $lens->bezeichnung }} ({{ $lens->nummer }})
-                            </option>
+                            <option value="{{ $lens->id }}" @selected(old('lens', $config->lens) == $lens->id) @disabled(isset($blocked[$lens->id]))>
+                                {{ $lens->bezeichnung }} ({{ $lens->nummer }}) @if(isset($blocked[$lens->id])) — {{ $blocked[$lens->id] }}@endif</option>
                         @endforeach
                     </select>
                 </div>
@@ -50,9 +48,8 @@
                     <select name="large_lens_adapter" id="large_lens_adapter" class="form-control w-full p-2">
                         <option value="">— kein Adapter —</option>
                         @foreach ($adapters as $adapter)
-                            <option value="{{ $adapter->id }}" @selected(old('large_lens_adapter', $config->large_lens_adapter) == $adapter->id)>
-                                {{ $adapter->bezeichnung }} ({{ $adapter->nummer }})
-                            </option>
+                            <option value="{{ $adapter->id }}" @selected(old('large_lens_adapter', $config->large_lens_adapter) == $adapter->id) @disabled(isset($blocked[$adapter->id]))>
+                                {{ $adapter->bezeichnung }} ({{ $adapter->nummer }}) @if(isset($blocked[$adapter->id])) — {{ $blocked[$adapter->id] }}@endif</option>
                         @endforeach
                     </select>
                 </div>
@@ -62,9 +59,8 @@
                     <select name="tripod" id="tripod" class="form-control w-full p-2">
                         <option value="">— kein Stativ —</option>
                         @foreach ($tripods as $tripod)
-                            <option value="{{ $tripod->id }}" @selected(old('tripod', $config->tripod) == $tripod->id)>
-                                {{ $tripod->bezeichnung }} ({{ $tripod->nummer }})
-                            </option>
+                            <option value="{{ $tripod->id }}" @selected(old('tripod', $config->tripod) == $tripod->id) @disabled(isset($blocked[$tripod->id]))>
+                                {{ $tripod->bezeichnung }} ({{ $tripod->nummer }}) @if(isset($blocked[$tripod->id])) — {{ $blocked[$tripod->id] }}@endif</option>
                         @endforeach
                     </select>
                 </div>
@@ -74,9 +70,8 @@
                     <select name="tripod_head" id="tripod_head" class="form-control w-full p-2">
                         <option value="">— kein Stativkopf —</option>
                         @foreach ($heads as $head)
-                            <option value="{{ $head->id }}" @selected(old('tripod_head', $config->tripod_head) == $head->id)>
-                                {{ $head->bezeichnung }} ({{ $head->nummer }})
-                            </option>
+                            <option value="{{ $head->id }}" @selected(old('tripod_head', $config->tripod_head) == $head->id) @disabled(isset($blocked[$head->id]))>
+                                {{ $head->bezeichnung }} ({{ $head->nummer }}) @if(isset($blocked[$head->id])) — {{ $blocked[$head->id] }}@endif</option>
                         @endforeach
                     </select>
                 </div>
