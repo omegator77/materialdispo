@@ -103,6 +103,17 @@
                 </div>
             </div>
 
+            <!-- Suche / Command-Palette -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-palette'))"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-gray-700"
+                        aria-label="Suche öffnen">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                    <span>Suchen…</span>
+                    <kbd class="text-[10px] text-gray-400 border rounded px-1">Strg K</kbd>
+                </button>
+            </div>
+
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
@@ -160,6 +171,10 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
+            <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-palette'))"
+                    class="block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50">
+                {{ __('Suchen …') }}
+            </button>
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>

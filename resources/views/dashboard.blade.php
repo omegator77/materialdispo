@@ -57,6 +57,10 @@
                 </div>
             </div>
 
+            <x-flash />
+
+            @include('dashboard._attention')
+
             {{-- Kurzanleitung --}}
             {{--
             <details class="bg-white rounded-lg shadow-sm overflow-hidden">

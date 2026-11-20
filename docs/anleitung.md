@@ -64,6 +64,26 @@ Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddat
 3. Ein **VB-Protokoll** (Vorbesprechungsprotokoll) anlegen — dort trägt man Kunde, Ort, Zeitplan, Crew und die benötigten Geräte/Mengen ein. Die App vergleicht automatisch Bedarf mit tatsächlich zugeordnetem/gepacktem Material und zeigt eine rot/gelb/grün-Ampel.
 4. Die Materialliste als **PDF exportieren**.
 
+## Schneller arbeiten: Suche, Schnellerfassung, Massenaktionen
+
+**Suche & Befehle (Strg/⌘ + K oder `/`)** — überall verfügbar. Tippen sucht Geräte (Name, Nummer, auch „ldx 22"), Produktionen, Vermieter, Mieter und Gruppen. Geräte zeigen sofort, ob sie *frei* sind oder wann die nächste Buchung ansteht. Befehle wie „Neue Produktion" oder „Geräte schnell erfassen" finden sich über ihre Stichworte.
+
+**Geräte schnell erfassen** (Geräte → „Mehrere erfassen") — mehrere Geräte in einem Schritt anlegen:
+
+- pro Zeile Gerätetyp + Anzahl **oder** Nummernbereich (`21-23, 30`); ohne Angabe wird ab der nächsten freien Nummer der Gruppe weitergezählt,
+- optional gleich mit Vermieter und Mietzeitraum — alle Geräte einer Zeile landen im selben Mietvorgang,
+- oder einfach Text eintippen: `3x LDX 86N #21-23` / `5 Stativ` → „Zeilen erkennen". Typ und Gruppe werden automatisch (auch bei Tippfehlern) erkannt.
+
+**Massenaktionen in der Geräteliste** — Geräte per Checkbox markieren (Shift-Klick wählt einen Bereich, Kopf-Checkbox alle sichtbaren). Unten erscheint eine Leiste: markierte Geräte in einem Zug einer Produktion, einem Miet-/Vermietvorgang zuordnen oder in eine andere Gruppe verschieben. Nicht verfügbare Geräte werden übersprungen und mit Grund gemeldet.
+
+**Produktion: „Schnell hinzufügen"** — Bedarf als Text eingeben (`3x LDX, 2 Stativ`). Eine Live-Vorschau zeigt, welche konkreten Geräte gewählt werden (Eigentum vor Miete, niedrige Nummer zuerst), was blockiert ist und warum, und welche Alternativen es in der Gruppe gibt.
+
+**Intelligente Hilfen** (regelbasiert, ohne externe KI):
+
+- **Handlungsbedarf** auf dem Dashboard: Doppelbuchungen/Mietfenster-Konflikte mit Ein-Klick-„Tauschen" gegen ein freies Gerät, offene Positionen aus dem VB-Protokoll mit „automatisch zuordnen", leere Produktionen kurz vor Start (mit Vorschlag einer ähnlichen Vorlage), offene Packvorgänge.
+- **Offenen VB-Bedarf automatisch zuordnen** direkt auf der Produktionsseite. Kamerazüge bleiben manuell, da sie eine Konfiguration brauchen.
+- **Wird oft zusammen gebucht**: Vorschläge aus früheren Produktionen mit demselben Material.
+
 ## Packvorgang: Verladen abhaken
 
 Der **Packvorgang** ist die praktische Checkliste beim Einladen des Materials für eine Produktion (erreichbar über den Button auf der Packliste oder Produktionsseite):

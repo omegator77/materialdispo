@@ -8,8 +8,10 @@ use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
+use App\Services\ProductionAssignmentService;
 use App\Services\ProductionImportService;
 use App\Services\SlackVorgangSync;
+use App\Services\SmartAssignmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -22,6 +24,7 @@ class ProductionController extends Controller
         private ItemAvailabilityService $availability,
         private ProductionImportService $imports,
         private SlackVorgangSync $slack,
+        private ProductionAssignmentService $assignment,
     ) {}
 
     public function index(Request $request)
@@ -116,7 +119,15 @@ class ProductionController extends Controller
         $mietvorgaenge = $production->items->pluck('mietvorgaenge')->flatten()->unique('id')->values();
         $vermietvorgaenge = $production->items->pluck('vermietvorgaenge')->flatten()->unique('id')->values();
 
+        $smart = app(SmartAssignmentService::class);
+        $suggestions = $smart->suggestionsFor($production);
+        $openNeeds = $smart->openVbNeeds($production);
+        $similarProduction = $production->packlistEntries()->count() < 3 ? $smart->similarProduction($production) : null;
+
         return view('productions.show', compact(
+            'suggestions',
+            'openNeeds',
+            'similarProduction',
             'production',
             'availableItems',
             'unitFilter',
@@ -189,44 +200,10 @@ class ProductionController extends Controller
                     ->with('error', 'Ein oder mehrere Geräte wurden nicht gefunden.');
             }
 
-            $added = [];
-            $skipped = [];
+            $result = $this->assignment->attachMany($production, $items->values(), $request->notes);
 
-            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped) {
-                foreach ($itemIds as $itemId) {
-                    $item = $items->get($itemId);
-
-                    if ($production->items()->where('items.id', $item->id)->exists()) {
-                        $skipped[] = "{$item->bezeichnung} (bereits enthalten)";
-
-                        continue;
-                    }
-
-                    $availability = $this->availability->check($item, $production);
-
-                    if (! $availability['available']) {
-                        $skipped[] = "{$item->bezeichnung} ({$availability['reason']})";
-
-                        continue;
-                    }
-
-                    $production->items()->syncWithoutDetaching([
-                        $item->id => [
-                            'notes' => $request->notes,
-                        ],
-                    ]);
-
-                    activity('item')
-                        ->performedOn($item)
-                        ->event('attached')
-                        ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
-                        ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
-
-                    $added[] = $item->bezeichnung;
-                }
-            });
-
-            $this->slack->syncProduction($production);
+            $added = array_map(fn ($item) => $item->bezeichnung, $result['added']);
+            $skipped = array_map(fn ($s) => "{$s['item']->bezeichnung} ({$s['reason']})", $result['skipped']);
 
             $messageParts = [];
             if (count($added)) {

@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Vermietvorgang;
+use App\Services\AttentionService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
@@ -19,6 +20,8 @@ class DashboardController extends Controller
         return view('dashboard', [
             'itemsCount' => Item::count(),
             'rentedItemsCount' => Item::whereNotNull('suppliers_id')->count(),
+
+            'attention' => app(AttentionService::class)->findings(),
 
             'lastActivities' => Activity::with('causer')->latest()->limit(5)->get(),
 

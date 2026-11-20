@@ -51,6 +51,12 @@
         </div>
         @endif
 
+        @if(session('warning'))
+        <div class="bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 rounded">
+            {{ session('warning') }}
+        </div>
+        @endif
+
         {{-- Produktionskopf --}}
         <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
             <h1 class="text-2xl font-bold text-gray-900">
@@ -202,7 +208,9 @@
 
             {{-- Links: Material hinzufügen --}}
             @if(Auth::user()->isUser())
-            <div class="lg:col-span-2">
+            <div class="lg:col-span-2 space-y-6">
+                @include('productions._quick-add')
+
                 <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
                     <h2 class="text-lg font-semibold text-gray-800">
                         Material hinzufügen

@@ -24,6 +24,9 @@ use App\Http\Controllers\TestMailController;
 use App\Http\Controllers\SlackInteractionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\DocumentationController;
+use App\Http\Controllers\ItemBulkController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SmartProductionController;
 
 Route::redirect('/', '/login');
 
@@ -42,6 +45,12 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::get('/geraetetypen/{geraetetyp}/edit', [GeraetetypController::class, 'edit'])->name('geraetetypen.edit');
     Route::put('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'update'])->name('geraetetypen.update');
     Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
+    // Schnellerfassung & Massenaktionen — vor dem items-Resource, damit "items/bulk" nicht als {item} gilt.
+    Route::get('/items/bulk', [ItemBulkController::class, 'create'])->name('items.bulk.create');
+    Route::post('/items/bulk', [ItemBulkController::class, 'store'])->name('items.bulk.store');
+    Route::post('/items/bulk/parse', [ItemBulkController::class, 'parse'])->name('items.bulk.parse');
+    Route::get('/items/bulk/suggest-number', [ItemBulkController::class, 'suggestNumber'])->name('items.bulk.suggestNumber');
+    Route::post('/items/bulk-action', [ItemBulkController::class, 'action'])->name('items.bulk.action');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
     Route::resource('/mieter', MieterController::class)->except(['index', 'show']);
@@ -50,6 +59,10 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/productions', ProductionController::class)->except(['index', 'show']);
     Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
+    Route::post('productions/{production}/quick-add/preview', [SmartProductionController::class, 'preview'])->name('productions.quickAdd.preview');
+    Route::post('productions/{production}/quick-add', [SmartProductionController::class, 'store'])->name('productions.quickAdd');
+    Route::post('productions/{production}/auto-fill', [SmartProductionController::class, 'autoFill'])->name('productions.autoFill');
+    Route::post('productions/{production}/replace-item/{item}', [SmartProductionController::class, 'replaceItem'])->name('productions.replaceItem');
     Route::get('productions/{production}/import-from/{source}', [ProductionController::class, 'importFrom'])->name('productions.importFrom');
     Route::post('productions/{production}/import-from/{source}', [ProductionController::class, 'storeImport'])->name('productions.storeImport');
 
@@ -112,6 +125,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/search', SearchController::class)->name('search');
     Route::get('/anleitung', [DocumentationController::class, 'show'])->name('anleitung');
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);

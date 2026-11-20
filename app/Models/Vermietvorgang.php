@@ -203,14 +203,19 @@ class Vermietvorgang extends Model
      */
     public static function findOrCreateFor(int $mieterId, string $rentStart, string $rentEnd): self
     {
-        return static::firstOrCreate(
-            [
-                'mieter_id' => $mieterId,
-                'rent_start' => $rentStart,
-                'rent_end' => $rentEnd,
-            ],
-            ['bezeichnung' => static::suggestBezeichnung($mieterId)]
-        );
+        // whereDate statt exaktem String-Vergleich: das date-Cast speichert auf
+        // SQLite "Y-m-d 00:00:00", der Vergleich mit "Y-m-d" fände den Vorgang sonst nie.
+        $existing = static::where('mieter_id', $mieterId)
+            ->whereDate('rent_start', $rentStart)
+            ->whereDate('rent_end', $rentEnd)
+            ->first();
+
+        return $existing ?? static::create([
+            'mieter_id' => $mieterId,
+            'rent_start' => $rentStart,
+            'rent_end' => $rentEnd,
+            'bezeichnung' => static::suggestBezeichnung($mieterId),
+        ]);
     }
 
     /**

@@ -10,10 +10,14 @@ window.Alpine = Alpine;
 
 Alpine.start();
 
-document.addEventListener('DOMContentLoaded', () => {
-    flatpickr('.datepicker', {
-        locale: German,
-        dateFormat: 'd.m.Y',
-        allowInput: true,
+// Idempotent, damit dynamisch eingefügte Felder (Alpine x-for) nachinitialisiert werden können.
+window.initDatepickers = () => {
+    document.querySelectorAll('.datepicker:not(.flatpickr-input)').forEach((el) => {
+        flatpickr(el, { locale: German, dateFormat: 'd.m.Y', allowInput: true });
     });
-});
+};
+
+document.addEventListener('DOMContentLoaded', window.initDatepickers);
+
+// Felder, die Alpine erst nach dem Laden rendert (z. B. Schnellerfassung).
+new MutationObserver(() => window.initDatepickers()).observe(document.documentElement, { childList: true, subtree: true });

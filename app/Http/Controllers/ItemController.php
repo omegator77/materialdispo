@@ -6,9 +6,11 @@ use App\Http\Requests\ItemRequest;
 use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Mieter;
+use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Models\Vermietvorgang;
 use App\Services\ItemDetailSyncService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -74,7 +76,11 @@ class ItemController extends Controller
             ->orderBy('booking_start')
             ->get();
 
-        return view('items.index', compact('items', 'units', 'productions'));
+        $today = today()->toDateString();
+        $mietvorgaenge = Mietvorgang::with('supplier')->where('rent_end', '>=', $today)->orderBy('rent_start')->get();
+        $vermietvorgaenge = Vermietvorgang::with('mieter')->where('rent_end', '>=', $today)->orderBy('rent_start')->get();
+
+        return view('items.index', compact('items', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge'));
     }
 
     public function create()
