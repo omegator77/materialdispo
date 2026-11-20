@@ -123,6 +123,21 @@ class Production extends Model
      * Kamera-Konfigurationen, dedupliziert nach Gerät. Einzige Quelle der
      * Wahrheit für Abgleich, Packvorgang-Ansicht und Packvorgang-PDF.
      */
+    /**
+     * Stand der vier Produktionsschritte für die Schrittleiste.
+     *
+     * @return array{vb: bool, packliste: int, packed: int, confirmed: bool}
+     */
+    public function stepStatus(): array
+    {
+        return [
+            'vb' => $this->vbProtokoll !== null,
+            'packliste' => $this->packlistEntries()->count(),
+            'packed' => $this->packedItemIds()->count(),
+            'confirmed' => $this->packvorgang_confirmed_at !== null,
+        ];
+    }
+
     public function packlistEntries(): Collection
     {
         $entries = collect();
