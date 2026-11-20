@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Packvorgang {{ $production->bezeichnung }}</title>
+    <title>Packen {{ $production->bezeichnung }}</title>
 
     <style>
         body {
@@ -84,7 +84,7 @@
         };
     @endphp
 
-    <h1>Packvorgang-Checkliste: {{ $production->bezeichnung }}</h1>
+    <h1>Packen-Checkliste: {{ $production->bezeichnung }}</h1>
 
     <div class="meta">
         <strong>Zeitraum:</strong>
