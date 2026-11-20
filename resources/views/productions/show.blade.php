@@ -21,6 +21,13 @@
                 </a>
                 @endif
 
+                @if(Auth::user()->isUser())
+                <a href="{{ route('productions.create', ['from' => $production->id]) }}"
+                    class="btn btn-secondary">
+                    Duplizieren
+                </a>
+                @endif
+
                 <a href="{{ route('productions.pdf', $production->id) }}"
                     class="btn btn-secondary">
                     PDF exportieren
