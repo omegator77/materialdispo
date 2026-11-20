@@ -77,7 +77,7 @@ class VbVorschlagService
 
             $noType = ! $typeId;
             $slots = [];
-            $cameraMissing = false;
+            $noCamera = false;
 
             foreach (self::SLOTS as $slot => [$column, $label]) {
                 $slotTypeId = $line->{$column};
@@ -86,13 +86,13 @@ class VbVorschlagService
                     ? $this->smart->ranked($pool->filter(fn (Item $i) => $i->geraetetyp_id === $slotTypeId && ! in_array($i->id, $taken, true)))
                     : collect();
 
-                // Ohne Kamera gibt es keinen Zug: Zubehör wird dann nicht reserviert.
-                $item = ($slot === 'camera' || ! $cameraMissing) ? $candidates->first() : null;
+                // Ohne Kamera (kein Typ oder keine freie) gibt es keinen Zug: Zubehör wird nicht reserviert.
+                $item = ($slot === 'camera' || ! $noCamera) ? $candidates->first() : null;
                 if ($item) {
                     $taken[] = $item->id;
                 }
                 if ($slot === 'camera') {
-                    $cameraMissing = ! $noType && ! $item;
+                    $noCamera = $noType || ! $item;
                 }
 
                 $slots[$slot] = [
@@ -100,7 +100,7 @@ class VbVorschlagService
                     'typ' => $typ,
                     'item' => $item,
                     'alternatives' => $candidates->reject(fn (Item $i) => $i->id === $item?->id)->values(),
-                    'gap' => (bool) $slotTypeId && ! $item,
+                    'gap' => ! $noType && $slotTypeId && ! $item,
                     'warning' => $item?->suppliers_id ? $this->availability->check($item, $production)['warning'] : null,
                 ];
             }
@@ -108,7 +108,7 @@ class VbVorschlagService
             $rigs[] = [
                 'line_id' => $line->id,
                 'cam_label' => 'Cam '.$next++,
-                'camera_missing' => $cameraMissing,
+                'camera_missing' => ! $noType && $noCamera,
                 'no_type' => $noType,
                 'takeable' => $slots['camera']['item'] !== null,
                 'slots' => $slots,

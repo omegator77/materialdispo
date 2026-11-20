@@ -184,3 +184,33 @@ test('propose() ändert nichts', function () {
 
     expect($count())->toBe($before);
 });
+
+test('ein Zug ohne Kamera-Typ verbraucht kein Objektiv, das der nächste Zug braucht', function () {
+    ($this->mk)($this->camT, '1');
+    $lens = ($this->mk)($this->lensT, '1');
+    ($this->camLine)(['geraetetyp_id' => null, 'tripod_geraetetyp_id' => null]);
+    ($this->camLine)(['cam_number' => '2', 'tripod_geraetetyp_id' => null]);
+
+    $out = ($this->propose)();
+
+    foreach ($out['rigs'][0]['slots'] as $slot) {
+        expect($slot['gap'])->toBeFalse()->and($slot['item'])->toBeNull();
+    }
+    expect($out['rigs'][1]['slots']['lens']['item']->id)->toBe($lens->id)
+        ->and($out['rigs'][1]['slots']['lens']['gap'])->toBeFalse();
+});
+
+test('ein Zug ohne freie Kamera reserviert kein Zubehör', function () {
+    $otherCamT = ($this->typ)('Andere Kamera');
+    ($this->mk)($this->camT, '1');
+    $lens = ($this->mk)($this->lensT, '1');
+    ($this->camLine)(['geraetetyp_id' => $otherCamT->id, 'tripod_geraetetyp_id' => null]);
+    ($this->camLine)(['cam_number' => '2', 'tripod_geraetetyp_id' => null]);
+
+    $out = ($this->propose)();
+
+    expect($out['rigs'][0]['camera_missing'])->toBeTrue()
+        ->and($out['rigs'][0]['slots']['lens']['item'])->toBeNull()
+        ->and($out['rigs'][1]['slots']['lens']['item']->id)->toBe($lens->id)
+        ->and($out['rigs'][1]['slots']['lens']['gap'])->toBeFalse();
+});
