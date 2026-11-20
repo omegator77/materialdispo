@@ -18,46 +18,46 @@
                     <input type="hidden" name="from_production_id" value="{{ $preset->id }}">
                 @else
                     <div class="mb-5" x-data="{
-                        open: false,
                         query: '',
-                        results: [
-                            @foreach($productions as $p)
-                            { id: {{ $p->id }}, bezeichnung: @js($p->bezeichnung), booking_start: @js($p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : null) },
-                            @endforeach
-                        ],
+                        older: [],
+                        visible() {
+                            const q = this.query.trim().toLowerCase();
+                            return [...this.$refs.list.querySelectorAll('[data-name]')]
+                                .filter(el => q === '' || el.dataset.name.includes(q)).length;
+                        },
+                        match(name) { const q = this.query.trim().toLowerCase(); return q === '' || name.includes(q); },
                         search() {
+                            if (this.query.trim().length < 2) { this.older = []; return; }
                             fetch('{{ route('productions.searchTemplates') }}?q=' + encodeURIComponent(this.query))
                                 .then(r => r.json())
-                                .then(data => this.results = data);
-                        },
-                        select(p) {
-                            window.location = '{{ route('productions.create') }}?from=' + p.id;
+                                .then(data => this.older = data);
                         }
                     }">
-                        <label class="form-label">Vorlage (optional)</label>
-                        <div class="relative">
-                            <input type="text" x-model="query"
-                                   @input.debounce.300ms="search()"
-                                   @focus="open = true"
-                                   @click.outside="open = false"
-                                   placeholder="Vorlage suchen (z. B. Produktionsname)..."
-                                   class="form-control w-full text-sm" autocomplete="off">
+                        <label for="template-search" class="form-label">Aus früherer Produktion starten</label>
+                        <input type="text" id="template-search" x-model="query" @input.debounce.300ms="search()"
+                               placeholder="Produktion suchen ..." class="form-control w-full text-sm mb-2" autocomplete="off">
 
-                            <div x-show="open" x-cloak
-                                 class="absolute z-10 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-                                <template x-for="p in results" :key="p.id">
-                                    <button type="button" @click="select(p)"
-                                            class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b last:border-b-0">
-                                        <span x-text="p.bezeichnung"></span>
-                                        <span x-show="p.booking_start" class="text-gray-400" x-text="' (' + p.booking_start + ')'"></span>
-                                    </button>
-                                </template>
-                                <div x-show="results.length === 0" class="px-3 py-2 text-sm text-gray-400">
-                                    Keine Treffer.
-                                </div>
-                            </div>
+                        <div x-ref="list" data-template-list class="max-h-48 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                            @foreach($productions as $p)
+                                <a href="{{ route('productions.create', ['from' => $p->id]) }}"
+                                   data-name="{{ mb_strtolower($p->bezeichnung) }}"
+                                   x-show="match($el.dataset.name)"
+                                   class="flex justify-between gap-3 px-3 py-2 text-sm hover:bg-gray-50">
+                                    <span class="font-medium text-gray-900">{{ $p->bezeichnung }}</span>
+                                    <span class="text-gray-400 whitespace-nowrap">{{ $p->booking_start ? \Carbon\Carbon::parse($p->booking_start)->format('d.m.Y') : '' }}</span>
+                                </a>
+                            @endforeach
+                            <template x-for="p in older" :key="p.id">
+                                <a :href="'{{ route('productions.create') }}?from=' + p.id"
+                                   class="flex justify-between gap-3 px-3 py-2 text-sm hover:bg-gray-50">
+                                    <span class="font-medium text-gray-900" x-text="p.bezeichnung"></span>
+                                    <span class="text-gray-400 whitespace-nowrap" x-text="p.booking_start"></span>
+                                </a>
+                            </template>
+                            <p x-show="query.trim() !== '' && visible() === 0 && older.length === 0" x-cloak class="px-3 py-2 text-sm text-gray-400">Keine Treffer.</p>
+                            <span hidden data-template-list-end></span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Geräte der gewählten Produktion werden nach dem Speichern zur Übernahme angeboten. Es werden zunächst die letzten 25 Produktionen angezeigt — tippe, um ältere zu finden.</p>
+                        <p class="form-hint mt-1">Nach dem Speichern wählst du, welche Geräte übernommen werden. Ohne Auswahl startest du leer.</p>
                     </div>
                 @endif
 
