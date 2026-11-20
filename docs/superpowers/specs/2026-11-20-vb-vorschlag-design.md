@@ -51,8 +51,11 @@ Dass die App ohne Sicht des Anwenders Geräte vergibt. Ein Vorschlag ändert nic
   Reihenfolge der VB-Zeilen) erhalten einen neuen Zug. Name des Zugs: `Cam {n}` mit der
   nächsten freien Nummer (`CameraSetupService::nextCamNumber()`), nicht der VB-Text.
 - Eine Kamerazeile ohne freie Kamera des Typs ergibt keinen Zug, sondern eine markierte Lücke.
-- Übernahme in einer Transaktion unter Geräte-Sperre; jedes Gerät wird erneut geprüft, was
-  nicht mehr geht, wird mit Grund gemeldet statt halb übernommen.
+- Übernahme: Jeder **Kamerazug ganz oder gar nicht** (keine halben Züge; `CameraConfigService::create()`
+  prüft unter Sperre erneut). Die Übernahme insgesamt ist **teilweise**: was nicht mehr geht
+  (Gerät inzwischen vergeben), wird übersprungen und mit Grund gemeldet, der Rest wird
+  übernommen. Danach Rückkehr zur Packliste-Seite mit Meldung (angelegte Züge, zugeordnete
+  Geräte, übersprungene mit Grund).
 
 ## Entwurf
 1. **Service** `VbVorschlagService` mit `propose(Production): array` (Kamerazüge und übriger
@@ -72,6 +75,27 @@ Dass die App ohne Sicht des Anwenders Geräte vergibt. Ein Vorschlag ändert nic
 - **B Vorschlag prüfen, dann übernehmen (gewählt).**
 - **C Kamerazug je VB-Zeile einzeln über das Formular:** verworfen, ein Klick pro Zug und das
   übrige Material bleibt bei der alten Funktion.
+
+## Entscheidungen des Autors (Annahmen, bitte prüfen)
+Aus der Prüfung des Entwurfs; nicht vom Anwender entschieden, jede mit Kosten bei Irrtum.
+- **Eine Kamerazeile = ein Zug.** `anzahl` zählt bei Kamerazeilen nicht (wie in `openVbNeeds()`).
+  Irrtum: es fehlen Züge, die man dann von Hand anlegt.
+- **Zuordnung bestehender Züge zu VB-Zeilen nur nach Kamera-Typ-Anzahl** (siehe Regeln); ein
+  vorhandener Zug gilt als Erfüllung der Zeile, auch wenn sein Zubehör nicht passt, und wird
+  nie angefasst. Irrtum: ein späterer Zug bekommt Zubehör einer anderen Zeile; in der Vorschau
+  sichtbar und tauschbar.
+- **Kein Typ für einen Zubehör-Slot im VB:** Slot bleibt leer, ohne Lückenmarkierung. **Typ
+  verlangt, aber nichts frei:** Lückenmarkierung im Slot, der Zug wird trotzdem vorgeschlagen,
+  sofern eine freie Kamera da ist; mit Haken abwählbar.
+- **Mietgeräte** gehören zum normalen Kandidatenpool (`ranked()`: Eigentum zuerst), ohne
+  Mietvorgang mit Warnung "noch nicht gemietet". "Frei" ist, was
+  `ItemAvailabilityService::assignableItemsFor()` als verfügbar liefert.
+- **Übriger Bedarf:** `openVbNeeds()` unverändert wiederverwenden. Ein Gerät wird im selben
+  Vorschlag nie doppelt vergeben (gemeinsame Liste vergebener Geräte über Züge und Material).
+- **Eingabe der Übernahme:** vom Client kommen Gerät-IDs je Slot, je Zug ein Haken und die
+  gewählten Geräte-IDs des übrigen Materials; der Server leitet die Struktur nicht neu aus dem
+  VB-Protokoll ab (der Anwender darf tauschen), prüft aber jedes Gerät erneut. Zug-Namen
+  (`Cam n`) werden erst bei der Übernahme vergeben; die Vorschau zeigt vorläufige Namen.
 
 ## Vom Bauenden zu klären
 Aufbau der Vorschau im bestehenden Designsystem, Texte, Test-Szenarien (Pest, SQLite und MySQL;
