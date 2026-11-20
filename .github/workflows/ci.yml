@@ -48,9 +48,9 @@ jobs:
   tests-mysql:
     name: Tests (MySQL, wie Produktion)
     runs-on: ubuntu-latest
-    # Noch nicht verifiziert grün (Tests liefen bisher nur auf SQLite). Sobald
-    # dieser Job stabil läuft, "continue-on-error" entfernen und ihn als
-    # Pflicht-Check für Merges nach main eintragen.
+    # Lokal gegen MySQL 8.0 grün (alle Tests). Im CI noch nicht gelaufen: Sobald dieser
+    # Job dort stabil grün ist, "continue-on-error" entfernen und ihn als Pflicht-Check
+    # für Merges nach main eintragen.
     continue-on-error: true
     services:
       mysql:

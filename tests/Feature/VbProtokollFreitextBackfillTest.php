@@ -3,6 +3,7 @@
 use App\Models\Production;
 use App\Models\Unit;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -128,4 +129,12 @@ test('Backfill läuft vor den Drop-Migrationen', function () {
 
     expect($backfill)->not->toBeFalse()
         ->and($backfill)->toBeLessThan($drop);
+});
+
+// Diese Tests ändern das Schema (DDL). MySQL committet dabei die Test-Transaktion implizit:
+// Daten und Schemaänderungen würden in spätere Tests durchsickern. Darum danach neu aufbauen.
+afterEach(function () {
+    if (DB::connection()->getDriverName() !== 'sqlite') {
+        Artisan::call('migrate:fresh', ['--force' => true]);
+    }
 });

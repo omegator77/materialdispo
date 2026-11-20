@@ -29,6 +29,14 @@ return new class extends Migration
 
     public function down(): void
     {
+        // MySQL verwendet den Unique-Index als Index für den Fremdschlüssel
+        // production_id (der ursprüngliche Einzelindex wird beim Anlegen automatisch
+        // entfernt). Ohne Ersatzindex lässt sich der Unique-Index nicht löschen
+        // (Fehler 1553), also zuerst den Einzelindex wieder anlegen.
+        Schema::table('item_production', function (Blueprint $table) {
+            $table->index('production_id');
+        });
+
         Schema::table('item_production', function (Blueprint $table) {
             $table->dropUnique(['production_id', 'item_id']);
         });
