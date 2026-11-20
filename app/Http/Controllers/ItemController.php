@@ -36,6 +36,13 @@ class ItemController extends Controller
             $query->where('units_id', $request->unit_id);
         }
 
+        // Herkunft: Mietmaterial hat einen Vermieter, Eigenes nicht. Unbekannte Werte = alle.
+        match ($request->get('herkunft')) {
+            'gemietet' => $query->whereNotNull('suppliers_id'),
+            'eigen' => $query->whereNull('suppliers_id'),
+            default => null,
+        };
+
         // Standard ohne Auswahl: nach Gruppen-Reihenfolge gruppiert (wie
         // Timeline/Gruppenseite). "group" nutzt die drei Modi custom/asc/desc,
         // die Sachspalten (nummer, bezeichnung) nur auf-/absteigend.
