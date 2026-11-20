@@ -137,7 +137,7 @@
         @endforelse
 
         @if($archivedProductionIds->isNotEmpty())
-        <details class="bg-gray-50 border border-gray-300 rounded-lg shadow-md overflow-hidden">
+        <details class="card overflow-hidden bg-gray-50">
             <summary class="cursor-pointer bg-gray-200 hover:bg-gray-300 px-4 py-4 font-bold text-gray-700">
                 Archiv ({{ $archivedProductionIds->count() }}) – Produktionen, deren Ende mehr als 14 Tage zurückliegt
             </summary>

@@ -60,7 +60,7 @@
                             <td>
                                 @if($m->email)
                                     <a href="mailto:{{ $m->email }}"
-                                       class="text-orange-600 hover:underline">
+                                       class="link">
                                         {{ $m->email }}
                                     </a>
                                 @else
@@ -124,7 +124,7 @@
 
                             @if($m->email)
                                 <a href="mailto:{{ $m->email }}"
-                                   class="text-orange-600 hover:underline">
+                                   class="link">
                                     {{ $m->email }}
                                 </a>
                             @else
@@ -153,7 +153,7 @@
 
             @empty
 
-                <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+                <div class="card card-pad text-center text-gray-500">
                     Noch keine Mieter angelegt.
                 </div>
 

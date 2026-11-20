@@ -2,7 +2,7 @@
 
     {{-- Suche --}}
     <div class="card p-4 mb-4">
-        <label for="unitSearch" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="unitSearch" class="form-label">
             Suche
         </label>
         <input
@@ -152,12 +152,12 @@
                 </div>
             </div>
         @empty
-            <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+            <div class="card card-pad text-center text-gray-500">
                 Noch keine Gruppen angelegt.
             </div>
         @endforelse
 
-        <div data-search-empty class="hidden bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+        <div data-search-empty class="hidden card card-pad text-center text-gray-500">
             Keine Gruppe gefunden.
         </div>
     </div>

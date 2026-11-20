@@ -1,30 +1,28 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                VB-Protokoll: {{ $production->bezeichnung }}
-            </h2>
-
-            <div class="flex gap-2">
+        <x-page-header title="VB-Protokoll: {{ $production->bezeichnung }}">
+            <x-slot name="actions">
+                <div class="flex gap-2">
                 <a href="{{ route('vb-protokoll.pdf', $production->id) }}"
-                    class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     PDF exportieren
                 </a>
                 @if(Auth::user()->isUser())
                 <a href="{{ route('vb-protokoll.edit', $production->id) }}"
-                    class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-primary">
                     Bearbeiten
                 </a>
                 @endif
                 <a href="{{ route('productions.show', $production->id) }}"
-                    class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     Zurück
                 </a>
             </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-4xl w-11/12 mx-auto mt-6 space-y-6">
+    <div class="page">
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
@@ -33,7 +31,7 @@
         @endif
 
         {{-- Kopf --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+        <div class="card card-pad">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                     <span class="block text-gray-500">Kunde</span>
@@ -58,8 +56,8 @@
         </div>
 
         {{-- Crew --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Crew</h2>
+        <div class="card card-pad">
+            <h2 class="card-title mb-4">Crew</h2>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 @php
@@ -81,11 +79,11 @@
 
         {{-- Anforderungen / Soll-Ist-Abgleich --}}
         @if($vbProtokoll->anforderungen->count())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Anforderungen – Abgleich mit Packliste</h2>
+        <div class="card card-pad">
+            <h2 class="card-title mb-4">Anforderungen – Abgleich mit Packliste</h2>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="data-table">
                     <thead>
                         <tr class="border-b text-left text-gray-500">
                             <th class="py-2">Kategorie</th>
@@ -126,7 +124,7 @@
 
         {{-- Freitext-Blöcke --}}
         @if($vbProtokoll->freitextBloecke->count())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-4 text-sm">
+        <div class="card card-pad space-y-4 text-sm">
             @foreach($vbProtokoll->freitextBloecke as $block)
             <div>
                 <span class="block text-gray-500 mb-1">{{ $block->ueberschrift ?: '—' }}</span>
@@ -138,8 +136,8 @@
 
         {{-- Fotos --}}
         @if($vbProtokoll->fotos->count())
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Fotos / Lagepläne</h2>
+        <div class="card card-pad">
+            <h2 class="card-title mb-4">Fotos / Lagepläne</h2>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 @foreach($vbProtokoll->fotos as $foto)
@@ -157,7 +155,7 @@
                   onsubmit="return confirm('VB-Protokoll wirklich löschen?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                <button type="submit" class="btn btn-danger">
                     VB-Protokoll löschen
                 </button>
             </form>

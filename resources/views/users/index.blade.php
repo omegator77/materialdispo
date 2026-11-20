@@ -35,7 +35,7 @@
                         <td class="font-medium">
                             {{ $user->name }}
                             @if($user->id === auth()->id())
-                                <span class="text-xs text-blue-500 ml-1">(du)</span>
+                                <span class="link ml-1 text-xs">(du)</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $user->email }}</td>

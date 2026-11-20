@@ -20,7 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Relative Zeitangaben ("vor 5 Minuten") deutsch, unabhängig von APP_LOCALE.
+        // Die App ist durchgehend deutsch (Texte, Meldungen, Zeitangaben), unabhängig von APP_LOCALE.
+        app()->setLocale('de');
         Carbon::setLocale('de');
     }
 }

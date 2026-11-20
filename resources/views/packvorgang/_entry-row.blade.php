@@ -5,7 +5,7 @@
            x-model="packs[{{ $item->id }}].packed"
            @change="toggle({{ $item->id }}, $event)"
            @if($locked) disabled @endif
-           class="mt-1 h-5 w-5 rounded border-gray-300 text-orange-500 focus:ring-orange-400 disabled:opacity-50 disabled:cursor-not-allowed">
+           class="form-check mt-1 disabled:opacity-50 disabled:cursor-not-allowed">
 
     <div class="min-w-0 flex-1">
         <div class="font-semibold text-gray-900">

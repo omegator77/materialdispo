@@ -44,7 +44,7 @@
             <thead>
                 <tr>
                     @if(Auth::user()->isUser())
-                    <th class="w-8"><input type="checkbox" class="bulk-select-all rounded border-gray-300" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
+                    <th class="w-8"><input type="checkbox" class="bulk-select-all form-check" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
                     @endif
                     <th>
                         <a href="{{ $colLink('group', $nextGroupDir) }}"
@@ -77,7 +77,7 @@
                 @forelse($items as $item)
                 <tr class="border-b hover:bg-gray-50" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
                     @if(Auth::user()->isUser())
-                    <td><input type="checkbox" class="bulk-select rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
+                    <td><input type="checkbox" class="bulk-select form-check" value="{{ $item->id }}" aria-label="Gerät auswählen"></td>
                     @endif
                     <td>{{ $item->unit->bezeichnung ?? '—' }}</td>
                     <td>{{ $item->nummer ?: '—' }}</td>
@@ -102,14 +102,14 @@
     {{-- Mobile --}}
     @if(Auth::user()->isUser())
     <label class="md:hidden flex items-center gap-2 text-sm text-gray-600 mb-2 px-1">
-        <input type="checkbox" class="bulk-select-all rounded border-gray-300 w-5 h-5"> Alle sichtbaren auswählen
+        <input type="checkbox" class="bulk-select-all form-check"> Alle sichtbaren auswählen
     </label>
     @endif
     <div class="md:hidden space-y-3">
         @forelse($items as $item)
         <div class="relative card p-4" data-search="{{ $item->bezeichnung }} {{ $item->nummer }}" data-item-id="{{ $item->id }}">
             @if(Auth::user()->isUser())
-            <input type="checkbox" class="bulk-select absolute top-3 right-3 w-6 h-6 rounded border-gray-300" value="{{ $item->id }}" aria-label="Gerät auswählen">
+            <input type="checkbox" class="bulk-select absolute top-3 right-3 form-check" value="{{ $item->id }}" aria-label="Gerät auswählen">
             @endif
             <a href="{{ route('items.show', $item->id) }}" class="text-lg font-semibold text-gray-900 hover:text-orange-500">
                 {{ $item->bezeichnung }}
@@ -140,11 +140,11 @@
             <div class="mt-4">@include('items.tables._actions')</div>
         </div>
         @empty
-        <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">Keine Geräte gefunden.</div>
+        <div class="card card-pad text-center text-gray-500">Keine Geräte gefunden.</div>
         @endforelse
     </div>
 
-    <div data-search-empty class="hidden mt-4 bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+    <div data-search-empty class="hidden mt-4 card card-pad text-center text-gray-500">
         Keine Geräte gefunden.
     </div>
 

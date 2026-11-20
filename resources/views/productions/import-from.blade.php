@@ -1,11 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Geräte aus Vorlage übernehmen
-        </h2>
+        <x-page-header title="Geräte aus Vorlage übernehmen"></x-page-header>
     </x-slot>
 
-    <div class="max-w-3xl mx-auto mt-6 px-4 pb-12">
+    <div class="page-narrow">
 
         {{-- Info-Banner --}}
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6 text-sm text-blue-800">
@@ -45,7 +43,7 @@
                                 @if($result['available'])
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" name="configs[{{ $config->id }}]" value="import" checked
-                                               class="rounded border-gray-300 text-blue-600">
+                                               class="form-check">
                                         <span class="text-gray-700">Übernehmen</span>
                                     </label>
                                 @else
@@ -84,7 +82,7 @@
                                     {{-- Verfügbar: Checkbox zum Übernehmen --}}
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox"
-                                               class="rounded border-gray-300 text-blue-600 peer"
+                                               class="form-check peer"
                                                onchange="this.nextElementSibling.value = this.checked ? 'keep' : 'skip'"
                                                checked>
                                         <input type="hidden" name="items[{{ $item->id }}][action]" value="keep">
@@ -98,12 +96,12 @@
                                     <div class="text-yellow-700 text-xs font-medium mb-2">{{ $result['reason'] }}</div>
                                     <div class="space-y-1.5" x-data="{ action: 'skip' }">
                                         <label class="flex items-center gap-2 cursor-pointer text-gray-700">
-                                            <input type="radio" name="item_action_{{ $item->id }}" x-model="action" value="skip" class="border-gray-300">
+                                            <input type="radio" name="item_action_{{ $item->id }}" x-model="action" value="skip" class="form-check">
                                             Überspringen
                                         </label>
                                         @if($result['alternatives']->count())
                                         <label class="flex items-center gap-2 cursor-pointer text-gray-700">
-                                            <input type="radio" name="item_action_{{ $item->id }}" x-model="action" value="replace" class="border-gray-300">
+                                            <input type="radio" name="item_action_{{ $item->id }}" x-model="action" value="replace" class="form-check">
                                             Ersetzen durch:
                                         </label>
                                         <select name="items[{{ $item->id }}][replacement_id]"
@@ -133,7 +131,7 @@
             @endif
 
             @if($itemResults->isEmpty() && $configResults->isEmpty())
-            <div class="bg-white border border-gray-200 rounded-lg p-8 text-center text-gray-400">
+            <div class="card p-8 text-center text-gray-400">
                 Die Vorlage enthält keine Geräte.
             </div>
             @endif
@@ -145,7 +143,7 @@
                     Überspringen — direkt zur Produktion
                 </a>
                 <button type="submit"
-                        class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-6 rounded focus:outline-none focus:ring">
+                        class="btn btn-primary focus:outline-none focus:ring">
                     Auswahl übernehmen
                 </button>
             </div>

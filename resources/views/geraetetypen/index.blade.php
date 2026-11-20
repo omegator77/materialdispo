@@ -30,7 +30,7 @@
         <div class="card p-4 mb-4">
             <div class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <div class="w-full sm:w-72">
-                    <label for="geraetetypUnitFilter" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="geraetetypUnitFilter" class="form-label">
                         Gruppe filtern
                     </label>
                     <select id="geraetetypUnitFilter" x-model="unitId" @change="filter()" class="form-control w-full">
@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="w-full sm:flex-1">
-                    <label for="geraetetypSearch" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="geraetetypSearch" class="form-label">
                         Suche
                     </label>
                     <input

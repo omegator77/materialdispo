@@ -1,11 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Neue Gruppe anlegen
-        </h2>
+        <x-page-header title="Neue Gruppe anlegen"></x-page-header>
     </x-slot>
 
-    <div class="max-w-5xl w-11/12 mx-auto mt-6">
+    <div class="page-narrow">
         <form action="{{ route('units.store') }}" method="POST">
             @csrf
 

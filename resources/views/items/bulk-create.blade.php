@@ -1,12 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Geräte schnell erfassen</h2>
-            <a href="{{ route('items.index') }}" class="text-sm text-gray-600 hover:text-gray-900">← Zurück zur Geräteliste</a>
-        </div>
+        <x-page-header title="Geräte schnell erfassen">
+            <x-slot name="actions">
+                <a href="{{ route('items.index') }}" class="text-sm text-gray-600 hover:text-gray-900">← Zurück zur Geräteliste</a>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-4"
+    <div class="page"
          x-data="bulkCreate({
             types: @js($types),
             units: @js($units->map(fn ($u) => ['id' => $u->id, 'bezeichnung' => $u->bezeichnung])->values()),
@@ -24,15 +25,15 @@
         @endif
 
         {{-- Text-Eingabe: eine Zeile pro Position --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-4">
-            <label for="paste" class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="card p-4">
+            <label for="paste" class="form-label">
                 Schnell per Text <span class="font-normal text-gray-400">— eine Position pro Zeile, z. B. <code>3x LDX 86N #21-23</code> oder <code>5 Sachtler</code></span>
             </label>
             <div class="flex flex-col sm:flex-row gap-2">
                 <textarea id="paste" x-model="text" rows="2" class="form-control w-full text-sm" placeholder="3x LDX 86N #21-23&#10;5 Stativ"
                           @keydown.ctrl.enter.prevent="parse()" @keydown.meta.enter.prevent="parse()"></textarea>
                 <button type="button" @click="parse()" :disabled="!text.trim() || busy"
-                        class="bg-gray-800 hover:bg-gray-900 disabled:opacity-40 text-white font-semibold px-4 py-2 rounded text-sm whitespace-nowrap">
+                        class="btn btn-secondary disabled:opacity-40 whitespace-nowrap">
                     Zeilen erkennen
                 </button>
             </div>
@@ -42,9 +43,9 @@
         <form method="POST" action="{{ route('items.bulk.store') }}" class="space-y-4">
             @csrf
 
-            <div class="bg-white border border-gray-300 rounded-lg shadow-md overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-100 border-b text-left">
+            <div class="card overflow-x-auto">
+                <table class="data-table">
+                    <thead>
                         <tr>
                             <th class="px-3 py-3">Gerätetyp</th>
                             <th class="px-3 py-3">Gruppe</th>
@@ -115,7 +116,7 @@
                 <button type="button" @click="add()" class="text-sm text-orange-600 hover:text-orange-700 font-medium self-start">+ Weitere Zeile</button>
                 <div class="flex items-center gap-4">
                     <span class="text-sm text-gray-500"><strong x-text="total()"></strong> Gerät(e) werden angelegt</span>
-                    <button type="submit" :disabled="!total()" class="bg-orange-400 hover:bg-orange-500 disabled:opacity-40 text-white font-semibold py-2 px-6 rounded">
+                    <button type="submit" :disabled="!total()" class="btn btn-primary disabled:opacity-40">
                         Alle anlegen
                     </button>
                 </div>

@@ -1,11 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Einstellungen
-        </h2>
+        <x-page-header title="Einstellungen"></x-page-header>
     </x-slot>
 
-    <div class="max-w-3xl w-11/12 mx-auto mt-6">
+    <div class="page-narrow">
 
         @if(session('success'))
         <div class="mb-4 bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
@@ -13,7 +11,7 @@
         </div>
         @endif
 
-        <form action="{{ route('settings.update') }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
+        <form action="{{ route('settings.update') }}" method="POST" class="card card-pad space-y-6">
             @csrf
             @method('PUT')
 
@@ -28,11 +26,11 @@
             @endif
 
             <section>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Slack</h3>
+                <h3 class="card-title mb-4">Slack</h3>
 
                 <div>
                     <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="slack_reminder_enabled" value="1" @checked(old('slack_reminder_enabled', $settings['slack_reminder_enabled']))>
+                        <input class="form-check" type="checkbox" name="slack_reminder_enabled" value="1" @checked(old('slack_reminder_enabled', $settings['slack_reminder_enabled']))>
                         Slack-Nachrichten für Miet-/Vermietvorgänge senden
                     </label>
 
@@ -49,7 +47,7 @@
 
                 <div class="mt-6 pt-4 border-t border-gray-100">
                     <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="slack_production_enabled" value="1" @checked(old('slack_production_enabled', $settings['slack_production_enabled']))>
+                        <input class="form-check" type="checkbox" name="slack_production_enabled" value="1" @checked(old('slack_production_enabled', $settings['slack_production_enabled']))>
                         Slack-Nachrichten für Produktionen senden
                     </label>
 
@@ -66,14 +64,14 @@
             </section>
 
             <section class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Standard-Vorlaufzeit für Erinnerungen</h3>
+                <h3 class="card-title mb-4">Standard-Vorlaufzeit für Erinnerungen</h3>
                 <p class="text-xs text-gray-500 mb-4">
                     Gilt für alle Miet-/Vermietvorgänge ohne eigene, individuell hinterlegte Vorlaufzeit.
                 </p>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_start" class="form-label">
                             Vor Beginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
@@ -82,7 +80,7 @@
                                value="{{ old('reminder_days_before_start', $settings['reminder_days_before_start']) }}">
                     </div>
                     <div>
-                        <label for="reminder_days_before_end" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_end" class="form-label">
                             Vor Ende (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
@@ -95,7 +93,7 @@
 
             <div class="border-t pt-6 flex justify-end">
                 <button type="submit"
-                        class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                        class="btn btn-primary">
                     Speichern
                 </button>
             </div>

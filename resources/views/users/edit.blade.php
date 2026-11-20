@@ -1,32 +1,32 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Benutzer bearbeiten</h2>
+        <x-page-header title="Benutzer bearbeiten"></x-page-header>
     </x-slot>
 
-    <div class="max-w-lg w-11/12 mx-auto mt-6">
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
+    <div class="page-narrow">
+        <div class="card card-pad">
             <form method="POST" action="{{ route('users.update', $user) }}" class="space-y-4">
                 @csrf
                 @method('PUT')
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label class="form-label">Name</label>
                     <input type="text" name="name" value="{{ old('name', $user->name) }}"
-                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                           class="form-control w-full">
                     @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail</label>
+                    <label class="form-label">E-Mail</label>
                     <input type="email" name="email" value="{{ old('email', $user->email) }}"
-                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                           class="form-control w-full">
                     @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Rolle</label>
+                    <label class="form-label">Rolle</label>
                     <select name="role"
-                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                            class="form-control w-full">
                         <option value="user"   {{ old('role', $user->role) === 'user'   ? 'selected' : '' }}>Benutzer</option>
                         <option value="viewer" {{ old('role', $user->role) === 'viewer' ? 'selected' : '' }}>Betrachter (nur Packliste)</option>
                         <option value="admin"  {{ old('role', $user->role) === 'admin'  ? 'selected' : '' }}>Admin</option>
@@ -35,27 +35,27 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <label class="form-label">
                         Neues Passwort <span class="text-gray-400 font-normal">(leer lassen = unverändert)</span>
                     </label>
                     <input type="password" name="password"
-                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                           class="form-control w-full">
                     @error('password') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Passwort bestätigen</label>
+                    <label class="form-label">Passwort bestätigen</label>
                     <input type="password" name="password_confirmation"
-                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+                           class="form-control w-full">
                 </div>
 
                 <div class="flex gap-3 pt-2">
                     <button type="submit"
-                            class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-5 rounded">
+                            class="btn btn-primary">
                         Speichern
                     </button>
                     <a href="{{ route('users.index') }}"
-                       class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-5 rounded">
+                       class="btn btn-secondary">
                         Abbrechen
                     </a>
                 </div>

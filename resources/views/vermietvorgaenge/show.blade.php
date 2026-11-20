@@ -1,25 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ $vermietvorgang->bezeichnung ?? 'Vermietvorgang: '.($vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht') }}
-            </h2>
-
-            <div class="flex gap-2">
+        <x-page-header title="{{ $vermietvorgang->bezeichnung ?? 'Vermietvorgang: '.($vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht') }}">
+            <x-slot name="actions">
+                <div class="flex gap-2">
                 <a href="{{ route('vermietvorgaenge.pdf', $vermietvorgang) }}"
-                   class="inline-flex justify-center bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                   class="btn btn-secondary">
                     Materialliste (PDF)
                 </a>
 
                 <a href="{{ route('vermietvorgaenge.index') }}"
-                   class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                   class="btn btn-secondary">
                     Zurück
                 </a>
             </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-5xl w-11/12 mx-auto mt-6 space-y-6">
+    <div class="page">
 
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
@@ -33,7 +31,7 @@
         </div>
         @endif
 
-        <form action="{{ route('vermietvorgaenge.update', $vermietvorgang) }}" method="POST" class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
+        <form action="{{ route('vermietvorgaenge.update', $vermietvorgang) }}" method="POST" class="card card-pad space-y-6">
             @csrf
             @method('PUT')
 
@@ -48,12 +46,12 @@
             @endif
 
             <section>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Mieter &amp; Zeitraum</h3>
+                <h3 class="card-title mb-4">Mieter &amp; Zeitraum</h3>
                 <p class="text-xs text-gray-500 mb-4">Änderungen hier werden auf alle zugeordneten Geräte übertragen.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="mieter_id" class="block text-sm font-medium text-gray-700">Mieter</label>
+                        <label for="mieter_id" class="form-label">Mieter</label>
                         <select name="mieter_id" id="mieter_id" class="form-control w-full" required>
                             @foreach($mieter as $m)
                             <option value="{{ $m->id }}" @selected(old('mieter_id', $vermietvorgang->mieter_id) == $m->id)>
@@ -64,14 +62,14 @@
                     </div>
 
                     <div>
-                        <label for="rent_start" class="block text-sm font-medium text-gray-700">Verleihbeginn</label>
+                        <label for="rent_start" class="form-label">Verleihbeginn</label>
                         <input type="text" name="rent_start" id="rent_start"
                                value="{{ old('rent_start', \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y')) }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
                     </div>
 
                     <div>
-                        <label for="rent_end" class="block text-sm font-medium text-gray-700">Verleihende</label>
+                        <label for="rent_end" class="form-label">Verleihende</label>
                         <input type="text" name="rent_end" id="rent_end"
                                value="{{ old('rent_end', \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y')) }}"
                                class="form-control datepicker w-full" placeholder="TT.MM.JJJJ" required>
@@ -79,7 +77,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                    <label for="bezeichnung" class="form-label">Bezeichnung</label>
                     <input type="text" name="bezeichnung" id="bezeichnung"
                            value="{{ old('bezeichnung', $vermietvorgang->bezeichnung) }}"
                            class="form-control w-full">
@@ -87,18 +85,18 @@
             </section>
 
             <details class="border-t pt-6" @if($errors->hasAny(['transport_type_start', 'transport_type_end', 'notify_mieter'])) open @endif>
-                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Transport-Logistik</summary>
+                <summary class="card-title cursor-pointer select-none">Transport-Logistik</summary>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="transport_type_start" class="block text-sm font-medium text-gray-700">
+                        <label for="transport_type_start" class="form-label">
                             Hinweg — wie kommt das Gerät zum Mieter?
                         </label>
                         <input type="text" name="transport_type_start" id="transport_type_start" class="form-control w-full" value="{{ old('transport_type_start', $vermietvorgang->transport_type_start) }}">
                     </div>
 
                     <div>
-                        <label for="transport_type_end" class="block text-sm font-medium text-gray-700">
+                        <label for="transport_type_end" class="form-label">
                             Rückweg — wie kommt es zurück?
                         </label>
                         <input type="text" name="transport_type_end" id="transport_type_end" class="form-control w-full" value="{{ old('transport_type_end', $vermietvorgang->transport_type_end) }}">
@@ -106,17 +104,17 @@
                 </div>
 
                 <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
-                    <input type="checkbox" name="notify_mieter" value="1" @checked(old('notify_mieter', $vermietvorgang->notify_mieter))>
+                    <input class="form-check" type="checkbox" name="notify_mieter" value="1" @checked(old('notify_mieter', $vermietvorgang->notify_mieter))>
                     Mieter automatisch benachrichtigen
                 </label>
             </details>
 
             <details class="border-t pt-6" @if($errors->hasAny(['reminder_days_before_start', 'reminder_days_before_end', 'mailing_list_id'])) open @endif>
-                <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">Erinnerungen</summary>
+                <summary class="card-title cursor-pointer select-none">Erinnerungen</summary>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="reminder_days_before_start" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_start" class="form-label">
                             Erinnerung vor Verleihbeginn (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_start" id="reminder_days_before_start"
@@ -125,7 +123,7 @@
                                value="{{ old('reminder_days_before_start', $vermietvorgang->reminder_days_before_start ?? '') }}">
                     </div>
                     <div>
-                        <label for="reminder_days_before_end" class="block text-sm font-medium text-gray-700">
+                        <label for="reminder_days_before_end" class="form-label">
                             Erinnerung vor Verleihende (Tage)
                         </label>
                         <input type="number" min="0" max="60" name="reminder_days_before_end" id="reminder_days_before_end"
@@ -136,7 +134,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <label for="mailing_list_id" class="block text-sm font-medium text-gray-700">Mailingliste</label>
+                    <label for="mailing_list_id" class="form-label">Mailingliste</label>
                     <select name="mailing_list_id" id="mailing_list_id" class="form-control w-full">
                         <option value="">
                             {{ $defaultMailingList ? '— keine (Standardliste: '.$defaultMailingList->name.') —' : '— keine (keine Standardliste festgelegt) —' }}
@@ -152,15 +150,15 @@
 
             <div class="border-t pt-6 flex justify-end">
                 <button type="submit"
-                        class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                        class="btn btn-primary">
                     Speichern
                 </button>
             </div>
         </form>
 
         {{-- Zugeordnete Geräte --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Zugeordnete Geräte ({{ $vermietvorgang->items->count() }})</h3>
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Zugeordnete Geräte ({{ $vermietvorgang->items->count() }})</h3>
 
             <div class="space-y-2 mb-6">
                 @forelse($vermietvorgang->items as $item)
@@ -201,7 +199,7 @@
                   })">
                 @csrf
 
-                <label for="item_search" class="block text-sm font-medium text-gray-700 mb-1">Geräte hinzufügen</label>
+                <label for="item_search" class="form-label">Geräte hinzufügen</label>
 
                 <template x-for="item in selected" :key="item.id">
                     <input type="hidden" name="item_id[]" :value="item.id">
@@ -243,16 +241,16 @@
 
                 <button type="submit"
                         :disabled="selected.length === 0"
-                        :class="selected.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-500'"
-                        class="mt-4 bg-orange-400 text-white font-semibold py-2 px-4 rounded"
+                        :class="selected.length === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="btn btn-primary mt-4"
                         x-text="selected.length > 1 ? selected.length + ' Geräte hinzufügen' : 'Gerät hinzufügen'">
                 </button>
             </form>
         </div>
 
         {{-- Status: chronologische Reihenfolge Gerichtet -> Übergeben -> Angenommen -> Geprüft --}}
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Status</h3>
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Status</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="border border-gray-200 rounded p-4">
@@ -267,13 +265,13 @@
                         <form action="{{ route('vermietvorgaenge.reopenGerichtet', $vermietvorgang) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                            <button type="submit" class="btn btn-secondary btn-sm w-full text-center">Wieder öffnen</button>
                         </form>
                     @else
                         <p class="text-sm text-gray-500 mb-2">Noch nicht gerichtet.</p>
                         <form action="{{ route('vermietvorgaenge.confirmGerichtet', $vermietvorgang) }}" method="POST">
                             @csrf
-                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                            <button type="submit" class="btn btn-primary btn-sm w-full text-center">
                                 Als gerichtet markieren
                             </button>
                         </form>
@@ -293,13 +291,13 @@
                         <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'start']) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                            <button type="submit" class="btn btn-secondary btn-sm w-full text-center">Wieder öffnen</button>
                         </form>
                     @else
                         <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $startLabel }}.</p>
                         <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'start']) }}" method="POST">
                             @csrf
-                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                            <button type="submit" class="btn btn-primary btn-sm w-full text-center">
                                 Als {{ $startLabel }} markieren
                             </button>
                         </form>
@@ -319,13 +317,13 @@
                         <form action="{{ route('vermietvorgaenge.reopenTransport', [$vermietvorgang, 'end']) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                            <button type="submit" class="btn btn-secondary btn-sm w-full text-center">Wieder öffnen</button>
                         </form>
                     @else
                         <p class="text-sm text-gray-500 mb-2">Noch nicht {{ $endLabel }}.</p>
                         <form action="{{ route('vermietvorgaenge.confirmTransport', [$vermietvorgang, 'end']) }}" method="POST">
                             @csrf
-                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                            <button type="submit" class="btn btn-primary btn-sm w-full text-center">
                                 Als {{ $endLabel }} markieren
                             </button>
                         </form>
@@ -344,13 +342,13 @@
                         <form action="{{ route('vermietvorgaenge.reopenVollstaendigZurueck', $vermietvorgang) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-1.5 px-3 rounded">Wieder öffnen</button>
+                            <button type="submit" class="btn btn-secondary btn-sm w-full text-center">Wieder öffnen</button>
                         </form>
                     @else
                         <p class="text-sm text-gray-500 mb-2">Noch nicht geprüft.</p>
                         <form action="{{ route('vermietvorgaenge.confirmVollstaendigZurueck', $vermietvorgang) }}" method="POST">
                             @csrf
-                            <button type="submit" class="w-full text-center bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold py-1.5 px-3 rounded">
+                            <button type="submit" class="btn btn-primary btn-sm w-full text-center">
                                 Als geprüft markieren
                             </button>
                         </form>

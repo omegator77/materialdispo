@@ -59,7 +59,7 @@
 
             {{-- Kurzanleitung --}}
             {{--
-            <details class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <details class="card overflow-hidden">
                 <summary class="cursor-pointer px-5 py-4 font-semibold text-gray-900 hover:bg-gray-50">
                     📖 Kurzanleitung: Vom Anlegen bis zum Abfahren
                 </summary>
@@ -69,7 +69,7 @@
                         <li>
                             <strong>Produktion anlegen</strong> —
                             @if(Auth::user()->isUser())
-                            <a href="{{ route('productions.create') }}" class="text-orange-600 hover:underline">Produktionen → Neu</a>,
+                            <a href="{{ route('productions.create') }}" class="link">Produktionen → Neu</a>,
                             @else
                             unter "Produktionen → Neu" (Admin/Benutzer),
                             @endif
@@ -82,7 +82,7 @@
                             <strong>Materialzuordnung</strong> — konkrete Geräte und Kamerazüge der Produktion zuweisen. Ein Live-Abgleich zeigt direkt, was vom VB-Protokoll noch fehlt.
                         </li>
                         <li>
-                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="text-orange-600 hover:underline">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
+                            <strong>Packen</strong> — auf der <a href="{{ route('itemprods') }}" class="link">Packliste</a> den Button "Packvorgang" öffnen und jedes Gerät beim Einladen abhaken. Nach dem Abschließen ist die Checkliste gesperrt (Status-Punkt hier im Dashboard wird grün); bei Bedarf über "Wieder öffnen" korrigierbar.
                         </li>
                     </ol>
 

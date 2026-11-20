@@ -60,7 +60,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
             </a>
 
             <a href="{{ route('productions.pdf', $production->id) }}"
-                class="btn btn-danger">
+                class="btn btn-secondary">
                 PDF exportieren
             </a>
 
@@ -93,7 +93,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
         {{-- Kamerazüge --}}
         @if($productionConfigs->count())
         <section>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <h3 class="card-title mb-4">
                 Kamerazüge
             </h3>
 
@@ -142,7 +142,7 @@ $itemsByUnit = $productionItems->groupBy(function ($row) {
         {{-- Weitere Geräte --}}
         @if($itemsByUnit->count())
         <section>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <h3 class="card-title mb-4">
                 Weitere Geräte
             </h3>
 

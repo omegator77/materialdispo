@@ -1,30 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Materialdetails
-                </h2>
-            </div>
-
-            <div class="flex gap-2">
+        <x-page-header title="Materialdetails">
+            <x-slot name="actions">
                 @if(Auth::user()->isUser())
-                <a href="{{ route('items.edit', $item->id) }}"
-                    class="bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
-                    Bearbeiten
-                </a>
+                    <a href="{{ route('items.edit', $item->id) }}" class="btn btn-primary">Bearbeiten</a>
                 @endif
-
-                <a href="{{ route('items.index') }}"
-                    class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
-                    Zurück
-                </a>
-            </div>
-        </div>
+                <a href="{{ route('items.index') }}" class="btn btn-secondary">Zurück</a>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="max-w-5xl w-11/12 mx-auto mt-6">
-        <div class="bg-white border border-gray-300 rounded-lg shadow-md p-6 space-y-6">
+    <div class="page">
+        <div class="card card-pad space-y-6">
 
             <div>
                 <h3 class="text-2xl font-bold text-gray-900">
@@ -97,7 +84,7 @@
                                 <ul class="mt-1 space-y-0.5">
                                     @foreach($item->mietvorgaenge as $mietvorgang)
                                         <li>
-                                            <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="text-orange-600 hover:underline">
+                                            <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}" class="link">
                                                 {{ $mietvorgang->rent_start->format('d.m.Y') }} – {{ $mietvorgang->rent_end->format('d.m.Y') }}
                                                 ({{ $mietvorgang->bezeichnung ?? $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }})
                                             </a>
@@ -133,7 +120,7 @@
                                 <ul class="mt-1 space-y-0.5">
                                     @foreach($item->vermietvorgaenge as $vermietvorgang)
                                         <li>
-                                            <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="text-orange-600 hover:underline">
+                                            <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}" class="link">
                                                 {{ $vermietvorgang->rent_start->format('d.m.Y') }} – {{ $vermietvorgang->rent_end->format('d.m.Y') }}
                                                 ({{ $vermietvorgang->bezeichnung ?? $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }})
                                             </a>
@@ -303,13 +290,13 @@
 
             <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <a href="{{ route('items.index') }}"
-                    class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                    class="btn btn-secondary">
                     Zurück
                 </a>
 
                 @if(Auth::user()->isUser())
                 <a href="{{ route('items.edit', $item->id) }}"
-                    class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                    class="btn btn-primary">
                     Bearbeiten
                 </a>
 
@@ -320,7 +307,7 @@
                     @method('DELETE')
 
                     <button type="submit"
-                        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">
+                        class="btn btn-danger w-full sm:w-auto">
                         Löschen
                     </button>
                 </form>

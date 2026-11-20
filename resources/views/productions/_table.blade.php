@@ -120,7 +120,7 @@
                 </div>
             </div>
         @empty
-            <div class="bg-white border border-gray-300 rounded-lg p-6 text-center text-gray-500">
+            <div class="card card-pad text-center text-gray-500">
                 Keine Produktionen gefunden.
             </div>
         @endforelse

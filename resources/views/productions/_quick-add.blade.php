@@ -1,6 +1,6 @@
 {{-- Schnell-Hinzufügen per Text + intelligente Vorschläge --}}
 {{-- Erwartet: $production, $suggestions, $similarProduction, $openNeeds --}}
-<div class="bg-white border border-orange-300 rounded-lg shadow-md p-6 space-y-4">
+<div class="card card-pad space-y-4 border-orange-300">
 
     @include('partials._quick-add-box', ['previewUrl' => route('productions.quickAdd.preview', $production), 'storeUrl' => route('productions.quickAdd', $production)])
 
@@ -14,7 +14,7 @@
             <select name="geraetetyp_id" class="form-control flex-1 text-sm" aria-label="Kameratyp">
                 @foreach($cameraTypes as $ct)<option value="{{ $ct->id }}">{{ $ct->bezeichnung }}</option>@endforeach
             </select>
-            <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold px-3 rounded">Anlegen</button>
+            <button type="submit" class="btn btn-secondary">Anlegen</button>
         </div>
     </form>
     @endif
@@ -25,7 +25,7 @@
         <p class="text-sm text-gray-700 mb-2">
             Das VB-Protokoll verlangt noch <strong>{{ array_sum(array_column($openNeeds, 'anzahl')) }}</strong> Position(en) mehr.
         </p>
-        <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold py-2 px-4 rounded">
+        <button type="submit" class="btn btn-secondary">
             Offenen Bedarf automatisch zuordnen
         </button>
     </form>
@@ -40,7 +40,7 @@
             <div class="flex flex-wrap gap-2">
                 @foreach($suggestions as $s)
                 <label class="inline-flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-200 rounded-full pl-2 pr-3 py-1 cursor-pointer hover:bg-orange-50">
-                    <input type="checkbox" name="item_id[]" value="{{ $s['item']->id }}" class="rounded border-gray-300" checked>
+                    <input type="checkbox" name="item_id[]" value="{{ $s['item']->id }}" class="form-check" checked>
                     <span>{{ $s['item']->bezeichnung }}{{ $s['item']->nummer ? ' ('.$s['item']->nummer.')' : '' }}</span>
                     <span class="text-gray-400">{{ $s['together'] }}×</span>
                 </label>

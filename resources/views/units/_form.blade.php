@@ -1,4 +1,4 @@
-<div class="bg-white p-6 border border-gray-300 rounded-lg shadow-md space-y-6">
+<div class="card card-pad space-y-6">
 
     @if ($errors->any())
         <div class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded">
@@ -11,13 +11,13 @@
     @endif
 
     <section>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        <h3 class="card-title mb-4">
             Gruppendaten
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="bezeichnung" class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                <label for="bezeichnung" class="form-label">Bezeichnung</label>
                 <input
                     type="text"
                     name="bezeichnung"
@@ -29,7 +29,7 @@
             </div>
 
             <div>
-                <label for="description" class="block text-sm font-medium text-gray-700">Beschreibung</label>
+                <label for="description" class="form-label">Beschreibung</label>
                 <textarea
                     name="description"
                     id="description"
@@ -42,12 +42,12 @@
 
     <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
         <a href="{{ route('units.index') }}"
-           class="inline-flex justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+           class="btn btn-secondary">
             Abbrechen
         </a>
 
         <button type="submit"
-                class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                class="btn btn-primary">
             Speichern
         </button>
     </div>
