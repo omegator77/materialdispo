@@ -190,3 +190,24 @@ test('Alternative im Kamerazug zeigt Mietwarnung in der Option', function () {
 
     $this->actingAs($this->admin)->get($this->url)->assertOk()->assertSee('K-2) (Miete, noch nicht gemietet)', false);
 });
+
+test('Formularelemente der Vorschau tragen die Projekt-Klassen', function () {
+    ($this->mk)($this->camT, 'K-1');
+    ($this->mk)($this->tripT, 'S-1');
+    $kabelT = ($this->typ)('Kabelrolle');
+    ($this->mk)($kabelT, 'KR-1');
+    ($this->camLine)();
+    $this->vb->anforderungen()->create(['geraetetyp_id' => $kabelT->id, 'anzahl' => 1]);
+
+    $html = $this->actingAs($this->admin)->get($this->url)->assertOk()->getContent();
+
+    preg_match_all('/<select\b[^>]*>/', $html, $selects);
+    preg_match_all('/<input\b[^>]*type="checkbox"[^>]*>/', $html, $boxes);
+    expect($selects[0])->not->toBeEmpty()->and($boxes[0])->not->toBeEmpty();
+    foreach ($selects[0] as $tag) {
+        expect($tag)->toContain('form-control');
+    }
+    foreach ($boxes[0] as $tag) {
+        expect($tag)->toContain('form-check');
+    }
+});

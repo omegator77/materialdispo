@@ -62,7 +62,8 @@ Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddat
 1. **Material hinzufügen** — über die Suche einzelne Geräte zuordnen. Bei Kameras kann man statt „Standard hinzufügen" auch **„Konfigurieren"** wählen, um einen kompletten Kamerazug (Kamera + Objektiv + Stativ + Kopf + Adapter) zusammenzustellen.
 2. Verknüpfte Miet-/Vermietvorgänge einsehen (Link „Bearbeiten →").
 3. Ein **VB-Protokoll** (Vorbesprechungsprotokoll) anlegen — dort trägt man Kunde, Ort, Zeitplan, Crew und die benötigten Geräte/Mengen ein. Die App vergleicht automatisch Bedarf mit tatsächlich zugeordnetem/gepacktem Material und zeigt eine rot/gelb/grün-Ampel.
-4. Die Materialliste als **PDF exportieren**.
+4. Die Packliste aus dem VB-Protokoll **vorschlagen** lassen: „Packliste aus VB-Protokoll vorschlagen" zeigt eine Vorschau mit Kamerazügen und Material, die man prüfen, anpassen und mit „Übernehmen" zur Produktion hinzufügen kann.
+5. Die Materialliste als **PDF exportieren**.
 
 Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protokoll · Packliste · Packen) den Stand der Produktion und führt mit einem Klick zum jeweiligen Schritt.
 
@@ -88,7 +89,7 @@ Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protok
 
 **Intelligente Hilfen** (regelbasiert, ohne externe KI):
 
-- **Handlungsbedarf** auf dem Dashboard: Doppelbuchungen/Mietfenster-Konflikte mit Ein-Klick-„Tauschen" gegen ein freies Gerät, offene Positionen aus dem VB-Protokoll mit Link zur Vorschau „Packliste vorschlagen", leere Produktionen kurz vor Start (mit Vorschlag einer ähnlichen Vorlage), offene Packvorgänge.
+- **Handlungsbedarf** auf dem Dashboard: Doppelbuchungen/Mietfenster-Konflikte mit Ein-Klick-„Tauschen" gegen ein freies Gerät, offene Positionen aus dem VB-Protokoll (der Link zur Vorschau „Packliste vorschlagen" erscheint, sobald offener Bedarf besteht), leere Produktionen kurz vor Start (mit Vorschlag einer ähnlichen Vorlage), offene Packvorgänge.
 - **Packliste aus VB-Protokoll vorschlagen** auf der Produktionsseite (Schnelleingabe, leere Produktion) und im VB-Protokoll: zeigt eine Vorschau mit Kamerazügen und Material zum Übernehmen, sobald das VB-Protokoll Anforderungen enthält.
 - **Wird oft zusammen gebucht**: Vorschläge aus früheren Produktionen mit demselben Material.
 
@@ -169,7 +170,7 @@ Admins verwalten unter **Verwaltung → Benutzer** die Konten und Rollen der Nut
 ## Typischer Ablauf in Kurzform
 
 1. Produktion anlegen → Packliste erstellen (ggf. Kamerazüge konfigurieren)
-2. Bei Bedarf VB-Protokoll ausfüllen (Bedarf festhalten)
+2. Bei Bedarf VB-Protokoll ausfüllen (Bedarf festhalten) und daraus die Packliste vorschlagen, prüfen und übernehmen
 3. Vor dem Dreh: Packen durchgehen und abschließen
 4. Fehlt Equipment, das erst angemietet werden muss: Mietvorgang anlegen, Status-Schritte abhaken
 5. Verleiht man selbst Geräte: Vermietvorgang anlegen, Status-Schritte abhaken
