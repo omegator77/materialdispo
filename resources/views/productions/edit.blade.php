@@ -4,6 +4,8 @@
     </x-slot>
 
     <div class="page-narrow">
+        <x-production-steps :production="$production" active="details" />
+
         <div class="card card-pad">
             <form action="{{ route('productions.update', $production->id) }}" method="POST">
                 @csrf

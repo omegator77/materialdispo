@@ -11,6 +11,8 @@
     </x-slot>
 
     <div class="page">
+        <x-production-steps :production="$production" active="vb" />
+
         @if($templates->isNotEmpty())
         <div class="card p-4 border-orange-300">
             <h3 class="text-sm font-semibold text-gray-800">Aus früherer Produktion übernehmen</h3>

@@ -29,13 +29,16 @@
                         $vbProtokollRoute = $production->vbProtokoll
                             ? route('vb-protokoll.show', $production->id)
                             : route('vb-protokoll.create', $production->id);
+                        $step = $production->stepStatus();
+                        $nameRoute = ($production->vbProtokoll || Auth::user()->isUser()) ? $vbProtokollRoute : route('productions.show', $production->id);
                     @endphp
                     <tr>
                         <td class="font-medium">
-                            <a href="{{ $vbProtokollRoute }}"
+                            <a href="{{ $nameRoute }}"
                                class="text-gray-900 hover:text-orange-500">
                                 {{ $production->bezeichnung }}
                             </a>
+                            <span class="badge {{ $step['confirmed'] ? 'badge-green' : 'badge-gray' }}">{{ $step['confirmed'] ? 'abgeschlossen' : 'gepackt '.$step['packed'].'/'.$step['packliste'] }}</span>
                         </td>
 
                         <td>
@@ -48,17 +51,24 @@
 
                         <td>
                             <div class="flex justify-end gap-2">
+                                @if($production->vbProtokoll || Auth::user()->isUser())
                                 <a href="{{ $vbProtokollRoute }}"
                                    class="btn btn-secondary btn-sm">
                                     VB-Protokoll
                                 </a>
+                                @endif
 
-                                @if(Auth::user()->isUser())
                                 <a href="{{ route('productions.show', $production->id) }}"
                                    class="btn btn-primary btn-sm">
-                                    Zuordnen
+                                    Packliste
                                 </a>
 
+                                <a href="{{ route('packvorgang.show', $production->id) }}"
+                                   class="btn btn-secondary btn-sm">
+                                    Packen
+                                </a>
+
+                                @if(Auth::user()->isUser())
                                 <a href="{{ route('productions.edit', $production->id) }}"
                                    class="btn btn-secondary btn-sm">
                                     Bearbeiten
@@ -90,10 +100,12 @@
                 $vbProtokollRoute = $production->vbProtokoll
                     ? route('vb-protokoll.show', $production->id)
                     : route('vb-protokoll.create', $production->id);
+                $step = $production->stepStatus();
+                $nameRoute = ($production->vbProtokoll || Auth::user()->isUser()) ? $vbProtokollRoute : route('productions.show', $production->id);
             @endphp
             <div class="card p-4">
                 <div>
-                    <a href="{{ $vbProtokollRoute }}"
+                    <a href="{{ $nameRoute }}"
                        class="text-lg font-semibold text-gray-900 hover:text-orange-500">
                         {{ $production->bezeichnung }}
                     </a>
@@ -103,20 +115,28 @@
                         –
                         {{ $production->booking_end ? \Carbon\Carbon::parse($production->booking_end)->format('d.m.Y') : '—' }}
                     </p>
+                    <p class="mt-2"><span class="badge {{ $step['confirmed'] ? 'badge-green' : 'badge-gray' }}">{{ $step['confirmed'] ? 'abgeschlossen' : 'gepackt '.$step['packed'].'/'.$step['packliste'] }}</span></p>
                 </div>
 
                 <div class="mt-4 grid grid-cols-1 gap-2">
+                    @if($production->vbProtokoll || Auth::user()->isUser())
                     <a href="{{ $vbProtokollRoute }}"
                        class="btn btn-secondary text-center">
                         VB-Protokoll
                     </a>
+                    @endif
 
-                    @if(Auth::user()->isUser())
                     <a href="{{ route('productions.show', $production->id) }}"
                        class="btn btn-primary text-center">
-                        Zuordnen
+                        Packliste
                     </a>
 
+                    <a href="{{ route('packvorgang.show', $production->id) }}"
+                       class="btn btn-secondary text-center">
+                        Packen
+                    </a>
+
+                    @if(Auth::user()->isUser())
                     <a href="{{ route('productions.edit', $production->id) }}"
                        class="btn btn-secondary text-center">
                         Bearbeiten

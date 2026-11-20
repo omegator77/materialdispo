@@ -241,7 +241,7 @@ class DashboardController extends Controller
             ->map(function (Production $p) {
                 $checks = [
                     [
-                        'label' => 'Packvorgang abgeschlossen',
+                        'label' => 'Packen abgeschlossen',
                         'done' => $p->packvorgang_confirmed_at !== null,
                         'confirmRoute' => route('packvorgang.complete', $p),
                         'reopenRoute' => route('packvorgang.reopen', $p),

@@ -15,6 +15,20 @@ class Production extends Model
         HasReadableActivityDescription::getDescriptionForEvent insteadof LogsActivity;
     }
 
+    /**
+     * Relationen, die stepStatus() für die Listenansichten braucht.
+     */
+    public const LIST_RELATIONS = [
+        'items',
+        'cameraConfigs.item',
+        'cameraConfigs.lensItem',
+        'cameraConfigs.tripodItem',
+        'cameraConfigs.headItem',
+        'cameraConfigs.adapterItem',
+        'itemPacks',
+        'vbProtokoll',
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -116,6 +130,21 @@ class Production extends Model
         return $offen > 0
             ? ['level' => 'rot', 'label' => "Zuordnung unvollständig ({$offen} offen)"]
             : ['level' => 'gruen', 'label' => 'Zuordnung vollständig'];
+    }
+
+    /**
+     * Stand der vier Produktionsschritte für die Schrittleiste.
+     *
+     * @return array{vb: bool, packliste: int, packed: int, confirmed: bool}
+     */
+    public function stepStatus(): array
+    {
+        return [
+            'vb' => $this->vbProtokoll !== null,
+            'packliste' => $this->packlistEntries()->count(),
+            'packed' => $this->packedItemIds()->count(),
+            'confirmed' => $this->packvorgang_confirmed_at !== null,
+        ];
     }
 
     /**

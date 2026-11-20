@@ -22,7 +22,7 @@
                     </x-nav-link>
 
                     <x-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
-                        {{ __('Packliste') }}
+                        {{ __('Packen') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('timeline.items')" :active="request()->routeIs('timeline.items')">
@@ -188,7 +188,7 @@
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('itemprods')" :active="request()->routeIs('itemprods')">
-                {{ __('Packliste') }}
+                {{ __('Packen') }}
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('timeline.items')" :active="request()->routeIs('timeline.items')">

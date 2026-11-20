@@ -11,6 +11,8 @@
     </x-slot>
 
     <div class="page">
+        <x-production-steps :production="$production" active="vb" />
+
         @include('vb-protokoll._form')
     </div>
 </x-app-layout>

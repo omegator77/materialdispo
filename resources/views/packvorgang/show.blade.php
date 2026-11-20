@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Packvorgang: {{ $production->bezeichnung }}">
+        <x-page-header title="Packen: {{ $production->bezeichnung }}">
             <x-slot name="actions">
                 <div class="flex gap-2">
                 <a href="{{ route('packvorgang.pdf', $production->id) }}"
@@ -38,6 +38,7 @@
             toggleUrlBase: "{{ url('productions/'.$production->id.'/packvorgang/toggle') }}",
             locked: @json($checklistLocked)
          })'>
+        <x-production-steps :production="$production" active="packen" />
 
         <x-flash />
 
@@ -49,7 +50,7 @@
 
         @if($locked)
         <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded">
-            🔒 Packvorgang ist abgeschlossen — die Checkliste ist gesperrt. Zum Ändern erst unten "Wieder öffnen".
+            🔒 Packen ist abgeschlossen — die Checkliste ist gesperrt. Zum Ändern erst unten "Wieder öffnen".
         </div>
         @endif
 
@@ -121,7 +122,7 @@
             @if($production->packvorgang_confirmed_at)
             @php $incomplete = $production->packedItemIds()->count() < $entries->count(); @endphp
             <div class="bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded mb-4">
-                Packvorgang abgeschlossen am {{ $production->packvorgang_confirmed_at->format('d.m.Y H:i') }}
+                Packen abgeschlossen am {{ $production->packvorgang_confirmed_at->format('d.m.Y H:i') }}
                 von {{ $production->packvorgangConfirmedBy?->name ?? '—' }}.
                 @if($incomplete)
                 <span class="text-yellow-500" title="Abgeschlossen trotz fehlender Geräte">⚠ trotz fehlender Geräte</span>
@@ -155,7 +156,7 @@
                             :disabled="packedCount < total && !confirmIncomplete"
                             :class="(packedCount < total && !confirmIncomplete) ? 'opacity-50 cursor-not-allowed' : ''"
                             class="btn btn-primary">
-                        Packvorgang abschließen
+                        Packen abschließen
                     </button>
                 </form>
             </div>
@@ -200,7 +201,7 @@
                             if (event?.target) {
                                 event.target.checked = previous.packed;
                             }
-                            alert('Packvorgang ist abgeschlossen und gesperrt. Bitte erst "Wieder öffnen".');
+                            alert('Packen ist abgeschlossen und gesperrt. Bitte erst "Wieder öffnen".');
                             return;
                         }
 

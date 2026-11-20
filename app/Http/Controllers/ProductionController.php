@@ -36,9 +36,9 @@ class ProductionController extends Controller
         $selectedProduction = $request->get('production_id');
 
         if ($selectedProduction) {
-            $productions = Production::with('vbProtokoll')->where('id', $selectedProduction)->get();
+            $productions = Production::with(Production::LIST_RELATIONS)->where('id', $selectedProduction)->get();
         } else {
-            $productions = Production::with('vbProtokoll')->orderBy('bezeichnung')->get();
+            $productions = Production::with(Production::LIST_RELATIONS)->orderBy('bezeichnung')->get();
         }
 
         return view('productions.index', [
@@ -50,7 +50,7 @@ class ProductionController extends Controller
 
     public function create(Request $request)
     {
-        $productions = Production::orderBy('booking_start', 'desc')->limit(25)->get();
+        $productions = Production::with(Production::LIST_RELATIONS)->orderBy('booking_start', 'desc')->limit(25)->get();
         $preset = $request->filled('from') ? Production::find($request->from) : null;
 
         return view('productions.create', compact('productions', 'preset'));
@@ -148,7 +148,7 @@ class ProductionController extends Controller
 
     public function edit(Production $production)
     {
-        $productions = Production::all();
+        $productions = Production::with(Production::LIST_RELATIONS)->get();
 
         return view('productions.edit', compact('production', 'productions'));
     }

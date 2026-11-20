@@ -50,7 +50,7 @@ class PackvorgangController extends Controller
     {
         if ($production->packvorgang_confirmed_at) {
             return response()->json([
-                'error' => 'Packvorgang ist abgeschlossen und gesperrt.',
+                'error' => 'Packen ist abgeschlossen und gesperrt.',
             ], 423);
         }
 
@@ -114,7 +114,7 @@ class PackvorgangController extends Controller
 
         return redirect()
             ->route('packvorgang.show', $production)
-            ->with('success', 'Packvorgang als abgeschlossen markiert.');
+            ->with('success', 'Packen abgeschlossen.');
     }
 
     public function reopen(Production $production)
@@ -128,7 +128,7 @@ class PackvorgangController extends Controller
 
         return redirect()
             ->route('packvorgang.show', $production)
-            ->with('success', 'Packvorgang wieder geöffnet.');
+            ->with('success', 'Packen wieder geöffnet.');
     }
 
     public function pdf(Production $production)
