@@ -131,3 +131,27 @@ test('Slack wird nicht synchronisiert, wenn nichts übernommen wurde', function 
 
     expect($out['created'])->toBeEmpty()->and($out['attached'])->toBeEmpty();
 });
+
+test('übersprungener Zug nennt die gewählte Kamera', function () {
+    $c1 = ($this->mk)($this->camT, 'K-1');
+    $c2 = ($this->mk)($this->camT, 'K-2');
+    $l2 = ($this->mk)($this->lensT, 'O-2');
+    $this->mock(SlackVorgangSync::class)->shouldReceive('syncProduction');
+
+    $out = ($this->apply)(['rigs' => [($this->rig)($c1, $l2), ($this->rig)($c2, $l2)], 'items' => []]);
+
+    expect($out['created'])->toHaveCount(1)
+        ->and($out['skipped'])->toHaveCount(1)
+        ->and($out['skipped'][0])->toStartWith('Kamerazug mit LDX (K-2): ');
+});
+
+test('doppelt gewähltes Gerät wird einmal übernommen und gemeldet', function () {
+    $e1 = ($this->mk)(($this->typ)('Kabel'), '1');
+    $this->mock(SlackVorgangSync::class)->shouldReceive('syncProduction');
+
+    $out = ($this->apply)(['rigs' => [], 'items' => [$e1->id, $e1->id]]);
+
+    expect($out['attached'])->toHaveCount(1)
+        ->and(collect($out['skipped'])->filter(fn ($s) => str_contains($s, 'doppelt ausgewählt')))->toHaveCount(1)
+        ->and($out['skipped'][0])->toContain('Kabel');
+});

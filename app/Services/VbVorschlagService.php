@@ -91,13 +91,24 @@ class VbVorschlagService
                 $created[] = $result['config'];
                 $next++;
             } else {
-                $skipped[] = 'Kamerazug: '.$result['error'];
+                $camera = Item::find((int) $rig['camera']);
+                $name = $camera ? $camera->bezeichnung.($camera->nummer ? ' ('.$camera->nummer.')' : '') : 'Kamera #'.$rig['camera'];
+                $skipped[] = 'Kamerazug mit '.$name.': '.$result['error'];
             }
         }
 
         $attached = [];
-        $ids = collect($auswahl['items'] ?? [])->filter()->unique()->values();
+        $picked = collect($auswahl['items'] ?? [])->filter()->map(fn ($id) => (int) $id)->values();
+        $ids = $picked->unique()->values();
         if ($ids->isNotEmpty()) {
+            $duplicates = $picked->countBy()->map(fn (int $n) => $n - 1)->filter();
+            $names = Item::whereIn('id', $duplicates->keys())->get()->keyBy('id');
+            foreach ($duplicates as $id => $extra) {
+                for ($n = 0; $n < $extra; $n++) {
+                    $skipped[] = ($names[$id]->bezeichnung ?? 'Gerät #'.$id).': doppelt ausgewählt';
+                }
+            }
+
             $result = $this->assignments->attachMany($production, Item::whereIn('id', $ids)->get(), notifySlack: false);
             $attached = $result['added'];
             foreach ($result['skipped'] as $row) {

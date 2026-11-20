@@ -137,3 +137,14 @@ test('Produktionsnamen mit Sonderzeichen sind maskiert', function () {
         ->assertSee('Müller &amp; &lt;b&gt;Co&lt;/b&gt;', false)
         ->assertDontSee('<b>Co</b>', false);
 });
+
+test('POST mit doppelt gewähltem Gerät meldet doppelt ausgewählt', function () {
+    $e = ($this->mk)(($this->typ)('Kabel'), 'KA-1');
+    $this->mock(SlackVorgangSync::class)->shouldReceive('syncProduction');
+
+    $this->actingAs($this->admin)->post($this->url, ['items' => [$e->id, $e->id]])
+        ->assertRedirect(route('productions.show', $this->prod))
+        ->assertSessionHas('warning', fn ($w) => str_contains($w, 'doppelt ausgewählt'));
+
+    expect(DB::table('item_production')->where('production_id', $this->prod->id)->count())->toBe(1);
+});
