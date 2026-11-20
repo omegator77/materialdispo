@@ -8,17 +8,25 @@ use App\Models\User;
 
 function rigSetup(): array
 {
-    $unit = Unit::create(['bezeichnung' => 'Kameras']);
+    // Das Formular listet Geräte nach festen Gruppen-IDs (1 Kameras, 2 Objektive, 3 Stative).
+    // Unter MySQL setzt der Test-Rollback AUTO_INCREMENT nicht zurück, daher IDs explizit.
+    $cams = (new Unit(['bezeichnung' => 'Kameras']))->forceFill(['id' => 1]);
+    $cams->save();
+    $lenses = (new Unit(['bezeichnung' => 'Objektive']))->forceFill(['id' => 2]);
+    $lenses->save();
+    $tripods = (new Unit(['bezeichnung' => 'Stative']))->forceFill(['id' => 3]);
+    $tripods->save();
+
     $production = Production::create([
         'bezeichnung' => 'Testproduktion', 'booking_start' => '2026-08-01', 'booking_end' => '2026-08-05',
     ]);
-    $mk = fn (string $n) => Item::create(['units_id' => $unit->id, 'bezeichnung' => $n]);
+    $mk = fn (Unit $u, string $n) => Item::create(['units_id' => $u->id, 'bezeichnung' => $n]);
 
     return [
         'admin' => User::factory()->create(['role' => 'admin']),
         'production' => $production,
-        'camA' => $mk('Kamera A'), 'camB' => $mk('Kamera B'),
-        'tripod' => $mk('Stativ 1'), 'lens' => $mk('Objektiv 1'),
+        'camA' => $mk($cams, 'Kamera A'), 'camB' => $mk($cams, 'Kamera B'),
+        'tripod' => $mk($tripods, 'Stativ 1'), 'lens' => $mk($lenses, 'Objektiv 1'),
     ];
 }
 
