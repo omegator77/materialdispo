@@ -90,11 +90,11 @@
         </div>
 
 
-        {{-- Leer-Zustand: neue Produktion ohne Material zeigt die drei schnellen Wege --}}
+        {{-- Leer-Zustand: neue Produktion ohne Material zeigt die schnellen Wege --}}
         @if(Auth::user()->isUser() && $production->items->isEmpty() && $production->cameraConfigs->isEmpty())
         <div data-empty-state class="card card-pad border-orange-300">
             <h2 class="card-title">Noch kein Material – so geht es am schnellsten</h2>
-            <div class="mt-3 grid grid-cols-1 gap-3 text-sm {{ $similarProduction ? 'sm:grid-cols-3' : 'sm:grid-cols-2' }}">
+            <div class="mt-3 grid grid-cols-1 gap-3 text-sm {{ $similarProduction && $hasVbAnforderungen ? 'sm:grid-cols-4' : ($similarProduction || $hasVbAnforderungen ? 'sm:grid-cols-3' : 'sm:grid-cols-2') }}">
                 <a href="#schnelleingabe" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
                     <span class="block font-semibold text-gray-900">Text einfügen</span>
                     <span class="text-gray-500">Bedarf tippen, z. B. „3x LDX, 2 Stativ“</span>
@@ -103,6 +103,12 @@
                 <a href="{{ route('productions.importFrom', [$production, $similarProduction]) }}" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
                     <span class="block font-semibold text-gray-900">Aus „{{ $similarProduction->bezeichnung }}“ übernehmen</span>
                     <span class="text-gray-500">Ähnliche frühere Produktion</span>
+                </a>
+                @endif
+                @if($hasVbAnforderungen)
+                <a href="{{ route('productions.vbVorschlag', $production) }}" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                    <span class="block font-semibold text-gray-900">Packliste aus VB-Protokoll vorschlagen</span>
+                    <span class="text-gray-500">Kamerazüge und Material aus dem VB-Protokoll</span>
                 </a>
                 @endif
                 <a href="#material-hinzufuegen" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">

@@ -89,7 +89,7 @@ Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protok
 **Intelligente Hilfen** (regelbasiert, ohne externe KI):
 
 - **Handlungsbedarf** auf dem Dashboard: Doppelbuchungen/Mietfenster-Konflikte mit Ein-Klick-„Tauschen" gegen ein freies Gerät, offene Positionen aus dem VB-Protokoll mit „automatisch zuordnen", leere Produktionen kurz vor Start (mit Vorschlag einer ähnlichen Vorlage), offene Packvorgänge.
-- **Offenen VB-Bedarf automatisch zuordnen** direkt auf der Produktionsseite. Kamerazüge bleiben manuell, da sie eine Konfiguration brauchen.
+- **Packliste aus VB-Protokoll vorschlagen** auf der Produktionsseite (Schnelleingabe, leere Produktion) und im VB-Protokoll: zeigt eine Vorschau mit Kamerazügen und Material zum Übernehmen, sobald das VB-Protokoll Anforderungen enthält.
 - **Wird oft zusammen gebucht**: Vorschläge aus früheren Produktionen mit demselben Material.
 
 ## Packen: Verladen abhaken

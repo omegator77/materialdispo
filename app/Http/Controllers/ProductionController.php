@@ -127,7 +127,7 @@ class ProductionController extends Controller
 
         $smart = app(SmartAssignmentService::class);
         $suggestions = $smart->suggestionsFor($production);
-        $openNeeds = $smart->openVbNeeds($production);
+        $hasVbAnforderungen = $production->vbProtokoll()->whereHas('anforderungen')->exists();
         $similarProduction = $production->packlistEntries()->count() < 3 ? $smart->similarProduction($production) : null;
 
         $cameraTypes = Geraetetyp::where('units_id', 1)->whereHas('items')->orderBy('bezeichnung')->get();
@@ -135,7 +135,7 @@ class ProductionController extends Controller
         return view('productions.show', compact(
             'cameraTypes',
             'suggestions',
-            'openNeeds',
+            'hasVbAnforderungen',
             'similarProduction',
             'production',
             'availableItems',

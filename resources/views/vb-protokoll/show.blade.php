@@ -8,6 +8,12 @@
                     PDF exportieren
                 </a>
                 @if(Auth::user()->isUser())
+                @if($vbProtokoll->anforderungen->isNotEmpty())
+                <a href="{{ route('productions.vbVorschlag', $production) }}"
+                    class="btn btn-secondary">
+                    Packliste aus VB-Protokoll vorschlagen
+                </a>
+                @endif
                 <a href="{{ route('vb-protokoll.edit', $production->id) }}"
                     class="btn btn-primary">
                     Bearbeiten
