@@ -27,3 +27,14 @@ test('mit gewählter Vorlage steht der Hinweis statt der Liste da', function () 
     $this->actingAs($admin)->get(route('productions.create', ['from' => $p->id]))
         ->assertSee('Vorlage:')->assertDontSee('data-template-list', false);
 });
+
+test('Suche lässt bereits angezeigte Produktionen aus', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $a = Production::create(['bezeichnung' => 'Tagesschau A', 'booking_start' => '2026-12-01', 'booking_end' => '2026-12-01']);
+    $b = Production::create(['bezeichnung' => 'Tagesschau B', 'booking_start' => '2026-11-01', 'booking_end' => '2026-11-01']);
+
+    $ids = $this->actingAs($admin)->getJson(route('productions.searchTemplates', ['q' => 'Tages', 'exclude' => (string) $a->id]))
+        ->assertOk()->json('*.id');
+
+    expect($ids)->toBe([$b->id]);
+});

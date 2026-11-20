@@ -26,11 +26,14 @@
                                 .filter(el => q === '' || el.dataset.name.includes(q)).length;
                         },
                         match(name) { const q = this.query.trim().toLowerCase(); return q === '' || name.includes(q); },
+                        shown: @js($productions->pluck('id')),
                         search() {
-                            if (this.query.trim().length < 2) { this.older = []; return; }
-                            fetch('{{ route('productions.searchTemplates') }}?q=' + encodeURIComponent(this.query))
-                                .then(r => r.json())
-                                .then(data => this.older = data);
+                            const q = this.query;
+                            if (q.trim().length < 2) { this.older = []; return; }
+                            fetch('{{ route('productions.searchTemplates') }}?q=' + encodeURIComponent(q) + '&exclude=' + this.shown.join(','), { headers: { Accept: 'application/json' } })
+                                .then(r => r.ok ? r.json() : [])
+                                .then(data => { if (q === this.query) this.older = data; })
+                                .catch(() => { this.older = []; });
                         }
                     }">
                         <label for="template-search" class="form-label">Aus früherer Produktion starten</label>

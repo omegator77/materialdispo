@@ -59,9 +59,11 @@ class ProductionController extends Controller
     public function searchTemplates(Request $request)
     {
         $query = trim((string) $request->get('q', ''));
+        $exclude = array_values(array_filter(array_map('intval', explode(',', (string) $request->get('exclude', '')))));
 
         $productions = Production::query()
             ->when($query !== '', fn ($q) => $q->where('bezeichnung', 'like', "%{$query}%"))
+            ->when($exclude !== [], fn ($q) => $q->whereNotIn('id', $exclude))
             ->orderBy('booking_start', 'desc')
             ->limit(20)
             ->get(['id', 'bezeichnung', 'booking_start']);

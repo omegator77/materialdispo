@@ -27,6 +27,7 @@ test('Schnelleingabe steht vor den Mietvorgängen', function () {
     $html = $this->actingAs($admin)->get(route('productions.show', $p))->assertOk()->getContent();
 
     expect($html)->toContain('Mietvorgänge (Transport)');
+    expect($html)->toContain('Schnell hinzufügen');
     expect(strpos($html, 'Schnell hinzufügen'))->toBeLessThan(strpos($html, 'Mietvorgänge (Transport)'));
 });
 

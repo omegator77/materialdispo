@@ -17,7 +17,7 @@ test('anlegen leitet direkt zur neuen Produktion', function () {
     $response = $this->actingAs($admin)->post('/productions', produktionsDaten());
 
     $p = Production::where('bezeichnung', 'Sommerfest')->firstOrFail();
-    $response->assertRedirect(route('productions.show', $p));
+    $response->assertRedirect(route('productions.show', $p))->assertSessionHas('focus_quick_add', true);
     expect(substr((string) $p->booking_end, 0, 10))->toBe('2026-12-10');
 });
 
