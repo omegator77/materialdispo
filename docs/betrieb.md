@@ -94,11 +94,12 @@ server {
     listen 443 ssl http2;
     server_name dispo.example.de;
 
-    # VB-Protokoll-Fotos sind bis 8 MB erlaubt (nginx-Standard: 1 MB -> Fehler 413).
-    client_max_body_size 10m;
+    # VB-Protokoll-Fotos sind bis 8 MB je Foto erlaubt, mehrere pro Formular (nginx-Standard:
+    # 1 MB -> Fehler 413). Auf allen Schichten gleich hoch setzen, siehe "Upload-Limits".
+    client_max_body_size 64m;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;   # Port des App-Containers
+        proxy_pass http://127.0.0.1:8081;   # Port von laravel-nginx (nur auf 127.0.0.1 veröffentlicht)
 
         proxy_set_header Host              $host;
         # Beide Varianten sind sicher: Laravel nimmt die rechteste nicht vertrauenswürdige
@@ -131,6 +132,58 @@ server {
 Prüfen, ob die App die richtige Client-IP sieht: Im Login-Fehlerfall oder in
 `storage/logs/laravel.log` darf nicht die Docker-Gateway-Adresse (`172.x.x.x`)
 stehen, sondern die echte Client-IP.
+
+## Docker-Aufbau und Upload-Limits
+
+Die Anfrage läuft durch drei Schichten, **jede hat ein eigenes Größenlimit**. Das
+kleinste gewinnt, ein Foto-Upload scheitert mit `413` (nginx) oder einem
+Upload-Fehler (PHP), sobald eine Schicht zu klein ist:
+
+```
+Browser -> Host-nginx (Zertifikat, :443)
+        -> Container laravel-nginx (nginx:alpine, 127.0.0.1:8081)
+        -> Container laravel-app (PHP-FPM, :9000)
+```
+
+| Schicht | Einstellung | Wert | Wo |
+|---|---|---|---|
+| Host-nginx | `client_max_body_size` | `64m` | `/etc/nginx/sites-enabled/material.noicebard.de` |
+| laravel-nginx | `client_max_body_size` | `64m` | `nginx/default.conf` im Docker-Projektordner |
+| PHP-FPM | `upload_max_filesize` | `10M` | `docker/php/uploads.ini` |
+| PHP-FPM | `post_max_size` | `64M` | `docker/php/uploads.ini` |
+| PHP-FPM | `memory_limit` | `256M` | `docker/php/uploads.ini` |
+
+Die PHP-Werte werden über eine `docker-compose.override.yml` eingebunden (ohne
+Image-Neubau):
+
+```yaml
+services:
+  app:
+    volumes:
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/zz-uploads.ini:ro
+```
+
+Danach `docker compose up -d app`. Prüfen: `docker exec laravel-app php -i | grep -E
+"^(post_max_size|upload_max_filesize|memory_limit)"`.
+
+**Falle: eingebundene Einzeldateien.** `nginx/default.conf` ist als *einzelne Datei*
+in den Container eingebunden. Editoren und `sed -i` ersetzen die Datei durch eine
+neue; der Container hängt dann weiter an der alten Version, und
+`nginx -s reload` lädt nur diese alte. **Nach jeder Änderung an dieser Datei den
+Container neu starten:** `docker restart laravel-nginx`. Kontrolle:
+`docker exec laravel-nginx grep -n client_max_body_size /etc/nginx/conf.d/default.conf`.
+
+**Durchgangstest** (ohne Browser): Ein 12-MB-POST muss durch alle Schichten kommen
+und von Laravel mit `419` (fehlendes CSRF-Token) beantwortet werden; `413` heißt, eine
+Schicht ist zu klein. Mit `-o /dev/null -w '%{http_code}'` ausgeben, damit keine
+Cookies in der Ausgabe landen:
+
+```bash
+head -c 12000000 /dev/zero | curl -s -o /dev/null -w '%{http_code}\n' -X POST --data-binary @- https://<deine-domain>/login
+```
+
+Optional härten: `expose_php = Off` in `uploads.ini`, dann sendet PHP keinen
+`X-Powered-By: PHP/x.y.z`-Header mehr.
 
 ## Slack-Anbindung
 
