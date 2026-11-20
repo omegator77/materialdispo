@@ -49,14 +49,24 @@ Die App läuft dann unter `http://materialdispo.test` (Herd).
 feature/fix → develop → main → VPS
 ```
 
-1. Entwicklung auf `develop`
-2. Merge nach `main` wenn stabil
-3. Auf dem VPS pullen und Assets bauen:
+1. Entwicklung auf `develop` (CI läuft: Pint, Tests, `composer audit`)
+2. Merge nach `main`, wenn stabil
+3. Auf dem VPS deployen. **Der Deploy besteht nicht nur aus `git pull`**,
+   sondern auch aus `composer install`, `php artisan migrate --force` und dem
+   Asset-Build. Die genauen Schritte, der nötige **Scheduler-Cron** (ohne ihn
+   gehen keine Erinnerungen raus), die Produktions-`.env`, die Slack-Einrichtung
+   sowie Backup und Restore stehen in [docs/betrieb.md](docs/betrieb.md).
+
+## Tests
 
 ```bash
-git pull
-docker exec -it laravel-app npm run build
+npm run build      # die Tests brauchen das Vite-Manifest
+vendor/bin/pest
+vendor/bin/pint --test
 ```
+
+Die Tests laufen auf SQLite im Speicher, Produktion ist MySQL. Der CI-Workflow
+enthält zusätzlich einen MySQL-Lauf.
 
 ## Projektstruktur
 

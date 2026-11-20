@@ -16,25 +16,61 @@
 # the git working copy, so they can't be touched by git operations on app/
 # and never risk being committed.
 #
-# The DB password is never passed on this script's command line — it's read
-# from the mysql container's own MYSQL_PASSWORD env var via `docker exec`.
+# Sicherheit/Robustheit:
+#  - Das DB-Passwort steht in keiner Kommandozeile (weder hier noch im
+#    Container-`ps`): mysqldump bekommt es über MYSQL_PWD, gelesen aus der
+#    MYSQL_PASSWORD-Umgebung des mysql-Containers.
+#  - umask 077: Dump (enthält Passwort-Hashes und personenbezogene Daten) und
+#    Backup-Ordner sind nur für den ausführenden Benutzer lesbar.
+#  - Der Dump wird in eine .tmp-Datei geschrieben, geprüft (gzip -t und die
+#    "Dump completed"-Schlusszeile von mysqldump) und erst dann atomar
+#    umbenannt. Ein fehlgeschlagener/abgeschnittener Dump hinterlässt nie eine
+#    Datei, die wie ein gültiges Backup aussieht.
+#  - Alte Backups werden nur nach einem erfolgreichen Lauf gelöscht.
+#  - Optional: HEALTHCHECK_URL (z. B. healthchecks.io) wird nach Erfolg
+#    angepingt; bleibt der Ping aus, schlägt der Dienst Alarm.
+#
+# Restore: siehe docs/betrieb.md ("Backup einspielen").
+#
+# Für Tests/Sonderfälle überschreibbar: BACKUP_DIR, MYSQL_CONTAINER, MYSQL_USER,
+# DB_NAME, RETENTION_DAYS.
 
 set -euo pipefail
+umask 077
 
-MYSQL_CONTAINER="laravel-mysql"
-MYSQL_USER="laravel"
-DB_NAME="laravel"
-BACKUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/backups"
-RETENTION_DAYS=90
+MYSQL_CONTAINER="${MYSQL_CONTAINER:-laravel-mysql}"
+MYSQL_USER="${MYSQL_USER:-laravel}"
+DB_NAME="${DB_NAME:-laravel}"
+BACKUP_DIR="${BACKUP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/backups}"
+RETENTION_DAYS="${RETENTION_DAYS:-90}"
 
 TIMESTAMP="$(date +%Y-%m-%d_%H%M%S)"
 FILENAME="laravel_${TIMESTAMP}.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
 
-docker exec "$MYSQL_CONTAINER" sh -c "exec mysqldump -u ${MYSQL_USER} -p\"\$MYSQL_PASSWORD\" --single-transaction --quick --no-tablespaces ${DB_NAME}" \
-    | gzip > "$BACKUP_DIR/$FILENAME"
+TMP_FILE="$BACKUP_DIR/.${FILENAME}.tmp"
+trap 'rm -f "$TMP_FILE"' EXIT
+
+# Benutzer und Datenbankname kommen als Positionsparameter ($0/$1) in die
+# Container-Shell, das Passwort aus deren eigener Umgebung.
+docker exec "$MYSQL_CONTAINER" sh -c \
+    'MYSQL_PWD="$MYSQL_PASSWORD" exec mysqldump -u "$0" --single-transaction --quick --no-tablespaces "$1"' \
+    "$MYSQL_USER" "$DB_NAME" \
+    | gzip > "$TMP_FILE"
+
+if ! gzip -t "$TMP_FILE" || ! gzip -dc "$TMP_FILE" | tail -n 5 | grep -q -- '-- Dump completed'; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') FEHLER: Dump unvollständig oder leer, Backup verworfen." >&2
+    exit 1
+fi
+
+mv "$TMP_FILE" "$BACKUP_DIR/$FILENAME"
 
 find "$BACKUP_DIR" -name 'laravel_*.sql.gz' -type f -mtime +"$RETENTION_DAYS" -delete
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') Backup erstellt: $FILENAME ($(du -h "$BACKUP_DIR/$FILENAME" | cut -f1))"
+
+if [ -n "${HEALTHCHECK_URL:-}" ]; then
+    curl -fsS -m 10 --retry 3 -o /dev/null "$HEALTHCHECK_URL" || echo "WARNUNG: Healthcheck-Ping fehlgeschlagen." >&2
+fi
