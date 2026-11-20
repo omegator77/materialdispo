@@ -45,7 +45,6 @@
     <div class="page">
         <x-production-steps :production="$production" active="packliste" />
 
-
         @if(session('success'))
         <div class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded">
             {{ session('success') }}
@@ -267,7 +266,7 @@
                 {{-- Einzelmaterial gruppiert --}}
                 <div class="card card-pad">
                     <h2 class="card-title mb-4">
-                        Gepacktes Einzelmaterial
+                        Einzelmaterial
                     </h2>
 
                     @php

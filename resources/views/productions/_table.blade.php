@@ -69,7 +69,6 @@
                                 </a>
 
                                 @if(Auth::user()->isUser())
-
                                 <a href="{{ route('productions.edit', $production->id) }}"
                                    class="btn btn-secondary btn-sm">
                                     Bearbeiten
@@ -138,7 +137,6 @@
                     </a>
 
                     @if(Auth::user()->isUser())
-
                     <a href="{{ route('productions.edit', $production->id) }}"
                        class="btn btn-secondary text-center">
                         Bearbeiten
