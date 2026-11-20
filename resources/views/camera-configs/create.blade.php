@@ -56,11 +56,9 @@
                 <select name="camera" id="camera" class="form-control w-full p-2" required>
                     <option value="">– auswählen –</option>
                     @foreach(($cameras ?? collect()) as $it)
-                        <option value="{{ $it->id }}"
-                                @selected((int)old('camera', $preselectedCameraId ?? 0) === (int)$it->id)>
+                        <option value="{{ $it->id }}" @selected((int)old('camera', $preselectedCameraId ?? 0) === (int)$it->id) @disabled(isset($blocked[$it->id]))>
                             {{ $it->bezeichnung  ?? $it->name ?? 'Item #'.$it->id }}
-                            @if(!empty($it->nummer)) NR. {{ $it->nummer }} @endif
-                        </option>
+                            @if(!empty($it->nummer)) NR. {{ $it->nummer }} @endif @if(isset($blocked[$it->id])) — {{ $blocked[$it->id] }}@endif</option>
                     @endforeach
                 </select>
                 @error('camera') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -72,12 +70,11 @@
                     <select name="lens" id="lens" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($lenses ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('lens', $suggested['lens'] ?? null) == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('lens', $suggested['lens'] ?? null) == $it->id) @disabled(isset($blocked[$it->id]))>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
                                 @if (!empty($it->nummer)) NR. {{ $it->nummer }}
                                     
-                                @endif
-                            </option>
+                                @endif @if(isset($blocked[$it->id])) — {{ $blocked[$it->id] }}@endif</option>
                         @endforeach
                     </select>
                     @error('lens') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -88,11 +85,10 @@
                     <select name="large_lens_adapter" id="large_lens_adapter" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($adapters ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('large_lens_adapter', $suggested['large_lens_adapter'] ?? null) == $it->id)>
+                            <option value="{{ $it->id }}" @selected(old('large_lens_adapter', $suggested['large_lens_adapter'] ?? null) == $it->id) @disabled(isset($blocked[$it->id]))>
                                 {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }}
                                 @if (!empty($it->nummer)) NR. {{ $it->nummer }}
-                                @endif
-                            </option>
+                                @endif @if(isset($blocked[$it->id])) — {{ $blocked[$it->id] }}@endif</option>
                         @endforeach
                     </select>
                                         @error('large_lens_adapter') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -103,9 +99,8 @@
                     <select name="tripod" id="tripod" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($tripods ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('tripod', $suggested['tripod'] ?? null) == $it->id)>
-                                {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }}
-                            </option>
+                            <option value="{{ $it->id }}" @selected(old('tripod', $suggested['tripod'] ?? null) == $it->id) @disabled(isset($blocked[$it->id]))>
+                                {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }} @if(isset($blocked[$it->id])) — {{ $blocked[$it->id] }}@endif</option>
                         @endforeach
                     </select>
                     @error('tripod') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -116,9 +111,8 @@
                     <select name="tripod_head" id="tripod_head" class="form-control w-full p-2">
                         <option value="">– optional –</option>
                         @foreach(($heads ?? collect()) as $it)
-                            <option value="{{ $it->id }}" @selected(old('tripod_head', $suggested['tripod_head'] ?? null) == $it->id)>
-                                {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }}
-                            </option>
+                            <option value="{{ $it->id }}" @selected(old('tripod_head', $suggested['tripod_head'] ?? null) == $it->id) @disabled(isset($blocked[$it->id]))>
+                                {{ $it->bezeichnung ?? $it->name ?? 'Item #'.$it->id }} NR. {{ $it->nummer }} @if(isset($blocked[$it->id])) — {{ $blocked[$it->id] }}@endif</option>
                         @endforeach
                     </select>
                     @error('tripod_head') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror

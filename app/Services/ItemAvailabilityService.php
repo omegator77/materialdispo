@@ -356,6 +356,83 @@ class ItemAvailabilityService
     }
 
     /**
+     * Wo ein Gerät in DIESER Produktion schon steckt: als Einzelgerät oder in einem
+     * Kamerazug-Slot. Ein Gerät kann physisch nur an einer Stelle sein; check() sperrt
+     * nur andere Produktionen, diese Prüfung deckt die eigene ab.
+     *
+     * @return array{loose: list<int>, configs: array<int, string>} Einzelgeräte-IDs und
+     *                                                              Gerät-ID => Kamerazug-Nummer
+     */
+    public function productionHolders(Production $production, ?CameraConfig $ignoreConfig = null): array
+    {
+        $configs = [];
+
+        $production->cameraConfigs()
+            ->when($ignoreConfig, fn ($q) => $q->where('id', '!=', $ignoreConfig->id))
+            ->get()
+            ->each(function (CameraConfig $config) use (&$configs) {
+                foreach ($this->configItemColumns() as $column) {
+                    if ($config->{$column}) {
+                        $configs[(int) $config->{$column}] ??= $config->cam_number;
+                    }
+                }
+            });
+
+        return [
+            'loose' => $production->items()->pluck('items.id')->map(fn ($id) => (int) $id)->all(),
+            'configs' => $configs,
+        ];
+    }
+
+    /** Grund, warum das Gerät in dieser Produktion schon vergeben ist, sonst null. */
+    public function productionOverlap(Item $item, Production $production, ?CameraConfig $ignoreConfig = null): ?string
+    {
+        return $this->overlapReason((int) $item->id, $this->productionHolders($production, $ignoreConfig));
+    }
+
+    /**
+     * Gründe, warum Geräte für diese Produktion (bzw. diesen Kamerazug) nicht wählbar
+     * sind: schon in der Produktion vergeben oder nicht verfügbar. Gerät-ID => Grund.
+     * Für das Ausgrauen im Kamerazug-Formular.
+     *
+     * @param  iterable<Item>  $items
+     * @return array<int, string>
+     */
+    public function unavailableReasons(Production $production, iterable $items, ?CameraConfig $ignoreConfig = null): array
+    {
+        $holders = $this->productionHolders($production, $ignoreConfig);
+        $reasons = [];
+
+        foreach ($items as $item) {
+            $reason = $this->overlapReason((int) $item->id, $holders);
+
+            if (! $reason) {
+                $check = $this->check($item, $production, $ignoreConfig);
+                $reason = $check['available'] ? null : $check['reason'];
+            }
+
+            if ($reason) {
+                $reasons[(int) $item->id] = $reason;
+            }
+        }
+
+        return $reasons;
+    }
+
+    private function overlapReason(int $itemId, array $holders): ?string
+    {
+        if (in_array($itemId, $holders['loose'], true)) {
+            return 'bereits als Einzelgerät in dieser Produktion';
+        }
+
+        if (isset($holders['configs'][$itemId])) {
+            return 'bereits in '.$holders['configs'][$itemId].' dieser Produktion';
+        }
+
+        return null;
+    }
+
+    /**
      * Alle Spalten in camera_configs die ein Item referenzieren können.
      */
     public function configItemColumns(): array

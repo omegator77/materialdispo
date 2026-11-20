@@ -210,7 +210,9 @@ test('storeImport macht bei einem Fehler mittendrin nichts halb', function () {
     [$admin, $unit, $source, $target] = importScenario();
     $ok = Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Frei']);
     $source->items()->attach($ok->id);
-    $config = CameraConfig::create(['production_id' => $source->id, 'item_id' => $ok->id, 'cam_number' => 'Cam 1']);
+    // Ein Gerät kann nicht zugleich einzeln und im Kamerazug stehen: eigene Kamera für den Zug.
+    $kamera = Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Zugkamera']);
+    $config = CameraConfig::create(['production_id' => $source->id, 'item_id' => $kamera->id, 'cam_number' => 'Cam 1']);
 
     // Der Kamerazug-Import schlägt NACH dem Geräte-Import fehl.
     $event = 'eloquent.creating: '.CameraConfig::class;

@@ -87,15 +87,8 @@ class CameraConfigService
         foreach ($this->slotItemIds($validated) as $itemId) {
             $item = Item::findOrFail($itemId);
 
-            // Ein Gerät kann physisch nur in einem Kamerazug stecken. check() sperrt nur
-            // andere Produktionen, daher hier die Züge derselben Produktion prüfen.
-            $siblings = $production->cameraConfigs()
-                ->when($ignoreConfig, fn ($q) => $q->where('id', '!=', $ignoreConfig->id));
-            $this->availability->applyItemInConfigFilter($siblings, $item->id);
-            $sibling = $siblings->first();
-
-            if ($sibling) {
-                return $item->bezeichnung.': bereits in '.$sibling->cam_number.' dieser Produktion';
+            if ($overlap = $this->availability->productionOverlap($item, $production, $ignoreConfig)) {
+                return $item->bezeichnung.': '.$overlap;
             }
 
             $availability = $this->availability->check($item, $production, $ignoreConfig);

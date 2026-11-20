@@ -30,11 +30,13 @@ class CameraConfigController extends Controller
             $camera = Item::findOrFail($preselectedCameraId);
 
             $availability = $this->availability->check($camera, $production);
+            $reason = $this->availability->productionOverlap($camera, $production)
+                ?? ($availability['available'] ? null : $availability['reason']);
 
-            if (! $availability['available']) {
+            if ($reason) {
                 return redirect()
                     ->route('productions.show', $production)
-                    ->with('error', $camera->bezeichnung.': '.$availability['reason']);
+                    ->with('error', $camera->bezeichnung.': '.$reason);
             }
         }
 
@@ -54,7 +56,13 @@ class CameraConfigController extends Controller
         }
         $suggestedCamNumber = 'Cam '.$this->setup->nextCamNumber($production);
 
+        $blocked = $this->availability->unavailableReasons(
+            $production,
+            $cameras->concat($lenses)->concat($tripods)->concat($heads)->concat($adapters)
+        );
+
         return view('camera-configs.create', compact(
+            'blocked',
             'production',
             'cameras',
             'lenses',
@@ -114,7 +122,14 @@ class CameraConfigController extends Controller
         $heads = Item::where('units_id', 4)->orderBy('bezeichnung')->get();
         $adapters = Item::where('units_id', 5)->orderBy('bezeichnung')->get();
 
+        $blocked = $this->availability->unavailableReasons(
+            $config->production,
+            $cameras->concat($lenses)->concat($tripods)->concat($heads)->concat($adapters),
+            $config
+        );
+
         return view('camera-configs.edit', compact(
+            'blocked',
             'config',
             'cameras',
             'lenses',

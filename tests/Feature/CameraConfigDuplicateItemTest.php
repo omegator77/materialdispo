@@ -87,3 +87,70 @@ test('dasselbe Stativ in einer nicht überlappenden anderen Produktion bleibt er
 
     expect(CameraConfig::where('production_id', $later->id)->count())->toBe(1);
 });
+
+test('Kamerazug mit einem Gerät, das einzeln in der Produktion steht, wird abgelehnt', function () {
+    $s = rigSetup();
+    $s['production']->items()->attach($s['tripod']->id);
+
+    $this->actingAs($s['admin'])->post(route('camera-config.store', $s['production']), [
+        'cam_number' => 'Cam 1', 'camera' => $s['camA']->id, 'tripod' => $s['tripod']->id,
+    ])->assertSessionHas('error', fn ($m) => str_contains($m, 'Stativ 1') && str_contains($m, 'Einzelgerät'));
+
+    expect(CameraConfig::count())->toBe(0);
+});
+
+test('Einzelgerät, das schon in einem Kamerazug derselben Produktion steckt, wird abgelehnt', function () {
+    $s = rigSetup();
+    CameraConfig::create(['production_id' => $s['production']->id, 'item_id' => $s['camA']->id, 'cam_number' => 'Cam 1', 'tripod' => $s['tripod']->id]);
+
+    $this->actingAs($s['admin'])->post(route('productions.attachItem', $s['production']), [
+        'item_id' => [$s['tripod']->id],
+    ]);
+
+    expect($s['production']->items()->count())->toBe(0);
+});
+
+test('Kamerazug-Import überspringt Geräte, die in der Zielproduktion schon einzeln stehen', function () {
+    $s = rigSetup();
+    $source = Production::create(['bezeichnung' => 'Quelle', 'booking_start' => '2026-01-01', 'booking_end' => '2026-01-02']);
+    $cfg = CameraConfig::create(['production_id' => $source->id, 'item_id' => $s['camA']->id, 'cam_number' => 'Cam 1', 'tripod' => $s['tripod']->id]);
+    $s['production']->items()->attach($s['tripod']->id);
+
+    $this->actingAs($s['admin'])->post(route('productions.storeImport', [$s['production'], $source]), [
+        'configs' => [$cfg->id => 'import'],
+    ]);
+
+    expect(CameraConfig::where('production_id', $s['production']->id)->count())->toBe(0);
+});
+
+test('Formular graut Geräte aus, die in einem anderen Kamerazug dieser Produktion stecken', function () {
+    $s = rigSetup();
+    CameraConfig::create(['production_id' => $s['production']->id, 'item_id' => $s['camA']->id, 'cam_number' => 'Cam 1', 'tripod' => $s['tripod']->id]);
+
+    $html = $this->actingAs($s['admin'])->get(route('camera-config.create', $s['production']))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<option value="'.$s['tripod']->id.'"[^>]*disabled[^>]*>[^<]*Stativ 1[^<]*Cam 1/s')
+        ->and($html)->not->toMatch('/<option value="'.$s['camB']->id.'"[^>]*disabled/');
+});
+
+test('Formular graut auch Einzelgeräte und Geräte aus überlappenden anderen Produktionen aus', function () {
+    $s = rigSetup();
+    $s['production']->items()->attach($s['lens']->id);
+    $other = Production::create(['bezeichnung' => 'Parallel', 'booking_start' => '2026-08-02', 'booking_end' => '2026-08-03']);
+    $other->items()->attach($s['camB']->id);
+
+    $html = $this->actingAs($s['admin'])->get(route('camera-config.create', $s['production']))->getContent();
+
+    expect($html)->toMatch('/<option value="'.$s['lens']->id.'"[^>]*disabled/s')
+        ->and($html)->toMatch('/<option value="'.$s['camB']->id.'"[^>]*disabled[^>]*>[^<]*Parallel/s');
+});
+
+test('beim Bearbeiten sind die eigenen Geräte des Kamerazugs nicht ausgegraut', function () {
+    $s = rigSetup();
+    $a = CameraConfig::create(['production_id' => $s['production']->id, 'item_id' => $s['camA']->id, 'cam_number' => 'Cam 1', 'tripod' => $s['tripod']->id]);
+
+    $html = $this->actingAs($s['admin'])->get(route('camera-config.edit', $a))->assertOk()->getContent();
+
+    expect($html)->not->toMatch('/<option value="'.$s['tripod']->id.'"[^>]*disabled/')
+        ->and($html)->not->toMatch('/<option value="'.$s['camA']->id.'"[^>]*disabled/');
+});
