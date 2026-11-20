@@ -40,7 +40,6 @@
          })'>
         <x-production-steps :production="$production" active="packen" />
 
-
         <x-flash />
 
         @if($readonly)

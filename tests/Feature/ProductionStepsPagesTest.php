@@ -68,3 +68,12 @@ test('Viewer sieht Leiste auf Packen- und VB-Seite ohne Anlegen-Link', function 
     $q = Production::create(['bezeichnung' => 'Ohne VB', 'booking_start' => '2026-12-01', 'booking_end' => '2026-12-02']);
     $this->get(route('packvorgang.show', $q))->assertOk()->assertSee('fehlt')->assertDontSee(route('vb-protokoll.create', $q), false);
 });
+
+test('Packen-Seite: Badge der Leiste ist live an Alpine gebunden', function () {
+    $this->actingAs(User::factory()->create(['role' => 'admin']));
+    $p = Production::create(['bezeichnung' => 'Live', 'booking_start' => '2026-12-01', 'booking_end' => '2026-12-02']);
+
+    $html = $this->get(route('packvorgang.show', $p))->assertOk()->getContent();
+
+    expect($html)->toMatch('/<span[^>]*x-text="packedCount \+ \'\/\' \+ total"[^>]*>0\/0<\/span>/');
+});

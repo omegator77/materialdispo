@@ -39,7 +39,7 @@
 
     <a href="{{ route('packvorgang.show', $production) }}" class="{{ $btn('packen') }}" @if ($current('packen')) aria-current="step" @endif>
         Packen
-        <span class="badge {{ $status['confirmed'] ? 'badge-green' : 'badge-gray' }}">{{ $status['packed'] }}/{{ $status['packliste'] }}</span>
+        <span class="badge {{ $status['confirmed'] ? 'badge-green' : 'badge-gray' }}" @if ($active === 'packen') x-text="packedCount + '/' + total" @endif>{{ $status['packed'] }}/{{ $status['packliste'] }}</span>
         @if ($status['confirmed'])
             <span class="badge badge-green">abgeschlossen</span>
         @endif
