@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AttachItemRequest;
 use App\Http\Requests\ProductionRequest;
 use App\Http\Requests\StoreProductionImportRequest;
+use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
 use App\Services\ItemAvailabilityService;
+use App\Services\ProductionAssignmentService;
 use App\Services\ProductionImportService;
 use App\Services\SlackVorgangSync;
+use App\Services\SmartAssignmentService;
 use App\Support\PdfFilename;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -25,6 +28,7 @@ class ProductionController extends Controller
         private ItemAvailabilityService $availability,
         private ProductionImportService $imports,
         private SlackVorgangSync $slack,
+        private ProductionAssignmentService $assignment,
     ) {}
 
     public function index(Request $request)
@@ -119,7 +123,18 @@ class ProductionController extends Controller
         $mietvorgaenge = $production->items->pluck('mietvorgaenge')->flatten()->unique('id')->values();
         $vermietvorgaenge = $production->items->pluck('vermietvorgaenge')->flatten()->unique('id')->values();
 
+        $smart = app(SmartAssignmentService::class);
+        $suggestions = $smart->suggestionsFor($production);
+        $openNeeds = $smart->openVbNeeds($production);
+        $similarProduction = $production->packlistEntries()->count() < 3 ? $smart->similarProduction($production) : null;
+
+        $cameraTypes = Geraetetyp::where('units_id', 1)->whereHas('items')->orderBy('bezeichnung')->get();
+
         return view('productions.show', compact(
+            'cameraTypes',
+            'suggestions',
+            'openNeeds',
+            'similarProduction',
             'production',
             'availableItems',
             'unitFilter',
@@ -192,52 +207,11 @@ class ProductionController extends Controller
                     ->with('error', 'Ein oder mehrere Geräte wurden nicht gefunden.');
             }
 
-            $added = [];
-            $skipped = [];
-            $warnings = [];
+            $result = $this->assignment->attachMany($production, $items->values(), $request->notes);
 
-            DB::transaction(function () use ($itemIds, $items, $production, $request, &$added, &$skipped, &$warnings) {
-                // Zeilensperre VOR den Verfügbarkeitsprüfungen (siehe lockItems()).
-                $this->availability->lockItems($itemIds);
-
-                foreach ($itemIds as $itemId) {
-                    $item = $items->get($itemId);
-
-                    if ($production->items()->where('items.id', $item->id)->exists()) {
-                        $skipped[] = "{$item->bezeichnung} (bereits enthalten)";
-
-                        continue;
-                    }
-
-                    $availability = $this->availability->check($item, $production);
-
-                    if (! $availability['available']) {
-                        $skipped[] = "{$item->bezeichnung} ({$availability['reason']})";
-
-                        continue;
-                    }
-
-                    $production->items()->syncWithoutDetaching([
-                        $item->id => [
-                            'notes' => $request->notes,
-                        ],
-                    ]);
-
-                    activity('item')
-                        ->performedOn($item)
-                        ->event('attached')
-                        ->withProperties(['production' => $production->bezeichnung, 'production_id' => $production->id])
-                        ->log("Gerät \"{$item->bezeichnung}\" zu Produktion \"{$production->bezeichnung}\" hinzugefügt");
-
-                    $added[] = $item->bezeichnung;
-
-                    if ($availability['warning'] ?? null) {
-                        $warnings[] = "{$item->bezeichnung} ({$availability['warning']})";
-                    }
-                }
-            });
-
-            $this->slack->syncProduction($production);
+            $added = array_map(fn ($item) => $item->bezeichnung, $result['added']);
+            $skipped = array_map(fn ($s) => "{$s['item']->bezeichnung} ({$s['reason']})", $result['skipped']);
+            $warnings = $result['warnings'];
 
             $messageParts = [];
             if (count($added)) {

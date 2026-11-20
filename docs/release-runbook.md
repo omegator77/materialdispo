@@ -117,9 +117,11 @@ docker exec laravel-app composer install --no-dev --optimize-autoloader --no-int
 docker exec laravel-app php artisan migrate --pretend
 docker exec laravel-app php artisan migrate --force
 
-# C5: Assets bauen. Im App-Container gibt es kein node/npm, daher ein Einmal-Container:
-docker run --rm -e HOME=/tmp -u "$(id -u):$(id -g)" -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
-ls -la app/public/build/manifest.json     # muss jetzt ein aktuelles Datum haben
+# C5: Assets bauen. Im App-Container gibt es kein node/npm, daher ein Einmal-Container.
+# Bewusst als root (ohne -u): public/build gehört root (frühere Builds liefen im Container);
+# mit der eigenen Benutzer-ID scheitert Vite beim Leeren des Ordners (EACCES) und baut NICHTS.
+docker run --rm -e HOME=/tmp -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
+ls -la app/public/build/manifest.json     # muss jetzt ein aktuelles Datum haben (sonst ist der Build gescheitert!)
 
 # C6: Caches neu aufbauen
 docker exec laravel-app php artisan config:cache

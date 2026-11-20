@@ -6,6 +6,7 @@ use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\GeraetetypController;
+use App\Http\Controllers\ItemBulkController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemproductionController;
 use App\Http\Controllers\MailingListController;
@@ -14,8 +15,10 @@ use App\Http\Controllers\MietvorgangController;
 use App\Http\Controllers\PackvorgangController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SlackInteractionController;
+use App\Http\Controllers\SmartProductionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TestMailController;
 use App\Http\Controllers\TimelineController;
@@ -23,6 +26,7 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VbProtokollController;
 use App\Http\Controllers\VermietvorgangController;
+use App\Http\Controllers\VorgangQuickAddController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -42,6 +46,12 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::get('/geraetetypen/{geraetetyp}/edit', [GeraetetypController::class, 'edit'])->name('geraetetypen.edit');
     Route::put('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'update'])->name('geraetetypen.update');
     Route::delete('/geraetetypen/{geraetetyp}', [GeraetetypController::class, 'destroy'])->name('geraetetypen.destroy');
+    // Schnellerfassung & Massenaktionen — vor dem items-Resource, damit "items/bulk" nicht als {item} gilt.
+    Route::get('/items/bulk', [ItemBulkController::class, 'create'])->name('items.bulk.create');
+    Route::post('/items/bulk', [ItemBulkController::class, 'store'])->name('items.bulk.store');
+    Route::post('/items/bulk/parse', [ItemBulkController::class, 'parse'])->name('items.bulk.parse');
+    Route::get('/items/bulk/suggest-number', [ItemBulkController::class, 'suggestNumber'])->name('items.bulk.suggestNumber');
+    Route::post('/items/bulk-action', [ItemBulkController::class, 'action'])->name('items.bulk.action');
     Route::resource('/items', ItemController::class)->except(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->except(['index', 'show']);
     Route::resource('/mieter', MieterController::class)->except(['index', 'show']);
@@ -50,6 +60,10 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::resource('/productions', ProductionController::class)->except(['index', 'show']);
     Route::post('productions/{id}/attach-item', [ProductionController::class, 'attachItem'])->name('productions.attachItem');
     Route::delete('productions/{id}/detach-item/{itemId}', [ProductionController::class, 'detachItem'])->name('productions.detachItem');
+    Route::post('productions/{production}/quick-add/preview', [SmartProductionController::class, 'preview'])->name('productions.quickAdd.preview');
+    Route::post('productions/{production}/quick-add', [SmartProductionController::class, 'store'])->name('productions.quickAdd');
+    Route::post('productions/{production}/auto-fill', [SmartProductionController::class, 'autoFill'])->name('productions.autoFill');
+    Route::post('productions/{production}/replace-item/{item}', [SmartProductionController::class, 'replaceItem'])->name('productions.replaceItem');
     Route::get('productions/{production}/import-from/{source}', [ProductionController::class, 'importFrom'])->name('productions.importFrom');
     Route::post('productions/{production}/import-from/{source}', [ProductionController::class, 'storeImport'])->name('productions.storeImport');
 
@@ -58,9 +72,11 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
     Route::get('/productions/{production}/camera-config/create', [CameraConfigController::class, 'create'])->name('camera-config.create');
     Route::post('/productions/{production}/camera-config', [CameraConfigController::class, 'store'])->name('camera-config.store');
+    Route::post('/productions/{production}/camera-config-auto', [CameraConfigController::class, 'auto'])->name('camera-config.auto');
 
     Route::get('productions/{production}/vb-protokoll/create', [VbProtokollController::class, 'create'])->name('vb-protokoll.create');
     Route::post('productions/{production}/vb-protokoll', [VbProtokollController::class, 'store'])->name('vb-protokoll.store');
+    Route::post('productions/{production}/vb-protokoll/from/{source}', [VbProtokollController::class, 'fromTemplate'])->name('vb-protokoll.fromTemplate');
     Route::get('productions/{production}/vb-protokoll/edit', [VbProtokollController::class, 'edit'])->name('vb-protokoll.edit');
     Route::put('productions/{production}/vb-protokoll', [VbProtokollController::class, 'update'])->name('vb-protokoll.update');
     Route::delete('productions/{production}/vb-protokoll', [VbProtokollController::class, 'destroy'])->name('vb-protokoll.destroy');
@@ -77,6 +93,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->except(['index', 'show', 'edit'])
         ->parameters(['mietvorgaenge' => 'mietvorgang']);
     Route::get('mietvorgaenge/suggest-bezeichnung', [MietvorgangController::class, 'suggestBezeichnung'])->name('mietvorgaenge.suggestBezeichnung');
+    Route::post('mietvorgaenge/{mietvorgang}/quick-add/preview', [VorgangQuickAddController::class, 'previewMiete'])->name('mietvorgaenge.quickAdd.preview');
+    Route::post('mietvorgaenge/{mietvorgang}/quick-add', [VorgangQuickAddController::class, 'storeMiete'])->name('mietvorgaenge.quickAdd');
     Route::post('mietvorgaenge/{mietvorgang}/attach-items', [MietvorgangController::class, 'attachItems'])->name('mietvorgaenge.attachItems');
     Route::delete('mietvorgaenge/{mietvorgang}/detach-item/{item}', [MietvorgangController::class, 'detachItem'])->name('mietvorgaenge.detachItem');
     Route::post('mietvorgaenge/{mietvorgang}/confirm-transport/{type}', [MietvorgangController::class, 'confirmTransport'])
@@ -94,6 +112,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
         ->except(['index', 'show', 'edit'])
         ->parameters(['vermietvorgaenge' => 'vermietvorgang']);
     Route::get('vermietvorgaenge/suggest-bezeichnung', [VermietvorgangController::class, 'suggestBezeichnung'])->name('vermietvorgaenge.suggestBezeichnung');
+    Route::post('vermietvorgaenge/{vermietvorgang}/quick-add/preview', [VorgangQuickAddController::class, 'previewVerleih'])->name('vermietvorgaenge.quickAdd.preview');
+    Route::post('vermietvorgaenge/{vermietvorgang}/quick-add', [VorgangQuickAddController::class, 'storeVerleih'])->name('vermietvorgaenge.quickAdd');
     Route::post('vermietvorgaenge/{vermietvorgang}/attach-items', [VermietvorgangController::class, 'attachItems'])->name('vermietvorgaenge.attachItems');
     Route::delete('vermietvorgaenge/{vermietvorgang}/detach-item/{item}', [VermietvorgangController::class, 'detachItem'])->name('vermietvorgaenge.detachItem');
     Route::post('vermietvorgaenge/{vermietvorgang}/confirm-transport/{type}', [VermietvorgangController::class, 'confirmTransport'])
@@ -113,6 +133,7 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/search', SearchController::class)->name('search');
     Route::get('/anleitung', [DocumentationController::class, 'show'])->name('anleitung');
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);

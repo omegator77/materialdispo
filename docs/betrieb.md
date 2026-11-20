@@ -11,7 +11,7 @@ Auf dem VPS im App-Verzeichnis (Branch `main`):
 git pull
 docker exec laravel-app composer install --no-dev --optimize-autoloader
 docker exec laravel-app php artisan migrate --force
-docker run --rm -e HOME=/tmp -u "$(id -u):$(id -g)" -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
+docker run --rm -e HOME=/tmp -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
 docker exec laravel-app php artisan config:cache
 docker exec laravel-app php artisan route:cache
 docker exec laravel-app php artisan view:cache

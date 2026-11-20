@@ -5,17 +5,21 @@
                 {{ __('Geräte') }}
             </h2>
             @if(Auth::user()->isUser())
-            <a href="{{ route('items.create') }}"
-                class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
-                Neues Gerät
-            </a>
+            <div class="flex gap-2">
+                <a href="{{ route('items.bulk.create') }}"
+                    class="inline-flex justify-center bg-white border border-orange-400 text-orange-600 hover:bg-orange-50 font-semibold py-2 px-4 rounded">
+                    Mehrere erfassen
+                </a>
+                <a href="{{ route('items.create') }}"
+                    class="inline-flex justify-center bg-orange-400 hover:bg-orange-500 text-white font-semibold py-2 px-4 rounded">
+                    Neues Gerät
+                </a>
+            </div>
             @endif
         </div>
     </x-slot>
 
-    <div class="max-w-7xl w-11/12 mx-auto mt-6 space-y-3 empty:hidden">
-        <x-flash-messages />
-    </div>
+    <x-flash />
 
     @php
         $tableMap = [
@@ -29,6 +33,10 @@
     @endphp
 
     @include('items.tables.' . $partial)
+
+    @if(Auth::user()->isUser())
+        @include('items.tables._bulk-bar')
+    @endif
 
     {{-- Geteiltes Produktions-Dropdown (einmal im DOM, per JS positioniert) --}}
     @if(Auth::user()->isUser() && $productions->count())

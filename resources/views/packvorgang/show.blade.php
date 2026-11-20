@@ -41,7 +41,7 @@
             locked: @json($checklistLocked)
          })'>
 
-        <x-flash-messages />
+        <x-flash />
 
         @if($readonly)
         <div class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-3 rounded">
