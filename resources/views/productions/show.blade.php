@@ -88,130 +88,28 @@
             @endif
         </div>
 
-        {{-- Mietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Mietvorgang-Seite --}}
-        @if($mietvorgaenge->isNotEmpty())
-        <div class="card card-pad">
-            <h3 class="card-title mb-4">Mietvorgänge (Transport)</h3>
 
-            <div class="space-y-3">
-                @foreach($mietvorgaenge as $mietvorgang)
-                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="text-sm text-gray-600">
-                        <strong class="text-gray-900">{{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}</strong>
-                        &middot; {{ \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y') }}
-                        – {{ \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y') }}
-                        &middot; {{ $production->items->filter(fn ($item) => $item->mietvorgaenge->contains('id', $mietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
-
-                        <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="badge badge-gray">
-                                Hinweg: {{ $mietvorgang->transport_type_start ?: 'offen' }}
-                            </span>
-                            <span class="badge badge-gray">
-                                Rückweg: {{ $mietvorgang->transport_type_end ?: 'offen' }}
-                            </span>
-                            @if($mietvorgang->notify_supplier)
-                            <span class="badge badge-blue">
-                                Lieferant wird benachrichtigt
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
-                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
-                        Bearbeiten →
-                    </a>
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        {{-- Vermietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Vermietvorgang-Seite --}}
-        @if($vermietvorgaenge->isNotEmpty())
-        <div class="card card-pad">
-            <h3 class="card-title mb-4">Vermietvorgänge (Transport)</h3>
-
-            <div class="space-y-3">
-                @foreach($vermietvorgaenge as $vermietvorgang)
-                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="text-sm text-gray-600">
-                        <strong class="text-gray-900">{{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}</strong>
-                        &middot; {{ \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y') }}
-                        – {{ \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y') }}
-                        &middot; {{ $production->items->filter(fn ($item) => $item->vermietvorgaenge->contains('id', $vermietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
-
-                        <div class="mt-1 flex flex-wrap gap-2">
-                            <span class="badge badge-gray">
-                                Hinweg: {{ $vermietvorgang->transport_type_start ?: 'offen' }}
-                            </span>
-                            <span class="badge badge-gray">
-                                Rückweg: {{ $vermietvorgang->transport_type_end ?: 'offen' }}
-                            </span>
-                            @if($vermietvorgang->notify_mieter)
-                            <span class="badge badge-blue">
-                                Mieter wird benachrichtigt
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}"
-                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
-                        Bearbeiten →
-                    </a>
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
-        @if($vbAbgleich && $vbAbgleich->isNotEmpty())
-        @php
-        $offenRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] !== true);
-        $erfuelltRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] === true);
-        @endphp
-        <div class="card card-pad" x-data="{ showAll: false }">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="card-title">Abgleich mit VB-Protokoll</h2>
-                <a href="{{ route('vb-protokoll.show', $production->id) }}" class="text-sm text-orange-600 hover:text-orange-700">
-                    Vollständiges Protokoll →
+        {{-- Leer-Zustand: neue Produktion ohne Material zeigt die drei schnellen Wege --}}
+        @if(Auth::user()->isUser() && $production->items->isEmpty() && $production->cameraConfigs->isEmpty())
+        <div data-empty-state class="card card-pad border-orange-300">
+            <h2 class="card-title">Noch kein Material – so geht es am schnellsten</h2>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <a href="#schnelleingabe" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                    <span class="block font-semibold text-gray-900">Text einfügen</span>
+                    <span class="text-gray-500">Bedarf tippen, z. B. „3x LDX, 2 Stativ“</span>
+                </a>
+                @if($similarProduction)
+                <a href="{{ route('productions.importFrom', [$production, $similarProduction]) }}" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                    <span class="block font-semibold text-gray-900">Aus „{{ $similarProduction->bezeichnung }}“ übernehmen</span>
+                    <span class="text-gray-500">Ähnliche frühere Produktion</span>
+                </a>
+                @endif
+                <a href="#material-hinzufuegen" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                    <span class="block font-semibold text-gray-900">Einzeln wählen</span>
+                    <span class="text-gray-500">Geräte aus dem Lager auswählen</span>
                 </a>
             </div>
-
-            @if($offenRows->isEmpty())
-            <p class="text-sm text-green-700">✓ Alle Anforderungen aus dem VB-Protokoll sind erfüllt.</p>
-            @else
-            <ul class="divide-y divide-gray-100 text-sm">
-                @foreach($offenRows as $row)
-                <li class="flex items-center justify-between py-1.5">
-                    <span class="text-gray-900">{{ $row['label'] }}</span>
-                    @if($row['erfuellt'] === false)
-                    <span class="text-red-700 font-medium text-xs whitespace-nowrap">fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>
-                    @else
-                    <span class="text-gray-400 text-xs whitespace-nowrap">manuell prüfen</span>
-                    @endif
-                </li>
-                @endforeach
-            </ul>
-            @endif
-
-            @if($erfuelltRows->isNotEmpty())
-            <button type="button" @click="showAll = !showAll" class="mt-3 text-xs text-gray-500 hover:text-gray-700">
-                <span x-show="!showAll">{{ $erfuelltRows->count() }} erfüllte Anforderung(en) anzeigen</span>
-                <span x-show="showAll" x-cloak>Erfüllte ausblenden</span>
-            </button>
-
-            <ul class="mt-2 divide-y divide-gray-100 text-sm" x-show="showAll" x-cloak>
-                @foreach($erfuelltRows as $row)
-                <li class="flex items-center justify-between py-1.5 text-gray-500">
-                    <span>{{ $row['label'] }}</span>
-                    <span class="text-xs whitespace-nowrap">✓ {{ $row['gepackt'] }}/{{ $row['benoetigt'] }}</span>
-                </li>
-                @endforeach
-            </ul>
-            @endif
+            <span hidden data-empty-state-end></span>
         </div>
         @endif
 
@@ -222,7 +120,7 @@
             <div class="lg:col-span-2 space-y-6">
                 @include('productions._quick-add')
 
-                <div class="card card-pad space-y-6">
+                <div id="material-hinzufuegen" class="card card-pad space-y-6">
                     <h2 class="card-title">
                         Material hinzufügen
                     </h2>
@@ -527,6 +425,133 @@
 
             </div>
         </div>
+
+        {{-- Mietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Mietvorgang-Seite --}}
+        @if($mietvorgaenge->isNotEmpty())
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Mietvorgänge (Transport)</h3>
+
+            <div class="space-y-3">
+                @foreach($mietvorgaenge as $mietvorgang)
+                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm text-gray-600">
+                        <strong class="text-gray-900">{{ $mietvorgang->supplier?->bezeichnung ?? 'Vermieter gelöscht' }}</strong>
+                        &middot; {{ \Carbon\Carbon::parse($mietvorgang->rent_start)->format('d.m.Y') }}
+                        – {{ \Carbon\Carbon::parse($mietvorgang->rent_end)->format('d.m.Y') }}
+                        &middot; {{ $production->items->filter(fn ($item) => $item->mietvorgaenge->contains('id', $mietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
+
+                        <div class="mt-1 flex flex-wrap gap-2">
+                            <span class="badge badge-gray">
+                                Hinweg: {{ $mietvorgang->transport_type_start ?: 'offen' }}
+                            </span>
+                            <span class="badge badge-gray">
+                                Rückweg: {{ $mietvorgang->transport_type_end ?: 'offen' }}
+                            </span>
+                            @if($mietvorgang->notify_supplier)
+                            <span class="badge badge-blue">
+                                Lieferant wird benachrichtigt
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <a href="{{ route('mietvorgaenge.show', $mietvorgang) }}"
+                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                        Bearbeiten →
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Vermietvorgänge: read-only Zusammenfassung, Bearbeitung läuft über die eigenständige Vermietvorgang-Seite --}}
+        @if($vermietvorgaenge->isNotEmpty())
+        <div class="card card-pad">
+            <h3 class="card-title mb-4">Vermietvorgänge (Transport)</h3>
+
+            <div class="space-y-3">
+                @foreach($vermietvorgaenge as $vermietvorgang)
+                <div class="border border-gray-200 rounded p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="text-sm text-gray-600">
+                        <strong class="text-gray-900">{{ $vermietvorgang->mieter?->bezeichnung ?? 'Mieter gelöscht' }}</strong>
+                        &middot; {{ \Carbon\Carbon::parse($vermietvorgang->rent_start)->format('d.m.Y') }}
+                        – {{ \Carbon\Carbon::parse($vermietvorgang->rent_end)->format('d.m.Y') }}
+                        &middot; {{ $production->items->filter(fn ($item) => $item->vermietvorgaenge->contains('id', $vermietvorgang->id))->pluck('bezeichnung')->implode(', ') }}
+
+                        <div class="mt-1 flex flex-wrap gap-2">
+                            <span class="badge badge-gray">
+                                Hinweg: {{ $vermietvorgang->transport_type_start ?: 'offen' }}
+                            </span>
+                            <span class="badge badge-gray">
+                                Rückweg: {{ $vermietvorgang->transport_type_end ?: 'offen' }}
+                            </span>
+                            @if($vermietvorgang->notify_mieter)
+                            <span class="badge badge-blue">
+                                Mieter wird benachrichtigt
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <a href="{{ route('vermietvorgaenge.show', $vermietvorgang) }}"
+                       class="shrink-0 text-sm text-orange-600 hover:text-orange-700 font-medium">
+                        Bearbeiten →
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- VB-Protokoll Abgleich: direkt hier sichtbar, kein Wechsel zum Protokoll nötig --}}
+        @if($vbAbgleich && $vbAbgleich->isNotEmpty())
+        @php
+        $offenRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] !== true);
+        $erfuelltRows = $vbAbgleich->filter(fn ($r) => $r['erfuellt'] === true);
+        @endphp
+        <div class="card card-pad" x-data="{ showAll: false }">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="card-title">Abgleich mit VB-Protokoll</h2>
+                <a href="{{ route('vb-protokoll.show', $production->id) }}" class="text-sm text-orange-600 hover:text-orange-700">
+                    Vollständiges Protokoll →
+                </a>
+            </div>
+
+            @if($offenRows->isEmpty())
+            <p class="text-sm text-green-700">✓ Alle Anforderungen aus dem VB-Protokoll sind erfüllt.</p>
+            @else
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($offenRows as $row)
+                <li class="flex items-center justify-between py-1.5">
+                    <span class="text-gray-900">{{ $row['label'] }}</span>
+                    @if($row['erfuellt'] === false)
+                    <span class="text-red-700 font-medium text-xs whitespace-nowrap">fehlt {{ $row['benoetigt'] - $row['gepackt'] }}</span>
+                    @else
+                    <span class="text-gray-400 text-xs whitespace-nowrap">manuell prüfen</span>
+                    @endif
+                </li>
+                @endforeach
+            </ul>
+            @endif
+
+            @if($erfuelltRows->isNotEmpty())
+            <button type="button" @click="showAll = !showAll" class="mt-3 text-xs text-gray-500 hover:text-gray-700">
+                <span x-show="!showAll">{{ $erfuelltRows->count() }} erfüllte Anforderung(en) anzeigen</span>
+                <span x-show="showAll" x-cloak>Erfüllte ausblenden</span>
+            </button>
+
+            <ul class="mt-2 divide-y divide-gray-100 text-sm" x-show="showAll" x-cloak>
+                @foreach($erfuelltRows as $row)
+                <li class="flex items-center justify-between py-1.5 text-gray-500">
+                    <span>{{ $row['label'] }}</span>
+                    <span class="text-xs whitespace-nowrap">✓ {{ $row['gepackt'] }}/{{ $row['benoetigt'] }}</span>
+                </li>
+                @endforeach
+            </ul>
+            @endif
+        </div>
+        @endif
     </div>
 
     <script>
