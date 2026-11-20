@@ -93,3 +93,19 @@ test('Produktionsname wird maskiert', function () {
 
     expect($html)->not->toContain('<b>Co</b>')->toContain('Müller &amp; &lt;b&gt;Co&lt;/b&gt;');
 });
+
+test('Viewer bekommt keinen Details-Link (403) und nur nicht-interaktive Schritte', function () {
+    $p = stepsProduction();
+
+    $viewer = renderSteps($p, 'viewer');
+    expect($viewer)->not->toContain(route('productions.edit', $p))
+        ->not->toContain(route('vb-protokoll.create', $p))
+        ->toContain('Details')
+        ->toContain('cursor-default');
+
+    $admin = renderSteps($p, 'admin');
+    expect($admin)->toContain(route('productions.edit', $p))->toContain(route('vb-protokoll.create', $p));
+
+    $user = renderSteps($p, 'user');
+    expect($user)->toContain(route('productions.edit', $p))->toContain(route('vb-protokoll.create', $p));
+});

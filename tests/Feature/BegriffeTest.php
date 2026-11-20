@@ -68,3 +68,17 @@ test('gesperrtes Packen meldet den neuen Fehlertext', function () {
         ->assertStatus(423)
         ->assertJsonFragment(['error' => 'Packen ist abgeschlossen und gesperrt.']);
 });
+
+test('PDF-Checkliste sagt Packen statt Packvorgang', function () {
+    $p = begriffeProduction();
+    $html = view('pdf.packvorgang_checklist', [
+        'production' => $p,
+        'cameraGroups' => collect(),
+        'groupedEinzelEntries' => collect(),
+        'packedIds' => collect(),
+    ])->render();
+
+    expect($html)->toContain('<title>Packen Tagesschau</title>')
+        ->toContain('Packen-Checkliste: Tagesschau')
+        ->not->toContain('Packvorgang');
+});

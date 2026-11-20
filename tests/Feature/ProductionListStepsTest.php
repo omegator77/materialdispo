@@ -106,3 +106,17 @@ test('stepStatus löst mit vorgeladenen Relationen keine weiteren Abfragen aus',
 
     expect($count)->toBe(0)->and($status['packliste'])->toBe(3)->and($status['packed'])->toBe(2);
 });
+
+test('Liste: Admin und User behalten Details- und VB-Anlegen-Link, Viewer nicht', function () {
+    $p = listProduction('Alpha', 1, 0);
+
+    foreach (['admin', 'user'] as $role) {
+        $html = $this->actingAs(User::factory()->create(['role' => $role]))
+            ->get(route('productions.index'))->assertOk()->getContent();
+        expect($html)->toContain(route('productions.edit', $p))->toContain(route('vb-protokoll.create', $p));
+    }
+
+    $html = $this->actingAs(User::factory()->create(['role' => 'viewer']))
+        ->get(route('productions.index'))->assertOk()->getContent();
+    expect($html)->not->toContain(route('productions.edit', $p))->not->toContain(route('vb-protokoll.create', $p));
+});

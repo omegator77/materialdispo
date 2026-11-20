@@ -4,13 +4,20 @@
     $status = $production->stepStatus();
     $canCreate = auth()->user()?->isUser();
     $btn = fn (string $key) => $active === $key ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+    $inert = 'btn btn-secondary btn-sm cursor-default opacity-70 pointer-events-none';
     $current = fn (string $key) => $active === $key ? 'step' : null;
 @endphp
 
 <nav data-production-steps aria-label="Schritte für {{ $production->bezeichnung }}" class="flex flex-wrap gap-2">
-    <a href="{{ route('productions.edit', $production) }}" class="{{ $btn('details') }}" @if ($current('details')) aria-current="step" @endif>
-        Details
-    </a>
+    @if ($canCreate)
+        <a href="{{ route('productions.edit', $production) }}" class="{{ $btn('details') }}" @if ($current('details')) aria-current="step" @endif>
+            Details
+        </a>
+    @else
+        <span class="{{ $inert }}" @if ($current('details')) aria-current="step" @endif>
+            Details
+        </span>
+    @endif
 
     @if ($status['vb'])
         <a href="{{ route('vb-protokoll.show', $production) }}" class="{{ $btn('vb') }}" @if ($current('vb')) aria-current="step" @endif>
@@ -21,7 +28,7 @@
             VB-Protokoll <span class="badge badge-amber">fehlt</span>
         </a>
     @else
-        <span class="{{ $btn('vb') }}" @if ($current('vb')) aria-current="step" @endif>
+        <span class="{{ $inert }}" @if ($current('vb')) aria-current="step" @endif>
             VB-Protokoll <span class="badge badge-gray">fehlt</span>
         </span>
     @endif
