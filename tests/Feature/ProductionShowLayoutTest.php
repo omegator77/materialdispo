@@ -81,3 +81,10 @@ test('Leer-Zustand bietet Übernahme aus ähnlicher Produktion', function () {
 
     expect($leer)->toContain(e(route('productions.importFrom', [$neu, $quelle])));
 });
+
+test('Kopf-Aktionen brechen auf schmalen Bildschirmen um', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)->get(route('productions.show', layoutProduction()))
+        ->assertSee('class="flex flex-wrap items-center gap-2"', false);
+});

@@ -2,7 +2,7 @@
     <x-slot name="header">
         <x-page-header title="Materialzuordnung">
             <x-slot name="actions">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                 @php
                 $vbProtokoll = $production->vbProtokoll;
                 $vbAbgleich = $vbProtokoll && $vbProtokoll->anforderungen->isNotEmpty() ? $vbProtokoll->abgleich() : null;
@@ -93,7 +93,7 @@
         @if(Auth::user()->isUser() && $production->items->isEmpty() && $production->cameraConfigs->isEmpty())
         <div data-empty-state class="card card-pad border-orange-300">
             <h2 class="card-title">Noch kein Material – so geht es am schnellsten</h2>
-            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div class="mt-3 grid grid-cols-1 gap-3 text-sm {{ $similarProduction ? 'sm:grid-cols-3' : 'sm:grid-cols-2' }}">
                 <a href="#schnelleingabe" class="rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
                     <span class="block font-semibold text-gray-900">Text einfügen</span>
                     <span class="text-gray-500">Bedarf tippen, z. B. „3x LDX, 2 Stativ“</span>
