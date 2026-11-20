@@ -117,9 +117,9 @@ docker exec laravel-app composer install --no-dev --optimize-autoloader --no-int
 docker exec laravel-app php artisan migrate --pretend
 docker exec laravel-app php artisan migrate --force
 
-# C5: Assets
-docker exec laravel-app npm ci
-docker exec laravel-app npm run build
+# C5: Assets bauen. Im App-Container gibt es kein node/npm, daher ein Einmal-Container:
+docker run --rm -e HOME=/tmp -u "$(id -u):$(id -g)" -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
+ls -la app/public/build/manifest.json     # muss jetzt ein aktuelles Datum haben
 
 # C6: Caches neu aufbauen
 docker exec laravel-app php artisan config:cache
@@ -136,8 +136,8 @@ docker exec laravel-app php artisan up
   ausstehende aus A2) auftauchen. Bei Unerwartetem **abbrechen** und `php artisan up`.
 - Bricht `migrate --force` mit einem Fehler ab: **nicht** erneut starten, sondern
   Fehlermeldung sichern, `up` ausführen und zurückrollen (Phase E).
-- Fehlt `composer`/`npm` im Container (A3), diese Schritte dort bauen, wo sie
-  verfügbar sind, und `vendor/` bzw. `public/build` bereitstellen.
+- Im App-Container ist `composer` vorhanden, `node`/`npm` nicht. Deshalb baut C5 die
+  Assets in einem Einmal-Container (`node:22`); das Image wird beim ersten Mal geladen.
 
 Danach, falls noch nicht eingerichtet, den Scheduler-Cron eintragen (ohne ihn gehen keine
 Erinnerungen raus; Details in [betrieb.md](betrieb.md)):

@@ -25,3 +25,7 @@ yarn-error.log
 /.zed
 /.claude
 
+
+# Datenbank-Dumps nie einchecken
+/*.sql
+*.sql.gz

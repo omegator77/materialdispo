@@ -11,7 +11,7 @@ Auf dem VPS im App-Verzeichnis (Branch `main`):
 git pull
 docker exec laravel-app composer install --no-dev --optimize-autoloader
 docker exec laravel-app php artisan migrate --force
-docker exec laravel-app npm run build
+docker run --rm -e HOME=/tmp -u "$(id -u):$(id -g)" -v "$PWD/app":/app -w /app node:22 sh -c "npm ci && npm run build"
 docker exec laravel-app php artisan config:cache
 docker exec laravel-app php artisan route:cache
 docker exec laravel-app php artisan view:cache
@@ -24,6 +24,8 @@ Wichtig:
   Produktion.
 - **Vor jeder Migration ein Backup ziehen** (siehe unten), besonders bei
   Migrationen, die Spalten entfernen oder Daten umschreiben.
+- Im App-Container gibt es kein `node`/`npm`: Die Assets werden mit einem
+  Einmal-Container gebaut (siehe oben).
 - `config:cache` liest die `.env` einmalig ein. Nach Änderungen an der `.env`
   muss `php artisan config:cache` erneut laufen.
 - Die Migration `2026_07_16_100000_migrate_vb_protokoll_freitext_to_bloecke`
