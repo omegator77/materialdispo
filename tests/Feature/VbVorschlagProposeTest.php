@@ -246,3 +246,15 @@ test('ein für eine getypte Zeile verbrauchter Zug deckt keine Zeile ohne Typ', 
 
     expect($out['rigs'])->toHaveCount(1)->and($out['rigs'][0]['no_type'])->toBeTrue();
 });
+
+test('Material: Mietgerät ohne Mietvorgang trägt Warnung', function () {
+    $supplier = Supplier::create(['bezeichnung' => 'Verleih']);
+    $rented = ($this->mk)($this->lensT, '1', ['suppliers_id' => $supplier->id]);
+    $own = ($this->mk)($this->lensT, '2');
+    $this->vb->anforderungen()->create(['geraetetyp_id' => $this->lensT->id, 'anzahl' => 2]);
+
+    $need = ($this->propose)()['needs'][0];
+
+    expect($need['warnings'])->toBe([$rented->id => 'noch nicht gemietet'])
+        ->and($own->id)->not->toBeIn(array_keys($need['warnings']));
+});

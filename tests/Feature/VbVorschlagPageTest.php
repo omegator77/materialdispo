@@ -170,3 +170,23 @@ test('übernehmbarer Zug oder Bedarf zeigt den Übernehmen-Button', function () 
     $this->vb->anforderungen()->where('cam_number', '1')->delete();
     $this->actingAs($this->admin)->get($this->url)->assertOk()->assertSee('type="submit"', false);
 });
+
+test('Mietgerät im Material zeigt noch nicht gemietet', function () {
+    $supplier = Supplier::create(['bezeichnung' => 'Verleih']);
+    $kabelT = ($this->typ)('Kabelrolle');
+    ($this->mk)($kabelT, 'KR-1', ['suppliers_id' => $supplier->id]);
+    $this->vb->anforderungen()->create(['geraetetyp_id' => $kabelT->id, 'anzahl' => 1]);
+
+    $this->actingAs($this->admin)->get($this->url)->assertOk()
+        ->assertSee('noch nicht gemietet')
+        ->assertSee('(Miete, noch nicht gemietet)');
+});
+
+test('Alternative im Kamerazug zeigt Mietwarnung in der Option', function () {
+    $supplier = Supplier::create(['bezeichnung' => 'Verleih']);
+    ($this->mk)($this->camT, 'K-1');
+    ($this->mk)($this->camT, 'K-2', ['suppliers_id' => $supplier->id]);
+    ($this->camLine)(['tripod_geraetetyp_id' => null]);
+
+    $this->actingAs($this->admin)->get($this->url)->assertOk()->assertSee('K-2) (Miete, noch nicht gemietet)', false);
+});

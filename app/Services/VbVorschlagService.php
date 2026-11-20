@@ -181,11 +181,13 @@ class VbVorschlagService
                     $noCamera = $noType || ! $item;
                 }
 
+                $alternatives = $candidates->reject(fn (Item $i) => $i->id === $item?->id)->values();
                 $slots[$slot] = [
                     'label' => $label,
                     'typ' => $typ,
                     'item' => $item,
-                    'alternatives' => $candidates->reject(fn (Item $i) => $i->id === $item?->id)->values(),
+                    'alternatives' => $alternatives,
+                    'warnings' => $this->rentalWarnings($production, collect([$item])->merge($alternatives)->filter()),
                     'gap' => ! $noType && $slotTypeId && ! $item,
                     'warning' => $item?->suppliers_id ? $this->availability->check($item, $production)['warning'] : null,
                 ];
@@ -218,7 +220,7 @@ class VbVorschlagService
         $free = $pool->reject(fn (Item $i) => in_array($i->id, $taken, true))->values();
         $plan = $this->smart->planFromPool($free, $needs);
 
-        return collect($plan['lines'])->map(function (array $line, int $i) use ($needs, $free) {
+        return collect($plan['lines'])->map(function (array $line, int $i) use ($needs, $free, $production) {
             $match = $needs[$i]['match'];
             $chosen = collect($line['items'])->pluck('id');
             $alternatives = $this->smart->ranked($free->filter(fn (Item $item) => ! $chosen->contains($item->id)
@@ -232,8 +234,28 @@ class VbVorschlagService
                 'missing' => $line['missing'],
                 'items' => $line['items'],
                 'alternatives' => $alternatives,
+                'warnings' => $this->rentalWarnings($production, collect($line['items'])->merge($alternatives)),
             ];
         })->all();
+    }
+
+    /**
+     * Mietwarnungen je Gerät-ID, nur für Geräte mit Lieferant (wie die Slot-Warnung).
+     *
+     * @param  Collection<int, Item>  $items
+     * @return array<int, string>
+     */
+    private function rentalWarnings(Production $production, Collection $items): array
+    {
+        $out = [];
+        foreach ($items->filter(fn (Item $i) => $i->suppliers_id) as $item) {
+            $warning = $this->availability->check($item, $production)['warning'];
+            if ($warning) {
+                $out[$item->id] = $warning;
+            }
+        }
+
+        return $out;
     }
 
     private function typeOf(VbProtokollAnforderung $line, string $slot): mixed

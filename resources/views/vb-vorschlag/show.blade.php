@@ -8,7 +8,8 @@
     </x-slot>
 
     @php
-        $label = fn ($i) => $i->bezeichnung.($i->nummer ? ' ('.$i->nummer.')' : '');
+        $label = fn ($i, array $warnings = []) => $i->bezeichnung.($i->nummer ? ' ('.$i->nummer.')' : '')
+            .(isset($warnings[$i->id]) ? ' (Miete, '.$warnings[$i->id].')' : '');
         $rigs = $proposal['rigs'];
         $needs = $proposal['needs'];
         $canApply = (bool) $needs || collect($rigs)->contains(fn ($r) => $r['takeable']);
@@ -72,7 +73,7 @@
                                                 <select id="rig-{{ $i }}-{{ $slot }}" name="rigs[{{ $i }}][{{ $slot }}]" class="form-control w-full">
                                                     <option value="">— leer —</option>
                                                     @foreach($selectable as $opt)
-                                                        <option value="{{ $opt->id }}" @selected($data['item'] && $data['item']->id === $opt->id)>{{ $label($opt) }}</option>
+                                                        <option value="{{ $opt->id }}" @selected($data['item'] && $data['item']->id === $opt->id)>{{ $label($opt, $data['warnings']) }}</option>
                                                     @endforeach
                                                 </select>
                                                 @if($data['gap'])
@@ -111,11 +112,16 @@
                                         <select name="items[]" class="form-control w-full" aria-label="{{ $need['label'] }}">
                                             <option value="">— weglassen —</option>
                                             @foreach(collect($need['items'])->reject(fn ($o) => $o->id !== $chosen->id)->merge($need['alternatives']) as $opt)
-                                                <option value="{{ $opt->id }}" @selected($opt->id === $chosen->id)>{{ $label($opt) }}</option>
+                                                <option value="{{ $opt->id }}" @selected($opt->id === $chosen->id)>{{ $label($opt, $need['warnings']) }}</option>
                                             @endforeach
                                         </select>
                                     @endforeach
                                 </div>
+                                @foreach($need['warnings'] as $warn)
+                                    @if($loop->first)
+                                        <span class="badge badge-blue mt-2">{{ $warn }}</span>
+                                    @endif
+                                @endforeach
                             </div>
                         @endforeach
                     </div>
