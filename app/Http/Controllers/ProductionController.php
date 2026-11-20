@@ -124,7 +124,10 @@ class ProductionController extends Controller
         $openNeeds = $smart->openVbNeeds($production);
         $similarProduction = $production->packlistEntries()->count() < 3 ? $smart->similarProduction($production) : null;
 
+        $cameraTypes = \App\Models\Geraetetyp::where('units_id', 1)->whereHas('items')->orderBy('bezeichnung')->get();
+
         return view('productions.show', compact(
+            'cameraTypes',
             'suggestions',
             'openNeeds',
             'similarProduction',

@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Geraetetyp;
 use App\Models\Item;
+use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\Unit;
+use App\Models\Vermietvorgang;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -52,7 +54,37 @@ class SmartAssignmentService
      */
     public function plan(Production $production, array $needs): array
     {
-        $pool = $this->availability->assignableItemsFor($production, null, true);
+        return $this->planFromPool($this->availability->assignableItemsFor($production, null, true), $needs);
+    }
+
+    /**
+     * Wie plan(), aber für einen Miet-/Vermietvorgang: Kandidaten sind die
+     * noch nicht zugeordneten Geräte (bei Miete nur die des Vermieters),
+     * Verfügbarkeit nach den Regeln des jeweiligen Vorgangs.
+     */
+    public function planForVorgang(Mietvorgang|Vermietvorgang $vorgang, array $needs): array
+    {
+        $isMiete = $vorgang instanceof Mietvorgang;
+        $pool = Item::query()
+            ->whereDoesntHave($isMiete ? 'mietvorgaenge' : 'vermietvorgaenge', fn ($q) => $q->where($isMiete ? 'mietvorgaenge.id' : 'vermietvorgaenge.id', $vorgang->id))
+            ->when($isMiete, fn ($q) => $q->where('suppliers_id', $vorgang->suppliers_id))
+            ->get()
+            ->map(function (Item $item) use ($vorgang, $isMiete) {
+                $check = $isMiete ? $this->availability->checkForMiete($item, $vorgang) : $this->availability->checkForVerleih($item, $vorgang);
+                $item->is_available = $check['available'];
+                $item->availability_reason = $check['reason'];
+
+                return $item;
+            });
+
+        return $this->planFromPool($pool, $needs);
+    }
+
+    /**
+     * @param  array<int, array{query?: string, anzahl: int, match: array}>  $needs
+     */
+    public function planFromPool(Collection $pool, array $needs): array
+    {
         $taken = [];
         $lines = [];
         $picked = [];
@@ -305,7 +337,29 @@ class SmartAssignmentService
         return $bestScore >= 0.4 ? $best : null;
     }
 
-    private function ranked(Collection $items): Collection
+    /**
+     * Plan als JSON-taugliches Array (Live-Vorschau im Browser).
+     */
+    public function serializePlan(array $plan): array
+    {
+        $fmt = fn (Item $i) => ['id' => $i->id, 'label' => trim($i->bezeichnung.' '.($i->nummer ? "({$i->nummer})" : '')), 'rented' => (bool) $i->suppliers_id];
+
+        return [
+            'missing' => $plan['missing'],
+            'total' => count($plan['items']),
+            'lines' => array_map(fn ($l) => [
+                'label' => $l['label'],
+                'requested' => $l['requested'],
+                'matched' => $l['matched'],
+                'missing' => $l['missing'],
+                'items' => array_map($fmt, $l['items']),
+                'blocked' => array_map(fn ($b) => $fmt($b['item']) + ['reason' => $b['reason']], $l['blocked']),
+                'substitutes' => array_map($fmt, $l['substitutes']),
+            ], $plan['lines']),
+        ];
+    }
+
+    public function ranked(Collection $items): Collection
     {
         return $items->sortBy([
             fn ($a, $b) => (int) (bool) $a->suppliers_id <=> (int) (bool) $b->suppliers_id, // Eigentum zuerst

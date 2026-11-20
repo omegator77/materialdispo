@@ -187,6 +187,10 @@
             </div>
 
             {{-- Geräte-Picker --}}
+            <div class="mb-4 border border-orange-300 rounded-lg p-4 bg-orange-50/40">
+                @include('partials._quick-add-box', ['previewUrl' => route('vermietvorgaenge.quickAdd.preview', $vermietvorgang), 'storeUrl' => route('vermietvorgaenge.quickAdd', $vermietvorgang)])
+            </div>
+
             <form action="{{ route('vermietvorgaenge.attachItems', $vermietvorgang) }}" method="POST"
                   x-data="vermietvorgangItemPicker({
                       items: [

@@ -21,7 +21,7 @@ class SmartProductionController extends Controller
 
         $plan = $this->smart->plan($production, $this->smart->parseNeeds($request->text));
 
-        return response()->json($this->serialize($plan));
+        return response()->json($this->smart->serializePlan($plan));
     }
 
     public function store(Request $request, Production $production)
@@ -75,24 +75,5 @@ class SmartProductionController extends Controller
 
         return redirect()->route('productions.show', $production)
             ->with($added ? 'success' : 'error', implode(' — ', $parts) ?: 'Nichts zu tun.');
-    }
-
-    private function serialize(array $plan): array
-    {
-        $fmt = fn (Item $i) => ['id' => $i->id, 'label' => trim($i->bezeichnung.' '.($i->nummer ? "({$i->nummer})" : '')), 'rented' => (bool) $i->suppliers_id];
-
-        return [
-            'missing' => $plan['missing'],
-            'total' => count($plan['items']),
-            'lines' => array_map(fn ($l) => [
-                'label' => $l['label'],
-                'requested' => $l['requested'],
-                'matched' => $l['matched'],
-                'missing' => $l['missing'],
-                'items' => array_map($fmt, $l['items']),
-                'blocked' => array_map(fn ($b) => $fmt($b['item']) + ['reason' => $b['reason']], $l['blocked']),
-                'substitutes' => array_map($fmt, $l['substitutes']),
-            ], $plan['lines']),
-        ];
     }
 }
