@@ -17,8 +17,8 @@ Es gibt drei Rollen, die vom Admin vergeben werden (siehe **Verwaltung → Benut
 
 | Rolle | Rechte |
 |---|---|
-| **Betrachter** | Nur lesen: Dashboard, Geräte, Produktionen, Timeline, Packliste, PDFs ansehen |
-| **Benutzer** | Wie Betrachter, plus: Geräte/Produktionen/Vorgänge anlegen, bearbeiten, Haken setzen (z. B. „Packvorgang abschließen") |
+| **Betrachter** | Nur lesen: Dashboard, Geräte, Produktionen, Timeline, Packen, PDFs ansehen |
+| **Benutzer** | Wie Betrachter, plus: Geräte/Produktionen/Vorgänge anlegen, bearbeiten, Haken setzen (z. B. „Packen abschließen") |
 | **Admin** | Wie Benutzer, plus: Benutzerverwaltung und Einstellungen |
 
 Falls ein Button fehlt, den man erwarten würde — meistens liegt es an der Rolle, nicht an einem Fehler.
@@ -30,7 +30,7 @@ Oben in der Leiste:
 - **Dashboard** — Übersicht über aktuelle Belegung und offene Vorgänge
 - **Geräte** — das komplette Inventar
 - **Produktionen** — laufende und geplante Drehs/Projekte
-- **Packliste** — Gesamtübersicht aller Produktionen mit ihrem Material
+- **Packen** — Gesamtübersicht aller Produktionen mit ihrem Material
 - **Timeline** — Zeitstrahl, wer welches Gerät wann belegt
 - **Verwaltung** (Dropdown) — Stammdaten (Gruppen, Gerätetypen, Mailinglisten), Miet- und Verleihvorgänge, sowie (für Admins) Benutzer und Einstellungen
 
@@ -48,14 +48,14 @@ Nach dem Login landet man auf dem Dashboard. Es zeigt auf einen Blick:
 
 Jedes Gerät (z. B. „LDX 86N WorldCam", Nr. 22) gehört zu:
 
-- einer **Gruppe** (z. B. „Kameras", „Optiken", „Stativ", „Audio", „Intercom") — dient zur Sortierung und zum Filtern in Timeline und Packliste,
+- einer **Gruppe** (z. B. „Kameras", „Optiken", „Stativ", „Audio", „Intercom") — dient zur Sortierung und zum Filtern in Timeline und Packen,
 - einem **Gerätetyp** (z. B. „LDX 86N WorldCam" bei Kameras oder „Canon 22 Fach" bei Objektiven) — wird u. a. für Materialanforderungen im VB-Protokoll genutzt.
 
 Auf der Geräte-Detailseite sieht man Stammdaten, ob es sich um **Eigenmaterial** oder **Mietmaterial** (inkl. Vermieter, z. B. „Pixmade") handelt, und in welchen Produktionen bzw. Miet-/Vermietvorgängen das Gerät aktuell steckt. Kameras, Monitore und Objektive haben zusätzliche technische Detailfelder.
 
 Neue Geräte, Gerätetypen und Gruppen legt man über **Verwaltung** an bzw. über die „+"/„Neu"-Buttons auf den jeweiligen Listenseiten an.
 
-## Produktionen: Material zuordnen
+## Produktionen: Packliste erstellen
 
 Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddatum. Auf der Detailseite kann man:
 
@@ -63,6 +63,8 @@ Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddat
 2. Verknüpfte Miet-/Vermietvorgänge einsehen (Link „Bearbeiten →").
 3. Ein **VB-Protokoll** (Vorbesprechungsprotokoll) anlegen — dort trägt man Kunde, Ort, Zeitplan, Crew und die benötigten Geräte/Mengen ein. Die App vergleicht automatisch Bedarf mit tatsächlich zugeordnetem/gepacktem Material und zeigt eine rot/gelb/grün-Ampel.
 4. Die Materialliste als **PDF exportieren**.
+
+Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protokoll · Packliste · Packen) den Stand der Produktion und führt mit einem Klick zum jeweiligen Schritt.
 
 ## Schneller arbeiten: Suche, Schnellerfassung, Massenaktionen
 
@@ -90,19 +92,19 @@ Eine **Produktion** ist ein Dreh/Projekt mit Bezeichnung sowie Start- und Enddat
 - **Offenen VB-Bedarf automatisch zuordnen** direkt auf der Produktionsseite. Kamerazüge bleiben manuell, da sie eine Konfiguration brauchen.
 - **Wird oft zusammen gebucht**: Vorschläge aus früheren Produktionen mit demselben Material.
 
-## Packvorgang: Verladen abhaken
+## Packen: Verladen abhaken
 
-Der **Packvorgang** ist die praktische Checkliste beim Einladen des Materials für eine Produktion (erreichbar über den Button auf der Packliste oder Produktionsseite):
+Das **Packen** ist die praktische Checkliste beim Einladen des Materials für eine Produktion (erreichbar über den Button „Packen" in der Übersicht oder in der Schrittleiste der Produktion):
 
 - Jedes benötigte Gerät (gruppiert nach Kamerazug bzw. Gerätegruppe) hat eine Checkbox. Ein Klick markiert es als gepackt (mit Name und Uhrzeit).
 - Ein Fortschrittsbalken zeigt „X von Y Geräten im Rüstwagen".
-- Sind alle Geräte gepackt, kann man mit **„Packvorgang abschließen"** den Vorgang sperren. Fehlt noch etwas, muss man das bestätigen („Trotz fehlender Geräte abschließen").
-- Ein abgeschlossener Packvorgang lässt sich über **„Wieder öffnen"** erneut bearbeiten.
+- Sind alle Geräte gepackt, kann man mit **„Packen abschließen"** das Packen sperren. Fehlt noch etwas, muss man das bestätigen („Trotz fehlender Geräte abschließen").
+- Ein abgeschlossenes Packen lässt sich über **„Wieder öffnen"** erneut bearbeiten.
 - Über **„PDF-Checkliste"** lässt sich die Liste ausdrucken.
 
-## Packliste: der Überblick über alles
+## Packen: der Überblick über alles
 
-Die **Packliste** (im Hauptmenü) zeigt alle Produktionen als Karten — laufend, kommend, vergangen oder archiviert — jeweils mit ihren Kamerazügen und weiteren Geräten. Von hier aus gelangt man direkt zum Packvorgang (mit Fortschrittsanzeige), zum PDF-Export und — sobald der Packvorgang abgeschlossen ist — zum **Abgleich-Report** (Soll aus dem VB-Protokoll vs. tatsächlich gepacktes Material).
+Der Menüpunkt **Packen** (im Hauptmenü) zeigt die Produktionen, die gepackt werden müssen — offene zuerst (unbestätigte vor bestätigten, dann nach Startdatum) — jeweils mit ihren Kamerazügen und weiteren Geräten. Jede Produktion hat einen Button **„Packen"** mit Fortschrittsanzeige; von hier aus gelangt man auch zum PDF-Export und — sobald das Packen abgeschlossen ist — zum **Abgleich-Report** (Soll aus dem VB-Protokoll vs. tatsächlich gepacktes Material).
 
 ## Timeline: Wer hat wann was?
 
@@ -166,9 +168,9 @@ Admins verwalten unter **Verwaltung → Benutzer** die Konten und Rollen der Nut
 
 ## Typischer Ablauf in Kurzform
 
-1. Produktion anlegen → Material zuordnen (ggf. Kamerazüge konfigurieren)
+1. Produktion anlegen → Packliste erstellen (ggf. Kamerazüge konfigurieren)
 2. Bei Bedarf VB-Protokoll ausfüllen (Bedarf festhalten)
-3. Vor dem Dreh: Packvorgang durchgehen und abschließen
+3. Vor dem Dreh: Packen durchgehen und abschließen
 4. Fehlt Equipment, das erst angemietet werden muss: Mietvorgang anlegen, Status-Schritte abhaken
 5. Verleiht man selbst Geräte: Vermietvorgang anlegen, Status-Schritte abhaken
-6. Timeline und Packliste jederzeit zur Kontrolle nutzen
+6. Timeline und Packen jederzeit zur Kontrolle nutzen

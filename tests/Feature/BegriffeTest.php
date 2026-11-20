@@ -82,3 +82,19 @@ test('PDF-Checkliste sagt Packen statt Packvorgang', function () {
         ->toContain('Packen-Checkliste: Tagesschau')
         ->not->toContain('Packvorgang');
 });
+
+test('Anleitung nutzt Packen und die Schrittleiste', function () {
+    $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+    $html = $this->get(route('anleitung'))->assertOk()->getContent();
+
+    expect($html)->toContain('Packen')
+        ->toContain('Packliste erstellen')
+        ->not->toContain('Packvorgang: Verladen')
+        ->not->toContain('Der <strong>Packvorgang</strong>')
+        ->not->toContain('Die <strong>Packliste</strong> (im Hauptmenü)')
+        ->not->toContain('Material zuordnen');
+
+    // Einzige verbleibende Nennung: der unveränderte Slack-Button-Text.
+    expect(substr_count($html, 'Packvorgang'))->toBe(1);
+});
