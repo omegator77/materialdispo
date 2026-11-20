@@ -101,10 +101,10 @@ server {
         proxy_pass http://127.0.0.1:8080;   # Port des App-Containers
 
         proxy_set_header Host              $host;
-        # $remote_addr statt $proxy_add_x_forwarded_for: ein vom Client mitgeschickter
-        # X-Forwarded-For wird verworfen, die IP lässt sich nicht fälschen
-        # (wichtig für das Login-Rate-Limit).
-        proxy_set_header X-Forwarded-For   $remote_addr;
+        # Beide Varianten sind sicher: Laravel nimmt die rechteste nicht vertrauenswürdige
+        # Adresse, also die echte Client-IP, die nginx anhängt. $remote_addr (überschreiben)
+        # ist die strengere Variante, $proxy_add_x_forwarded_for (anhängen) genügt.
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host  $host;
         proxy_set_header X-Forwarded-Port  $server_port;
@@ -115,11 +115,11 @@ server {
 }
 ```
 
-- **Den App-Port nur lokal veröffentlichen** (`127.0.0.1:8080:80` in der
-  `docker-compose.yml`, nicht `8080:80`). Sonst ist die App an nginx vorbei direkt
-  aus dem Internet erreichbar, und ein Client könnte `X-Forwarded-For` selbst
-  setzen (Docker zeigt der App dann eine private Absenderadresse, der die App
-  vertraut).
+- **Den App-Port nur lokal veröffentlichen** (z. B. `127.0.0.1:8081:80` in der
+  `docker-compose.yml`, nicht `8081:80`). Das ist die eigentliche Absicherung: Ist
+  der Port von außen erreichbar, umgeht ein Client den nginx, und weil Docker der
+  App dann eine private Absenderadresse zeigt (der sie vertraut), kann er
+  `X-Forwarded-For` selbst setzen. Hinter dem nginx ist das nicht möglich.
 - `/slack/interactions` muss von außen erreichbar bleiben (Slack ruft es auf).
   Es ist durch die Slack-Signatur geschützt, nicht durch ein Login.
 - **TLS endet am nginx**, die App spricht intern HTTP. Deshalb
