@@ -13,7 +13,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
+                    <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! request()->routeIs('items.rented')">
                         {{ __('Geräte') }}
                     </x-nav-link>
 
@@ -30,7 +30,46 @@
                     </x-nav-link>
 
                     @php
-                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'suppliers.*', 'mieter.*', 'mailing-lists.*', 'mietvorgaenge.*', 'vermietvorgaenge.*'];
+                        $mieteActive = request()->routeIs('items.rented', 'suppliers.*', 'mietvorgaenge.*', 'mieter.*', 'vermietvorgaenge.*');
+                    @endphp
+                    <div class="flex items-center">
+                        <x-dropdown align="left" width="48">
+                            <x-slot name="trigger">
+                                <button type="button"
+                                        class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ $mieteActive ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                    {{ __('Miete & Verleih') }}
+                                    <svg class="ms-1 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </x-slot>
+
+                            <x-slot name="content">
+                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Eingang (wir mieten)') }}</div>
+                                <x-dropdown-link :href="route('items.rented')">
+                                    {{ __('Mietgeräte') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('suppliers.index')">
+                                    {{ __('Vermieter') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('mietvorgaenge.index')">
+                                    {{ __('Mietvorgänge') }}
+                                </x-dropdown-link>
+
+                                <div class="border-t border-gray-100 my-1"></div>
+                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Ausgang (wir verleihen)') }}</div>
+                                <x-dropdown-link :href="route('mieter.index')">
+                                    {{ __('Mieter') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('vermietvorgaenge.index')">
+                                    {{ __('Vermietvorgänge') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+
+                    @php
+                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'mailing-lists.*'];
                         if (Auth::user()->isUser()) {
                             $verwaltungRoutes = array_merge($verwaltungRoutes, ['activity-log.*']);
                         }
@@ -61,24 +100,6 @@
                                 </x-dropdown-link>
                                 <x-dropdown-link :href="route('mailing-lists.index')">
                                     {{ __('Mailinglisten') }}
-                                </x-dropdown-link>
-
-                                <div class="border-t border-gray-100 my-1"></div>
-                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Miete (eingehend)') }}</div>
-                                <x-dropdown-link :href="route('suppliers.index')">
-                                    {{ __('Vermieter') }}
-                                </x-dropdown-link>
-                                <x-dropdown-link :href="route('mietvorgaenge.index')">
-                                    {{ __('Mietvorgänge') }}
-                                </x-dropdown-link>
-
-                                <div class="border-t border-gray-100 my-1"></div>
-                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Verleih (ausgehend)') }}</div>
-                                <x-dropdown-link :href="route('mieter.index')">
-                                    {{ __('Mieter') }}
-                                </x-dropdown-link>
-                                <x-dropdown-link :href="route('vermietvorgaenge.index')">
-                                    {{ __('Vermietvorgänge') }}
                                 </x-dropdown-link>
 
                                 @if(Auth::user()->isUser())
@@ -179,7 +200,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*')">
+            <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! request()->routeIs('items.rented')">
                 {{ __('Geräte') }}
             </x-responsive-nav-link>
 
@@ -196,6 +217,32 @@
             </x-responsive-nav-link>
 
             <div class="pt-2 mt-2 border-t border-gray-200">
+                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Eingang (wir mieten)') }}</div>
+
+                <x-responsive-nav-link :href="route('items.rented')" :active="request()->routeIs('items.rented')">
+                    {{ __('Mietgeräte') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
+                    {{ __('Vermieter') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('mietvorgaenge.index')" :active="request()->routeIs('mietvorgaenge.*')">
+                    {{ __('Mietvorgänge') }}
+                </x-responsive-nav-link>
+
+                <div class="px-4 py-1 mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Ausgang (wir verleihen)') }}</div>
+
+                <x-responsive-nav-link :href="route('mieter.index')" :active="request()->routeIs('mieter.*')">
+                    {{ __('Mieter') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('vermietvorgaenge.index')" :active="request()->routeIs('vermietvorgaenge.*')">
+                    {{ __('Vermietvorgänge') }}
+                </x-responsive-nav-link>
+            </div>
+
+            <div class="pt-2 mt-2 border-t border-gray-200">
                 <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Stammdaten') }}</div>
 
                 <x-responsive-nav-link :href="route('units.index')" :active="request()->routeIs('units.*')">
@@ -208,26 +255,6 @@
 
                 <x-responsive-nav-link :href="route('mailing-lists.index')" :active="request()->routeIs('mailing-lists.*')">
                     {{ __('Mailinglisten') }}
-                </x-responsive-nav-link>
-
-                <div class="px-4 py-1 mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Miete (eingehend)') }}</div>
-
-                <x-responsive-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
-                    {{ __('Vermieter') }}
-                </x-responsive-nav-link>
-
-                <x-responsive-nav-link :href="route('mietvorgaenge.index')" :active="request()->routeIs('mietvorgaenge.*')">
-                    {{ __('Mietvorgänge') }}
-                </x-responsive-nav-link>
-
-                <div class="px-4 py-1 mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Verleih (ausgehend)') }}</div>
-
-                <x-responsive-nav-link :href="route('mieter.index')" :active="request()->routeIs('mieter.*')">
-                    {{ __('Mieter') }}
-                </x-responsive-nav-link>
-
-                <x-responsive-nav-link :href="route('vermietvorgaenge.index')" :active="request()->routeIs('vermietvorgaenge.*')">
-                    {{ __('Vermietvorgänge') }}
                 </x-responsive-nav-link>
 
                 @if(Auth::user()->isUser())

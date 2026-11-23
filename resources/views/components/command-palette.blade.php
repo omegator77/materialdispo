@@ -7,6 +7,7 @@
         ['Produktionen', route('productions.index'), 'produktionen projekte'],
         ['Packen', route('itemprods'), 'packen packliste'],
         ['Timeline', route('timeline.items'), 'timeline zeitstrahl belegung gantt'],
+        ['Mietgeräte', route('items.rented'), 'mietgeräte mietpool gemietet'],
         ['Mietvorgänge', route('mietvorgaenge.index'), 'miete mietvorgänge eingehend'],
         ['Vermietvorgänge', route('vermietvorgaenge.index'), 'verleih vermietvorgänge ausgehend'],
     ]);
