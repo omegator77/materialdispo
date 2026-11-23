@@ -59,6 +59,51 @@ class Item extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Archiv der Mietgeräte: das Gerät hatte Mietvorgänge und alle sind abgeschlossen
+     * (Rückgabe bestätigt). Ohne Mietvorgang ist ein Gerät nie archiviert. Arbeitet auf
+     * der Relation `mietvorgaenge`, die dafür geladen sein sollte.
+     */
+    public function isRentArchived(): bool
+    {
+        return $this->mietvorgaenge->isNotEmpty()
+            && $this->mietvorgaenge->every(fn (Mietvorgang $mv) => $mv->isComplete());
+    }
+
+    /** Ein Mietvorgang ist abgelaufen, aber die Rückgabe ist noch nicht bestätigt. */
+    public function hasOpenReturn(): bool
+    {
+        $heute = now()->startOfDay();
+
+        return $this->mietvorgaenge->contains(
+            fn (Mietvorgang $mv) => ! $mv->isComplete() && $mv->rent_end->lt($heute)
+        );
+    }
+
+    /**
+     * Welcher Mietvorgang in der Liste als Zeitraum angezeigt wird: im Archiv der mit dem
+     * spätesten Ende; sonst unter den offenen der laufende, dann der nächste kommende,
+     * dann der jüngste abgelaufene.
+     */
+    public function displayMietvorgang(): ?Mietvorgang
+    {
+        if ($this->mietvorgaenge->isEmpty()) {
+            return null;
+        }
+
+        if ($this->isRentArchived()) {
+            return $this->mietvorgaenge->sortByDesc('rent_end')->first();
+        }
+
+        $heute = now()->startOfDay();
+        $offen = $this->mietvorgaenge->reject(fn (Mietvorgang $mv) => $mv->isComplete());
+
+        return $offen->filter(fn (Mietvorgang $mv) => $mv->rent_start->lte($heute) && $mv->rent_end->gte($heute))
+            ->sortBy('rent_start')->first()
+            ?? $offen->filter(fn (Mietvorgang $mv) => $mv->rent_start->gt($heute))->sortBy('rent_start')->first()
+            ?? $offen->sortByDesc('rent_end')->first();
+    }
+
     public function vermietvorgaenge()
     {
         return $this->belongsToMany(Vermietvorgang::class, 'item_vermietvorgang')
