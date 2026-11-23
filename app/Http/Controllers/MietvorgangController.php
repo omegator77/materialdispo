@@ -47,7 +47,7 @@ class MietvorgangController extends Controller
         return view('mietvorgaenge.index', compact('mietvorgaenge'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
@@ -56,7 +56,16 @@ class MietvorgangController extends Controller
             ->orderBy('bezeichnung')
             ->get();
 
-        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
+        // "Erneut mieten": Vermieter und Geräte per Query vorwählen. Nur bekannte Vermieter und
+        // nur Mietgeräte genau dieses Vermieters zählen, alles andere wird ignoriert.
+        $preselectedSupplierId = Supplier::whereKey($request->integer('suppliers_id') ?: 0)->value('id');
+        $preselectedIds = collect((array) $request->input('item_id'))
+            ->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->unique()->values();
+        $preselectedItems = $preselectedSupplierId && $preselectedIds->isNotEmpty()
+            ? Item::where('suppliers_id', $preselectedSupplierId)->whereIn('id', $preselectedIds)->orderBy('bezeichnung')->get()
+            : collect();
+
+        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems', 'preselectedSupplierId', 'preselectedItems'));
     }
 
     public function store(MietvorgangRequest $request)
