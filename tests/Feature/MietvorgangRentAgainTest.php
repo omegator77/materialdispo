@@ -90,3 +90,13 @@ test('Viewer erhält 403 auf das Anlege-Formular', function () {
 
     $this->actingAs(User::factory()->create(['role' => 'viewer']))->get(rentAgainUrl($s))->assertForbidden();
 });
+
+test('je Gerät genau ein Button "Erneut mieten" in der Desktop- und eine in der Mobilansicht', function () {
+    $s = ragSetup();
+
+    $archiv = substr($this->actingAs($s['admin'])->get(route('items.rented'))->getContent(), 0);
+    $archiv = substr($archiv, (int) strpos($archiv, 'data-rent-archive'));
+    [$desktop, $mobile] = explode('md:hidden', $archiv, 2);
+
+    expect(substr_count($desktop, 'Erneut mieten'))->toBe(1)->and(substr_count($mobile, 'Erneut mieten'))->toBe(1);
+});

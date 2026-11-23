@@ -323,11 +323,6 @@
             const bezeichnungInput = document.getElementById('bezeichnung');
             let lastSuggested = '';
 
-            // Vorgewählter Vermieter ("Erneut mieten"): Bezeichnung wie nach einer Auswahl vorschlagen.
-            if (supplierSelect.value && bezeichnungInput.value === '') {
-                supplierSelect.dispatchEvent(new Event('change'));
-            }
-
             supplierSelect.addEventListener('change', function () {
                 if (!this.value) return;
                 if (bezeichnungInput.value !== '' && bezeichnungInput.value !== lastSuggested) return;
@@ -339,6 +334,11 @@
                         lastSuggested = data.bezeichnung;
                     });
             });
+
+            // Vorgewählter Vermieter ("Erneut mieten"): Bezeichnung wie nach einer Auswahl vorschlagen.
+            if (supplierSelect.value && bezeichnungInput.value === '') {
+                supplierSelect.dispatchEvent(new Event('change'));
+            }
         });
     </script>
 </x-app-layout>

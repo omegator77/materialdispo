@@ -40,9 +40,6 @@
                         <td class="text-right">
                             <div class="row-actions justify-end">
                                 <a href="{{ route('items.show', $item->id) }}" class="btn btn-secondary btn-sm">Details</a>
-                    @if(Auth::user()->isUser())
-                    <a href="{{ route('mietvorgaenge.create', ['suppliers_id' => $item->suppliers_id, 'item_id' => [$item->id]]) }}" class="btn btn-primary btn-sm">Erneut mieten</a>
-                    @endif
                                 @if(Auth::user()->isUser())
                                 <a href="{{ route('mietvorgaenge.create', ['suppliers_id' => $item->suppliers_id, 'item_id' => [$item->id]]) }}" class="btn btn-primary btn-sm">Erneut mieten</a>
                                 @endif
@@ -71,6 +68,9 @@
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <a href="{{ route('items.show', $item->id) }}" class="btn btn-secondary btn-sm">Details</a>
+                    @if(Auth::user()->isUser())
+                    <a href="{{ route('mietvorgaenge.create', ['suppliers_id' => $item->suppliers_id, 'item_id' => [$item->id]]) }}" class="btn btn-primary btn-sm">Erneut mieten</a>
+                    @endif
                 </div>
             </div>
             @endforeach
