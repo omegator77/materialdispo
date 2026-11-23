@@ -58,6 +58,11 @@ function itemSearch() {
                 if (matches) visibleCount++;
             });
 
+            // Treffer im zugeklappten Archiv: Archiv öffnen, damit sie sichtbar sind.
+            document.querySelectorAll('details.rent-archive').forEach(d => {
+                if (needle !== '' && d.querySelector('[data-search]:not(.hidden)')) d.open = true;
+            });
+
             document.querySelectorAll('[data-search-empty]').forEach(el => {
                 el.classList.toggle('hidden', !(needle !== '' && visibleCount === 0 && rows.length > 0));
             });
