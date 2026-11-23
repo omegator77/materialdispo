@@ -513,7 +513,7 @@
 
     {{-- Aktionen --}}
     <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
-        <a href="{{ route('items.index') }}"
+        <a href="{{ route(!empty($item->suppliers_id) ? 'items.rented' : 'items.index') }}"
             class="btn btn-secondary">
             Abbrechen
         </a>

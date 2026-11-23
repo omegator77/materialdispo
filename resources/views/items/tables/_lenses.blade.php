@@ -11,16 +11,19 @@
                     <th class="w-8"><input type="checkbox" class="bulk-select-all form-check" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
                     @endif
                     <th>
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
+                        <a href="{{ route($listRoute ?? 'items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
                     </th>
                     <th>
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Bezeichnung</a>
+                        <a href="{{ route($listRoute ?? 'items.index', array_merge(request()->all(), ['sort_by' => 'bezeichnung', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Bezeichnung</a>
                     </th>
                     <th>Hersteller</th>
                     <th>Modell</th>
                     <th>Zoom</th>
                     <th>Seriennummer</th>
                     <th>Vermieter</th>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <th>Mietzeitraum</th>
+                    @endif
                     <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
@@ -41,11 +44,14 @@
                     <td>{{ $item->lensDetail->zoom_factor ?? '—' }}</td>
                     <td>{{ $item->lensDetail->serial_number ?? '—' }}</td>
                     <td>{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <td class="whitespace-nowrap">@include('items.tables._mietzeitraum')</td>
+                    @endif
                     <td>@include('items.tables._actions')</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="empty-state">Keine Objektive gefunden.</td>
+                    <td colspan="10" class="empty-state">Keine Objektive gefunden.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -74,6 +80,9 @@
                 <p><strong>SN:</strong> {{ $item->lensDetail->serial_number ?? '—' }}</p>
                 <p><strong>Vermieter:</strong> {{ $item->supplier->bezeichnung ?? 'Eigentum' }}</p>
             </div>
+            @if(($listRoute ?? '') === 'items.rented')
+            <p class="mt-2 text-sm text-gray-700"><strong>Mietzeitraum:</strong> @include('items.tables._mietzeitraum')</p>
+            @endif
             <div class="mt-4">@include('items.tables._actions')</div>
         </div>
         @empty

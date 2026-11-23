@@ -140,6 +140,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);
     Route::get('/geraetetypen', [GeraetetypController::class, 'index'])->name('geraetetypen.index');
+    // Vor dem items-Resource, damit "items/mietgeraete" nicht als {item} gilt.
+    Route::get('/items/mietgeraete', [ItemController::class, 'rented'])->name('items.rented');
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);

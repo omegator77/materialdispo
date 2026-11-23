@@ -23,6 +23,17 @@ class ItemController extends Controller
 
     public function index(Request $request)
     {
+        return $this->listing($request, false);
+    }
+
+    /** Mietgeräte: dieselbe Liste wie "Geräte", aber nur Geräte mit Vermieter. */
+    public function rented(Request $request)
+    {
+        return $this->listing($request, true);
+    }
+
+    private function listing(Request $request, bool $rented)
+    {
         $detailRelations = match ((int) $request->get('unit_id', 0)) {
             1 => ['cameraDetail'],
             2 => ['lensDetail'],
@@ -36,12 +47,8 @@ class ItemController extends Controller
             $query->where('units_id', $request->unit_id);
         }
 
-        // Herkunft: Mietmaterial hat einen Vermieter, Eigenes nicht. Unbekannte Werte = alle.
-        match ($request->get('herkunft')) {
-            'gemietet' => $query->whereNotNull('suppliers_id'),
-            'eigen' => $query->whereNull('suppliers_id'),
-            default => null,
-        };
+        // Mietmaterial hat einen Vermieter; "Geräte" zeigt nur Eigenes, "Mietgeräte" nur Gemietetes.
+        $rented ? $query->whereNotNull('suppliers_id') : $query->whereNull('suppliers_id');
 
         // Standard ohne Auswahl: nach Gruppen-Reihenfolge gruppiert (wie
         // Timeline/Gruppenseite). "group" nutzt die drei Modi custom/asc/desc,
@@ -80,7 +87,10 @@ class ItemController extends Controller
         $items = $query->get();
         ['units' => $units, 'productions' => $productions, 'mietvorgaenge' => $mietvorgaenge, 'vermietvorgaenge' => $vermietvorgaenge] = BulkTargets::load();
 
-        return view('items.index', compact('items', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge'));
+        $listRoute = $rented ? 'items.rented' : 'items.index';
+        $pageTitle = $rented ? 'Mietgeräte' : 'Geräte';
+
+        return view('items.index', compact('items', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge', 'listRoute', 'pageTitle'));
     }
 
     public function create()
@@ -105,7 +115,7 @@ class ItemController extends Controller
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
 
-        return redirect()->route('items.index');
+        return redirect()->route($item->suppliers_id ? 'items.rented' : 'items.index');
     }
 
     public function show(string $id)
@@ -157,7 +167,7 @@ class ItemController extends Controller
         $this->detailSync->syncMonitorDetails($request, $item);
         $this->detailSync->syncLensDetails($request, $item);
 
-        return redirect()->route('items.index');
+        return redirect()->route($item->suppliers_id ? 'items.rented' : 'items.index');
     }
 
     public function destroy(string $id)
