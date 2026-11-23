@@ -1,3 +1,9 @@
+@php
+    // Detail-/Bearbeiten-Seite eines Mietgeräts: im Menü unter "Miete & Verleih", nicht unter "Geräte".
+    $navRentedItem = request()->routeIs('items.show', 'items.edit')
+        && (bool) optional(\App\Models\Item::find(request()->route('item')))->suppliers_id;
+    $navRentedPage = $navRentedItem || request()->routeIs('items.rented');
+@endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -13,7 +19,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! request()->routeIs('items.rented')">
+                    <x-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! $navRentedPage">
                         {{ __('Geräte') }}
                     </x-nav-link>
 
@@ -30,7 +36,7 @@
                     </x-nav-link>
 
                     @php
-                        $mieteActive = request()->routeIs('items.rented', 'suppliers.*', 'mietvorgaenge.*', 'mieter.*', 'vermietvorgaenge.*');
+                        $mieteActive = $navRentedPage || request()->routeIs('suppliers.*', 'mietvorgaenge.*', 'mieter.*', 'vermietvorgaenge.*');
                     @endphp
                     <div class="flex items-center">
                         <x-dropdown align="left" width="w-60">
@@ -200,7 +206,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! request()->routeIs('items.rented')">
+            <x-responsive-nav-link :href="route('items.index')" :active="request()->routeIs('items.*') && ! $navRentedPage">
                 {{ __('Geräte') }}
             </x-responsive-nav-link>
 
@@ -219,7 +225,7 @@
             <div class="pt-2 mt-2 border-t border-gray-200">
                 <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Eingang (wir mieten)') }}</div>
 
-                <x-responsive-nav-link :href="route('items.rented')" :active="request()->routeIs('items.rented')">
+                <x-responsive-nav-link :href="route('items.rented')" :active="$navRentedPage">
                     {{ __('Mietgeräte') }}
                 </x-responsive-nav-link>
 

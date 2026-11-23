@@ -82,13 +82,14 @@ test('Sortier- und Filterlinks bleiben auf der jeweiligen Seite', function () {
     foreach (['items.rented' => 'items.index', 'items.index' => 'items.rented'] as $page => $other) {
         foreach ([[], ['unit_id' => $s['unit']->id]] as $params) {
             $html = $this->actingAs($s['admin'])->get(route($page, $params))->assertOk()->getContent();
-            $mine = route($page);
-            $theirs = route($other);
+            $main = substr($html, (int) strpos($html, '<main'));
+            $mine = preg_quote(route($page), '/');
+            $theirs = preg_quote(route($other), '/');
 
-            expect($html)->toContain('action="'.$mine.'"');
-            // Kein Formular und kein Sortierkopf/Reset-Link zeigt auf die andere Liste.
-            expect($html)->not->toContain('action="'.$theirs.'"');
-            expect($html)->not->toMatch('/href="'.preg_quote($theirs, '/').'\?(sort_by|sort_direction)[^"]*"/');
+            // Im Inhalt (ohne Menü) zeigt weder ein Formular noch ein Link (auch Sortierung/Zurücksetzen) auf die andere Liste.
+            expect($main)->toContain('action="'.route($page).'"');
+            expect($main)->not->toMatch('/(action|href)="'.$theirs.'(\?[^"]*)?"/');
+            expect($main)->toMatch('/href="'.$mine.'\?[^"]*sort_by=/');
         }
     }
 });
@@ -140,4 +141,17 @@ test('Zurück und Abbrechen führen von einem Mietgerät zur Mietgeräte-Liste, 
         $own = $this->actingAs($s['admin'])->get(route($route, $s['own']))->assertOk()->getContent();
         expect($own)->toMatch($back(route('items.index')))->not->toMatch($back(route('items.rented')));
     }
+});
+
+test('Mietzeitraum zeigt die früheste Miete zuerst, unabhängig von der Anlege-Reihenfolge', function () {
+    $s = listSetup();
+    $spaet = Mietvorgang::create(['suppliers_id' => $s['supplier']->id, 'rent_start' => '2026-12-20', 'rent_end' => '2026-12-24']);
+    $frueh = Mietvorgang::create(['suppliers_id' => $s['supplier']->id, 'rent_start' => '2026-12-01', 'rent_end' => '2026-12-05']);
+    $spaet->items()->attach($s['rented']->id);
+    $frueh->items()->attach($s['rented']->id);
+
+    $html = $this->actingAs($s['admin'])->get(route('items.rented'))->getContent();
+
+    expect(strpos($html, '01.12.2026'))->not->toBeFalse()->and(strpos($html, '20.12.2026'))->not->toBeFalse();
+    expect(strpos($html, '01.12.2026'))->toBeLessThan(strpos($html, '20.12.2026'));
 });

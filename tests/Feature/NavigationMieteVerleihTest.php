@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Item;
+use App\Models\Supplier;
+use App\Models\Unit;
 use App\Models\User;
 
 function navHtml(string $role = 'admin', string $route = 'dashboard', array $params = []): array
@@ -103,4 +106,28 @@ test('die Befehlspalette findet Mietgeräte', function () {
 
     // Die Aktionen stehen JSON-kodiert (mehrfach maskiert) im Attribut: auf Pfad und Stichwort prüfen.
     expect($palette)->toContain('mietgeraete')->toContain('mietpool');
+});
+
+test('auf Detail- und Bearbeiten-Seiten richtet sich der aktive Menüpunkt nach der Herkunft des Geräts', function () {
+    $unit = Unit::create(['bezeichnung' => 'Kameras']);
+    $supplier = Supplier::create(['bezeichnung' => 'Pixmade']);
+    $own = Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Eigene-Kamera']);
+    $rented = Item::create(['units_id' => $unit->id, 'bezeichnung' => 'Miet-Kamera', 'suppliers_id' => $supplier->id]);
+
+    $miete = fn (string $desktop) => preg_match('/border-indigo-400[^>]*>\s*Miete &amp; Verleih/s', $desktop) === 1;
+    $geraete = fn (string $desktop) => preg_match('/border-indigo-400[^>]*>\s*Geräte\s*</s', $desktop) === 1;
+
+    foreach (['items.show', 'items.edit'] as $route) {
+        [$desktop, $mobile] = navHtml('admin', $route, [$rented]);
+        expect($miete($desktop))->toBeTrue("{$route} Mietgerät: Miete & Verleih nicht aktiv")
+            ->and($geraete($desktop))->toBeFalse("{$route} Mietgerät: Geräte fälschlich aktiv");
+        // Mobilmenü: aktiver Eintrag trägt border-indigo-400; Mietgeräte aktiv, Geräte nicht.
+        expect($mobile)->toMatch('/border-indigo-400[^>]*>\s*Mietgeräte/s')
+            ->and($mobile)->not->toMatch('/border-indigo-400[^>]*>\s*Geräte\s*</s');
+
+        [$desktop, $mobile] = navHtml('admin', $route, [$own]);
+        expect($geraete($desktop))->toBeTrue("{$route} eigenes Gerät: Geräte nicht aktiv")
+            ->and($miete($desktop))->toBeFalse()
+            ->and($mobile)->toMatch('/border-indigo-400[^>]*>\s*Geräte\s*</s');
+    }
 });
