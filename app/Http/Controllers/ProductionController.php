@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AttachItemRequest;
 use App\Http\Requests\ProductionRequest;
 use App\Http\Requests\StoreProductionImportRequest;
-use App\Models\Geraetetyp;
 use App\Models\Item;
 use App\Models\Production;
 use App\Models\Unit;
@@ -130,10 +129,7 @@ class ProductionController extends Controller
         $hasVbAnforderungen = $production->vbProtokoll()->whereHas('anforderungen')->exists();
         $similarProduction = $production->packlistEntries()->count() < 3 ? $smart->similarProduction($production) : null;
 
-        $cameraTypes = Geraetetyp::where('units_id', 1)->whereHas('items')->orderBy('bezeichnung')->get();
-
         return view('productions.show', compact(
-            'cameraTypes',
             'suggestions',
             'hasVbAnforderungen',
             'similarProduction',

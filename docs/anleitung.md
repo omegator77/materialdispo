@@ -81,8 +81,6 @@ Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protok
 
 **Produktion: „Schnell hinzufügen"** — Bedarf als Text eingeben (`3x LDX, 2 Stativ`). Eine Live-Vorschau zeigt, welche konkreten Geräte gewählt werden (Eigentum vor Miete, niedrige Nummer zuerst), was blockiert ist und warum, und welche Alternativen es in der Gruppe gibt.
 
-**Kamerazüge automatisch** (Produktion → „Schnell hinzufügen") — Kameratyp und Anzahl wählen: es werden freie Kameras gewählt und mit dem Zubehör (Objektiv, Stativ, Kopf, Adapter) aus früheren Zügen mit dieser Kamera ausgestattet; bevorzugt dieselben Geräte wie zuletzt, nie ein Gerät doppelt. Auch im Kamerazug-Formular ist das Zubehör dann vorbelegt (frei änderbar).
-
 **VB-Protokoll aus Vorlage** — beim Anlegen eines Protokolls lässt sich eine frühere Produktion übernehmen (ähnlichste zuerst): Bedarf, Textblöcke und Crew-Stärken werden kopiert, Kunde und Ort bleiben leer.
 
 **Schnell hinzufügen bei Miet- und Vermietvorgängen** — dieselbe Texteingabe wie bei Produktionen. Bei einem Mietvorgang kommen nur Geräte des jeweiligen Vermieters infrage; Verfügbarkeit wird nach den Regeln des Vorgangs geprüft.
