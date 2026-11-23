@@ -85,12 +85,20 @@ class ItemController extends Controller
         }
 
         $items = $query->get();
+
+        // Mietgeräte: Geräte mit ausschließlich abgeschlossenen Mietvorgängen liegen im Archiv.
+        $archived = collect();
+        if ($rented) {
+            [$archived, $items] = $items->partition(fn (Item $item) => $item->isRentArchived());
+            $archived = $archived->sortByDesc(fn (Item $item) => $item->displayMietvorgang()?->rent_end)->values();
+            $items = $items->values();
+        }
         ['units' => $units, 'productions' => $productions, 'mietvorgaenge' => $mietvorgaenge, 'vermietvorgaenge' => $vermietvorgaenge] = BulkTargets::load();
 
         $listRoute = $rented ? 'items.rented' : 'items.index';
         $pageTitle = $rented ? 'Mietgeräte' : 'Geräte';
 
-        return view('items.index', compact('items', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge', 'listRoute', 'pageTitle'));
+        return view('items.index', compact('items', 'archived', 'units', 'productions', 'mietvorgaenge', 'vermietvorgaenge', 'listRoute', 'pageTitle'));
     }
 
     public function create()

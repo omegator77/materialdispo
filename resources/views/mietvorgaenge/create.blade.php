@@ -11,6 +11,11 @@
                       @foreach($assignableItems as $item)
                       { id: {{ $item->id }}, label: @js($item->bezeichnung . ($item->nummer ? ' (' . $item->nummer . ')' : '')) },
                       @endforeach
+                  ],
+                  selected: [
+                      @foreach($preselectedItems as $item)
+                      { id: {{ $item->id }}, label: @js($item->bezeichnung . ($item->nummer ? ' (' . $item->nummer . ')' : '')) },
+                      @endforeach
                   ]
               })"
               @submit="if (selected.length === 0 && !confirm('Diesen Mietvorgang wirklich ohne zugeordnetes Gerät speichern? Ein Mietvorgang ohne Gerät ist in der Regel nicht sinnvoll.')) { $event.preventDefault(); }">
@@ -41,7 +46,7 @@
                         <select name="suppliers_id" id="suppliers_id" class="form-control w-full" required>
                             <option value="">— wählen —</option>
                             @foreach($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" @selected(old('suppliers_id') == $supplier->id)>
+                            <option value="{{ $supplier->id }}" @selected(old('suppliers_id', $preselectedSupplierId) == $supplier->id)>
                                 {{ $supplier->bezeichnung }}
                             </option>
                             @endforeach
@@ -286,12 +291,12 @@
             });
         }
 
-        function mietvorgangItemPicker({ items }) {
+        function mietvorgangItemPicker({ items, selected = [] }) {
             return {
                 items,
                 query: '',
                 open: false,
-                selected: [],
+                selected: [...selected],
                 get filteredItems() {
                     const needle = this.query.trim().toLowerCase();
                     return this.items.filter(item => !this.isSelected(item) && (needle === '' || item.label.toLowerCase().includes(needle)));
@@ -329,6 +334,11 @@
                         lastSuggested = data.bezeichnung;
                     });
             });
+
+            // Vorgewählter Vermieter ("Erneut mieten"): Bezeichnung wie nach einer Auswahl vorschlagen.
+            if (supplierSelect.value && bezeichnungInput.value === '') {
+                supplierSelect.dispatchEvent(new Event('change'));
+            }
         });
     </script>
 </x-app-layout>

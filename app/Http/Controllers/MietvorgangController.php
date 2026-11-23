@@ -47,7 +47,7 @@ class MietvorgangController extends Controller
         return view('mietvorgaenge.index', compact('mietvorgaenge'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $suppliers = Supplier::orderBy('bezeichnung')->get();
         $mailingLists = MailingList::orderBy('name')->get();
@@ -56,7 +56,21 @@ class MietvorgangController extends Controller
             ->orderBy('bezeichnung')
             ->get();
 
-        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems'));
+        // "Erneut mieten": Vermieter und Geräte per Query vorwählen. Nur bekannte Vermieter und
+        // nur Mietgeräte genau dieses Vermieters zählen, alles andere wird ignoriert.
+        // Nach einem Validierungsfehler gilt die Auswahl des Benutzers (old input), nicht die Query-Vorwahl.
+        $hasOld = $request->hasSession() && $request->session()->hasOldInput();
+        $supplierRaw = $hasOld ? $request->old('suppliers_id') : $request->input('suppliers_id');
+        $itemRaw = $hasOld ? $request->old('item_id') : $request->input('item_id');
+
+        $preselectedSupplierId = Supplier::whereKey(is_numeric($supplierRaw) ? (int) $supplierRaw : 0)->value('id');
+        $preselectedIds = collect((array) $itemRaw)
+            ->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->unique()->values();
+        $preselectedItems = $preselectedSupplierId && $preselectedIds->isNotEmpty()
+            ? Item::where('suppliers_id', $preselectedSupplierId)->whereIn('id', $preselectedIds)->orderBy('bezeichnung')->get()
+            : collect();
+
+        return view('mietvorgaenge.create', compact('suppliers', 'mailingLists', 'defaultMailingList', 'assignableItems', 'preselectedSupplierId', 'preselectedItems'));
     }
 
     public function store(MietvorgangRequest $request)

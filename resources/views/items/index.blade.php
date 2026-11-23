@@ -33,6 +33,10 @@
 
     @include('items.tables.' . $partial)
 
+    @if(($archived ?? collect())->isNotEmpty())
+        @include('items.tables._archiv')
+    @endif
+
     @if(Auth::user()->isUser())
         @include('items.tables._bulk-bar')
     @endif

@@ -54,6 +54,8 @@ Jedes Gerät (z. B. „LDX 86N WorldCam", Nr. 22) gehört zu:
 
 Ein Gerät mit eingetragenem Vermieter zählt als Mietmaterial und steht in der Liste **Mietgeräte** (mit Vermieter und Mietzeitraum, oder „noch nicht gemietet“, solange kein Mietvorgang angehängt ist) statt unter **Geräte**; trägt man den Vermieter aus, wandert es zurück.
 
+**Archiv und „Erneut mieten“:** Sind *alle* Mietvorgänge eines Mietgeräts abgeschlossen (Rückgabe im Mietvorgang bestätigt, in der App oder per Slack), wandert das Gerät in das zugeklappte **Archiv** unter der Liste (mit „zuletzt“-Zeitraum). Mit **Erneut mieten** öffnet man „Neuer Mietvorgang“ mit Vermieter und Gerät schon eingetragen — nur den Zeitraum gibt man ein, danach steht das Gerät wieder in der aktuellen Liste. Ein Gerät, dessen Mietvorgang abgelaufen, aber noch nicht zurückgegeben ist, bleibt oben und trägt die Markierung **Rückgabe offen**. Ohne die Bestätigung der Rückgabe landet ein Gerät nie im Archiv.
+
 Auf der Geräte-Detailseite sieht man Stammdaten, ob es sich um **Eigenmaterial** oder **Mietmaterial** (inkl. Vermieter, z. B. „Pixmade") handelt, und in welchen Produktionen bzw. Miet-/Vermietvorgängen das Gerät aktuell steckt. Kameras, Monitore und Objektive haben zusätzliche technische Detailfelder.
 
 Neue Geräte, Gerätetypen und Gruppen legt man über **Verwaltung** an bzw. über die „+"/„Neu"-Buttons auf den jeweiligen Listenseiten an.

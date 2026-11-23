@@ -67,7 +67,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="empty-state">Keine Kameras gefunden.</td>
+                    <td colspan="10" class="empty-state">{{ ($archived ?? collect())->isNotEmpty() ? 'Keine aktuellen Mietgeräte.' : 'Keine Kameras gefunden.' }}</td>
                 </tr>
                 @endforelse
             </tbody>

@@ -11,3 +11,9 @@ test('die Anleitung beschreibt das Menü Miete & Verleih und die getrennten List
     expect($html)->not->toContain('Miet- und Verleihvorgänge, sowie');
     expect($html)->not->toContain('das komplette Inventar');
 });
+
+test('die Anleitung erklärt Archiv, Rückgabe offen und Erneut mieten', function () {
+    $html = $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('anleitung'))->assertOk()->getContent();
+
+    expect($html)->toContain('Archiv')->toContain('Erneut mieten')->toContain('Rückgabe offen');
+});
