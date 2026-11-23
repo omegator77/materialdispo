@@ -50,12 +50,13 @@ function itemSearch() {
             const needle = this.query.trim().toLowerCase();
             const rows = document.querySelectorAll('[data-search]');
             let visibleCount = 0;
+            const currentRows = [...rows].filter(el => !el.closest('details.rent-archive')).length;
 
             rows.forEach(el => {
                 const haystack = el.dataset.search.toLowerCase();
                 const matches = needle === '' || haystack.includes(needle);
                 el.classList.toggle('hidden', !matches);
-                if (matches) visibleCount++;
+                if (matches && !el.closest('details.rent-archive')) visibleCount++;
             });
 
             // Treffer im zugeklappten Archiv: Archiv öffnen, damit sie sichtbar sind.
@@ -64,7 +65,7 @@ function itemSearch() {
             });
 
             document.querySelectorAll('[data-search-empty]').forEach(el => {
-                el.classList.toggle('hidden', !(needle !== '' && visibleCount === 0 && rows.length > 0));
+                el.classList.toggle('hidden', !(needle !== '' && visibleCount === 0 && currentRows > 0));
             });
         }
     };

@@ -58,8 +58,13 @@ class MietvorgangController extends Controller
 
         // "Erneut mieten": Vermieter und Geräte per Query vorwählen. Nur bekannte Vermieter und
         // nur Mietgeräte genau dieses Vermieters zählen, alles andere wird ignoriert.
-        $preselectedSupplierId = Supplier::whereKey($request->integer('suppliers_id') ?: 0)->value('id');
-        $preselectedIds = collect((array) $request->input('item_id'))
+        // Nach einem Validierungsfehler gilt die Auswahl des Benutzers (old input), nicht die Query-Vorwahl.
+        $hasOld = $request->hasSession() && $request->session()->hasOldInput();
+        $supplierRaw = $hasOld ? $request->old('suppliers_id') : $request->input('suppliers_id');
+        $itemRaw = $hasOld ? $request->old('item_id') : $request->input('item_id');
+
+        $preselectedSupplierId = Supplier::whereKey(is_numeric($supplierRaw) ? (int) $supplierRaw : 0)->value('id');
+        $preselectedIds = collect((array) $itemRaw)
             ->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->unique()->values();
         $preselectedItems = $preselectedSupplierId && $preselectedIds->isNotEmpty()
             ? Item::where('suppliers_id', $preselectedSupplierId)->whereIn('id', $preselectedIds)->orderBy('bezeichnung')->get()

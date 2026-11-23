@@ -161,3 +161,24 @@ test('Archiv-Checkboxen tragen die Projekt-Klasse form-check', function () {
         expect($tag)->toContain('form-check');
     }
 });
+
+test('sind alle Mietgeräte archiviert, sagt die aktuelle Liste nicht "Keine Geräte gefunden"', function () {
+    $s = archSetup();
+    archVorgang($s, archItem($s, 'Alt-Kamera'), '2026-01-01', '2026-01-05', true);
+
+    foreach ([[], ['unit_id' => 1]] as $params) {
+        $html = rentedHtml($s, $params);
+        $aktuell = substr($html, 0, strpos($html, 'data-rent-archive'));
+
+        expect($html)->toContain('Archiv (1)');
+        // Die Tabellenzeile sagt "Keine aktuellen Mietgeräte." (der versteckte Such-Hinweis heißt weiter "gefunden").
+        expect($aktuell)->toMatch('/class="empty-state">\s*Keine aktuellen Mietgeräte\./')
+            ->not->toMatch('/class="empty-state">\s*Keine [^<]*gefunden/');
+    }
+});
+
+test('ohne Archiv bleibt die gewohnte Leer-Meldung', function () {
+    $s = archSetup();
+
+    expect(rentedHtml($s))->toContain('Keine Geräte gefunden');
+});

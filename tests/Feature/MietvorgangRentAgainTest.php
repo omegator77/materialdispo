@@ -100,3 +100,18 @@ test('je Gerät genau ein Button "Erneut mieten" in der Desktop- und eine in der
 
     expect(substr_count($desktop, 'Erneut mieten'))->toBe(1)->and(substr_count($mobile, 'Erneut mieten'))->toBe(1);
 });
+
+test('nach einem Validierungsfehler bleibt die vom Benutzer geänderte Geräteauswahl erhalten', function () {
+    $s = ragSetup();
+    $b = Item::create(['units_id' => $s['unit']->id, 'bezeichnung' => 'Andere-Kamera', 'nummer' => 'K-10', 'suppliers_id' => $s['supplier']->id]);
+
+    // Benutzer kommt über "Erneut mieten" (Gerät A vorgewählt), tauscht gegen B und sendet mit ungültigem Datum.
+    $html = $this->actingAs($s['admin'])->from(rentAgainUrl($s))->followingRedirects()
+        ->post(route('mietvorgaenge.store'), [
+            'suppliers_id' => $s['supplier']->id, 'rent_start' => 'kaputt', 'rent_end' => '20.12.2026',
+            'item_id' => [$b->id],
+        ])->getContent();
+
+    expect(preg_match('/selected:\s*\[(.*?)\]\s*\n\s*\}\)/s', $html, $m))->toBe(1);
+    expect($m[1])->toContain('Andere-Kamera')->not->toContain('Alt-Kamera');
+});
