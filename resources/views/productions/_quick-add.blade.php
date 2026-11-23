@@ -4,21 +4,6 @@
 
     @include('partials._quick-add-box', ['previewUrl' => route('productions.quickAdd.preview', $production), 'storeUrl' => route('productions.quickAdd', $production)])
 
-    @if(!empty($cameraTypes) && $cameraTypes->isNotEmpty())
-    <form method="POST" action="{{ route('camera-config.auto', $production) }}" class="border-t pt-3">
-        @csrf
-        <h3 class="text-sm font-semibold text-gray-800 mb-1">Kamerazüge automatisch</h3>
-        <p class="text-xs text-gray-500 mb-2">Zubehör (Objektiv, Stativ, Kopf, Adapter) wird aus früheren Zügen mit dieser Kamera gelernt.</p>
-        <div class="flex gap-2">
-            <input type="number" name="anzahl" value="1" min="1" max="20" class="form-control w-20 text-sm" aria-label="Anzahl">
-            <select name="geraetetyp_id" class="form-control flex-1 text-sm" aria-label="Kameratyp">
-                @foreach($cameraTypes as $ct)<option value="{{ $ct->id }}">{{ $ct->bezeichnung }}</option>@endforeach
-            </select>
-            <button type="submit" class="btn btn-secondary">Anlegen</button>
-        </div>
-    </form>
-    @endif
-
     @if($hasVbAnforderungen)
     <div class="border-t pt-3">
         <p class="text-sm text-gray-700 mb-2">Das VB-Protokoll enthält Anforderungen für diese Produktion.</p>

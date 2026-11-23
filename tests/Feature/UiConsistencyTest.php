@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 dataset('listenseiten', [
     'Dashboard' => ['dashboard'],
     'Geräte' => ['items.index'],
+    'Mietgeräte' => ['items.rented'],
     'Produktionen' => ['productions.index'],
     'Lieferanten' => ['suppliers.index'],
     'Mieter' => ['mieter.index'],

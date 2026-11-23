@@ -11,7 +11,7 @@
                     <th class="w-8"><input type="checkbox" class="bulk-select-all form-check" title="Alle sichtbaren auswählen" aria-label="Alle sichtbaren auswählen"></th>
                     @endif
                     <th>
-                        <a href="{{ route('items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
+                        <a href="{{ route($listRoute ?? 'items.index', array_merge(request()->all(), ['sort_by' => 'nummer', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-orange-500">Nr.</a>
                     </th>
                     <th>Hersteller</th>
                     <th>Modell</th>
@@ -20,6 +20,9 @@
                     <th>Format</th>
                     <th>Wandler</th>
                     <th>Standfuß</th>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <th>Vermieter &amp; Mietzeitraum</th>
+                    @endif
                     <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
@@ -43,11 +46,14 @@
                     <td>{{ $item->monitorDetail->max_input_format ?? '—' }}</td>
                     <td>{{ $item->monitorDetail->converter_model ?? '—' }}</td>
                     <td>{{ ($item->monitorDetail->has_stand ?? false) ? 'Ja' : 'Nein' }}</td>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <td>{{ $item->supplier->bezeichnung ?? '—' }}<br>@include('items.tables._mietzeitraum')</td>
+                    @endif
                     <td>@include('items.tables._actions')</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="empty-state">Keine Monitore gefunden.</td>
+                    <td colspan="11" class="empty-state">Keine Monitore gefunden.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -78,6 +84,9 @@
                 <p><strong>Wandler:</strong> {{ $item->monitorDetail->converter_model ?? '—' }}</p>
                 <p><strong>Standfuß:</strong> {{ ($item->monitorDetail->has_stand ?? false) ? 'Ja' : 'Nein' }}</p>
             </div>
+            @if(($listRoute ?? '') === 'items.rented')
+            <p class="mt-2 text-sm text-gray-700"><strong>Mietzeitraum:</strong> @include('items.tables._mietzeitraum')</p>
+            @endif
             <div class="mt-4">@include('items.tables._actions')</div>
         </div>
         @empty

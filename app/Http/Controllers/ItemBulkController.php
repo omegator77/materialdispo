@@ -84,7 +84,14 @@ class ItemBulkController extends Controller
 
         $count = count($result['created']);
         $message = "{$count} Gerät(e) angelegt.";
-        $redirect = redirect()->route('items.index')->with($count ? 'success' : 'error', $message);
+        // Mietgeräte stehen nicht unter "Geräte": nur gemietete Zeilen führen zur Mietgeräte-Liste,
+        // bei einer Mischung bleibt es bei Geräte, mit Hinweis wo die gemieteten zu finden sind.
+        $rentedCount = collect($result['created'])->filter(fn ($item) => $item->suppliers_id)->count();
+        $route = $count && $rentedCount === $count ? 'items.rented' : 'items.index';
+        if ($rentedCount > 0 && $route === 'items.index') {
+            $message .= " {$rentedCount} Mietgerät(e) stehen unter Miete & Verleih → Mietgeräte.";
+        }
+        $redirect = redirect()->route($route)->with($count ? 'success' : 'error', $message);
 
         if ($result['warnings']) {
             $redirect->with('warning', implode(' ', $result['warnings']));

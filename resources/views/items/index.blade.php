@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Geräte">
+        <x-page-header :title="$pageTitle ?? 'Geräte'">
             <x-slot name="actions">
                 @if(Auth::user()->isUser())
             <div class="flex gap-2">

@@ -89,3 +89,17 @@ test('viewers cannot bulk create', function () {
     $this->actingAs($viewer)->get(route('items.bulk.create'))->assertForbidden();
     $this->actingAs($viewer)->post(route('items.bulk.store'), [])->assertForbidden();
 });
+
+test('nur gemietete Zeilen führen zur Mietgeräte-Liste, gemischte zu Geräte mit Hinweis', function () {
+    $supplier = Supplier::create(['bezeichnung' => 'Pixmade']);
+    $rented = ['geraetetyp_id' => $this->typ->id, 'units_id' => $this->unit->id, 'anzahl' => 2,
+        'suppliers_id' => $supplier->id, 'rent_start' => '01.12.2026', 'rent_end' => '10.12.2026'];
+    $own = ['geraetetyp_id' => $this->typ->id, 'units_id' => $this->unit->id, 'anzahl' => 1];
+
+    $this->actingAs($this->user)->post(route('items.bulk.store'), ['rows' => [$rented]])
+        ->assertRedirect(route('items.rented'));
+
+    $this->actingAs($this->user)->post(route('items.bulk.store'), ['rows' => [$rented, $own]])
+        ->assertRedirect(route('items.index'))
+        ->assertSessionHas('success', fn ($m) => str_contains($m, 'Mietgerät') && str_contains($m, 'Mietgeräte'));
+});

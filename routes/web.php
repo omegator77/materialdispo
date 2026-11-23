@@ -75,7 +75,6 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('/camera-configs/{config}', [CameraConfigController::class, 'destroy'])->name('camera-config.destroy');
     Route::get('/productions/{production}/camera-config/create', [CameraConfigController::class, 'create'])->name('camera-config.create');
     Route::post('/productions/{production}/camera-config', [CameraConfigController::class, 'store'])->name('camera-config.store');
-    Route::post('/productions/{production}/camera-config-auto', [CameraConfigController::class, 'auto'])->name('camera-config.auto');
 
     Route::get('productions/{production}/vb-protokoll/create', [VbProtokollController::class, 'create'])->name('vb-protokoll.create');
     Route::post('productions/{production}/vb-protokoll', [VbProtokollController::class, 'store'])->name('vb-protokoll.store');
@@ -141,6 +140,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('/units', UnitController::class)->only(['index', 'show']);
     Route::get('/geraetetypen', [GeraetetypController::class, 'index'])->name('geraetetypen.index');
+    // Vor dem items-Resource, damit "items/mietgeraete" nicht als {item} gilt.
+    Route::get('/items/mietgeraete', [ItemController::class, 'rented'])->name('items.rented');
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);

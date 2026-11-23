@@ -28,11 +28,12 @@ Falls ein Button fehlt, den man erwarten würde — meistens liegt es an der Rol
 Oben in der Leiste:
 
 - **Dashboard** — Übersicht über aktuelle Belegung und offene Vorgänge
-- **Geräte** — das komplette Inventar
+- **Geräte** — die eigenen Geräte (Eigentum); gemietete Geräte stehen unter *Miete & Verleih → Mietgeräte*
 - **Produktionen** — laufende und geplante Drehs/Projekte
 - **Packen** — Gesamtübersicht aller Produktionen mit ihrem Material
 - **Timeline** — Zeitstrahl, wer welches Gerät wann belegt
-- **Verwaltung** (Dropdown) — Stammdaten (Gruppen, Gerätetypen, Mailinglisten), Miet- und Verleihvorgänge, sowie (für Admins) Benutzer und Einstellungen
+- **Miete & Verleih** (Dropdown) — *Eingang* (was wir mieten): Mietgeräte, Vermieter, Mietvorgänge; *Ausgang* (was wir verleihen): Mieter, Vermietvorgänge
+- **Verwaltung** (Dropdown) — Stammdaten (Gruppen, Gerätetypen, Mailinglisten), das Protokoll sowie (für Admins) Benutzer und Einstellungen
 
 ## Dashboard: der Einstieg
 
@@ -50,6 +51,8 @@ Jedes Gerät (z. B. „LDX 86N WorldCam", Nr. 22) gehört zu:
 
 - einer **Gruppe** (z. B. „Kameras", „Optiken", „Stativ", „Audio", „Intercom") — dient zur Sortierung und zum Filtern in Timeline und Packen,
 - einem **Gerätetyp** (z. B. „LDX 86N WorldCam" bei Kameras oder „Canon 22 Fach" bei Objektiven) — wird u. a. für Materialanforderungen im VB-Protokoll genutzt.
+
+Ein Gerät mit eingetragenem Vermieter zählt als Mietmaterial und steht in der Liste **Mietgeräte** (mit Vermieter und Mietzeitraum, oder „noch nicht gemietet“, solange kein Mietvorgang angehängt ist) statt unter **Geräte**; trägt man den Vermieter aus, wandert es zurück.
 
 Auf der Geräte-Detailseite sieht man Stammdaten, ob es sich um **Eigenmaterial** oder **Mietmaterial** (inkl. Vermieter, z. B. „Pixmade") handelt, und in welchen Produktionen bzw. Miet-/Vermietvorgängen das Gerät aktuell steckt. Kameras, Monitore und Objektive haben zusätzliche technische Detailfelder.
 
@@ -80,8 +83,6 @@ Oben auf den Produktionsseiten zeigt die **Schrittleiste** (Details · VB-Protok
 **Massenaktionen in der Geräteliste** — Geräte per Checkbox markieren (Shift-Klick wählt einen Bereich, Kopf-Checkbox alle sichtbaren). Unten erscheint eine Leiste: markierte Geräte in einem Zug einer Produktion, einem Miet-/Vermietvorgang zuordnen oder in eine andere Gruppe verschieben. Nicht verfügbare Geräte werden übersprungen und mit Grund gemeldet. Das funktioniert auch am Handy (Checkbox oben rechts an jeder Karte, „Alle sichtbaren auswählen") und in der **Timeline**: dort lassen sich einzelne Geräte oder per Checkbox im Gruppenkopf eine ganze Gruppe markieren — die Leiste ist dieselbe.
 
 **Produktion: „Schnell hinzufügen"** — Bedarf als Text eingeben (`3x LDX, 2 Stativ`). Eine Live-Vorschau zeigt, welche konkreten Geräte gewählt werden (Eigentum vor Miete, niedrige Nummer zuerst), was blockiert ist und warum, und welche Alternativen es in der Gruppe gibt.
-
-**Kamerazüge automatisch** (Produktion → „Schnell hinzufügen") — Kameratyp und Anzahl wählen: es werden freie Kameras gewählt und mit dem Zubehör (Objektiv, Stativ, Kopf, Adapter) aus früheren Zügen mit dieser Kamera ausgestattet; bevorzugt dieselben Geräte wie zuletzt, nie ein Gerät doppelt. Auch im Kamerazug-Formular ist das Zubehör dann vorbelegt (frei änderbar).
 
 **VB-Protokoll aus Vorlage** — beim Anlegen eines Protokolls lässt sich eine frühere Produktion übernehmen (ähnlichste zuerst): Bedarf, Textblöcke und Crew-Stärken werden kopiert, Kunde und Ort bleiben leer.
 

@@ -5,7 +5,7 @@
                 @if(Auth::user()->isUser())
                     <a href="{{ route('items.edit', $item->id) }}" class="btn btn-primary">Bearbeiten</a>
                 @endif
-                <a href="{{ route('items.index') }}" class="btn btn-secondary">Zurück</a>
+                <a href="{{ route(!empty($item->suppliers_id) ? 'items.rented' : 'items.index') }}" class="btn btn-secondary">Zurück</a>
             </x-slot>
         </x-page-header>
     </x-slot>
@@ -289,7 +289,7 @@
             @endif
 
             <div class="border-t pt-6 flex flex-col sm:flex-row gap-3 sm:justify-end">
-                <a href="{{ route('items.index') }}"
+                <a href="{{ route(!empty($item->suppliers_id) ? 'items.rented' : 'items.index') }}"
                     class="btn btn-secondary">
                     Zurück
                 </a>

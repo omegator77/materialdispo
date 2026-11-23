@@ -28,7 +28,7 @@
         ? ['custom' => 'Gruppen-Reihenfolge', 'asc' => 'A–Z', 'desc' => 'Z–A'][$sortDir]
         : null;
 
-    $colLink = fn (string $col, string $dir) => route('items.index', array_merge($baseParams, [
+    $colLink = fn (string $col, string $dir) => route($listRoute ?? 'items.index', array_merge($baseParams, [
         'sort_by' => $col,
         'sort_direction' => $dir,
     ]));
@@ -70,6 +70,9 @@
                     </th>
                     <th>Beschreibung</th>
                     <th>Vermieter</th>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <th>Mietzeitraum</th>
+                    @endif
                     <th class="text-right">Aktionen</th>
                 </tr>
             </thead>
@@ -88,11 +91,14 @@
                     </td>
                     <td>{{ $item->description ?: '—' }}</td>
                     <td>{{ $item->supplier->bezeichnung ?? 'Eigentum' }}</td>
+                    @if(($listRoute ?? '') === 'items.rented')
+                    <td class="whitespace-nowrap">@include('items.tables._mietzeitraum')</td>
+                    @endif
                     <td>@include('items.tables._actions')</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="empty-state">Keine Geräte gefunden.</td>
+                    <td colspan="8" class="empty-state">Keine Geräte gefunden.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -119,22 +125,8 @@
                 <p><span class="font-medium">Nummer:</span> {{ $item->nummer ?: '—' }}</p>
                 <p><span class="font-medium">Beschreibung:</span> {{ $item->description ?: '—' }}</p>
                 <p><span class="font-medium">Vermieter:</span> {{ $item->supplier->bezeichnung ?? 'Eigentum' }}</p>
-                @if($item->mietvorgaenge->isNotEmpty())
-                <p>
-                    <span class="font-medium">Mietzeitraum:</span>
-                    {{ $item->mietvorgaenge->first()->rent_start->format('d.m.Y') }}
-                    – {{ $item->mietvorgaenge->first()->rent_end->format('d.m.Y') }}
-                    @if($item->mietvorgaenge->count() > 1)
-                        <details class="inline">
-                            <summary class="inline cursor-pointer text-orange-600 hover:underline text-xs">+{{ $item->mietvorgaenge->count() - 1 }} weitere</summary>
-                            <span class="block mt-0.5">
-                                @foreach($item->mietvorgaenge->slice(1) as $mv)
-                                    {{ $mv->rent_start->format('d.m.Y') }} – {{ $mv->rent_end->format('d.m.Y') }}@if(!$loop->last), @endif
-                                @endforeach
-                            </span>
-                        </details>
-                    @endif
-                </p>
+                @if(($listRoute ?? '') === 'items.rented')
+                <p><span class="font-medium">Mietzeitraum:</span> @include('items.tables._mietzeitraum')</p>
                 @endif
             </div>
             <div class="mt-4">@include('items.tables._actions')</div>
