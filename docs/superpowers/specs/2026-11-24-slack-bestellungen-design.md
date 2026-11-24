@@ -151,7 +151,7 @@ Auch diese hat der Anwender nicht entschieden; jede mit Kosten bei Irrtum.
    Timeout und ohne Ausnahme nach außen.
 4. **Antwort an Slack** innerhalb von 3 s (Bestätigung/Fehlertexte "Keine Berechtigung",
    Validierungsfehler im Formular als `response_action: errors`).
-5. **App**: `BestellungController` (Liste, Detail, Bearbeiten, Abschließen/Wieder öffnen), Seiten im
+5. **App**: `BestellungController` (Liste, Detail, Bearbeiten, Stufen weiterschalten/zurücknehmen, In Slack neu senden), Seiten im
    Designsystem, Menüeintrag, Tests (Pest, SQLite und MySQL), Anleitung.
 6. **Einrichtung in Slack (manuell, vom Anwender)**: Slash-Befehl `/bestellung` mit Request-URL
    `https://<App-Adresse>/slack/commands`; Scope `commands` ergänzen; Interactivity-URL ist
