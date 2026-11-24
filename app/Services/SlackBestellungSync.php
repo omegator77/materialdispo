@@ -104,12 +104,13 @@ class SlackBestellungSync
         ])->saveQuietly();
     }
 
-    public function threadReply(Bestellung $bestellung, string $text): void
+    /** @return bool true, wenn Slack die Antwort angenommen hat */
+    public function threadReply(Bestellung $bestellung, string $text): bool
     {
         $token = config('services.slack.bot_token');
 
         if (! $token || ! $bestellung->slack_channel || ! $bestellung->slack_message_ts) {
-            return;
+            return false;
         }
 
         $response = $this->slackApi($token, 'chat.postMessage', [
@@ -121,10 +122,18 @@ class SlackBestellungSync
         if ($response && ! $response->json('ok')) {
             Log::warning('Slack-Thread-Reply (Bestellung) konnte nicht gesendet werden: '.$response->json('error'));
         }
+
+        return (bool) $response?->json('ok');
     }
 
     /** Erwähnt die Buchhaltungs-Benutzer (mit Slack-Konto, sonst Klartext) im Thread der Bestellung. */
     public function pingBuchhaltung(Bestellung $bestellung): void
+    {
+        $this->threadReply($bestellung, $this->buchhaltungMentions().' Rechnung liegt vor: bitte herunterladen, bezahlen und ablegen.');
+    }
+
+    /** Erwähnungen (<@U…>) der Buchhaltung mit Slack-Konto, sonst "Buchhaltung:". */
+    public function buchhaltungMentions(): string
     {
         $resolver = app(SlackUserResolver::class);
         $mentions = User::buchhaltung()->get()
@@ -133,9 +142,7 @@ class SlackBestellungSync
             ->map(fn (string $id) => "<@{$id}>")
             ->implode(' ');
 
-        $text = 'Rechnung liegt vor: bitte herunterladen, bezahlen und ablegen.';
-
-        $this->threadReply($bestellung, ($mentions !== '' ? $mentions : 'Buchhaltung:').' '.$text);
+        return $mentions !== '' ? $mentions : 'Buchhaltung:';
     }
 
     /** Ziel-Kanal: Kanal der Nachricht, sonst Einstellung, sonst Konfiguration. */
