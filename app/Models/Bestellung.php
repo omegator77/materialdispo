@@ -62,7 +62,7 @@ class Bestellung extends Model
     protected function casts(): array
     {
         return [
-            'bestellt_am' => 'date',
+            'bestellt_am' => 'datetime',
             'rechnung_vorhanden_at' => 'datetime',
             'abgelegt_at' => 'datetime',
             'letzte_erinnerung_at' => 'datetime',

@@ -16,7 +16,7 @@ function bestellungFuerSync(array $attrs = []): Bestellung
         'bestellt_bei' => 'Thomann',
         'bestellt_was' => 'Kabel',
         'bezahlt_mit' => 'Firmenkarte',
-        'bestellt_am' => '2026-11-20',
+        'bestellt_am' => '2026-11-20 14:35:00',
         'created_by' => $user->id,
     ]);
 }
@@ -46,7 +46,7 @@ test('erster Sync postet in den Bestellkanal und speichert ts, zweiter aktualisi
     $post = bestellungSlackBody('chat.postMessage');
     expect($post)->toHaveCount(1)
         ->and($post[0]['channel'])->toBe('C900')
-        ->and(json_encode($post[0]['blocks'], JSON_UNESCAPED_UNICODE))->toContain('🛒 BESTELLUNG — Thomann')->toContain('Kabel')->toContain('Firmenkarte')->toContain('20.11.2026')->toContain('Berta Besteller')->toContain('Rechnung als Datei in den Thread');
+        ->and(json_encode($post[0]['blocks'], JSON_UNESCAPED_UNICODE))->toContain('🛒 BESTELLUNG — Thomann')->toContain('Kabel')->toContain('Firmenkarte')->toContain('20.11.2026 14:35')->toContain('Berta Besteller')->toContain('Rechnung als Datei in den Thread');
 
     app(SlackBestellungSync::class)->sync($b);
 
@@ -161,4 +161,21 @@ test('threadReply sendet thread_ts', function () {
 
     $post = bestellungSlackBody('chat.postMessage');
     expect($post)->toHaveCount(1)->and($post[0]['thread_ts'])->toBe('5.5')->and($post[0]['channel'])->toBe('C900')->and($post[0]['text'])->toBe('Hinweis');
+});
+
+test('sehr lange Texte lassen jeden Abschnitt unter 3000 Zeichen und werden trotzdem gepostet', function () {
+    foreach ([str_repeat('x', 2000), str_repeat('&', 2000)] as $lang) {
+        $b = bestellungFuerSync(['bestellt_was' => $lang, 'bestellt_bei' => str_repeat('<', 255), 'bezahlt_mit' => str_repeat('&', 255)]);
+
+        app(SlackBestellungSync::class)->sync($b);
+
+        expect($b->fresh()->slack_message_ts)->not->toBeNull()->and($b->fresh()->bestellt_was)->toHaveLength(2000);
+        $body = collect(bestellungSlackBody('chat.postMessage'))->last();
+        foreach ($body['blocks'] as $block) {
+            if ($block['type'] === 'section') {
+                expect(mb_strlen($block['text']['text']))->toBeLessThan(3000);
+            }
+        }
+        expect(json_encode($body['blocks'], JSON_UNESCAPED_UNICODE))->toContain('vollständig in der App');
+    }
 });

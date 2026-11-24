@@ -11,7 +11,7 @@ function neueBestellung(array $attrs = []): Bestellung
         'bestellt_bei' => 'Thomann',
         'bestellt_was' => 'Kabel',
         'bezahlt_mit' => 'Kreditkarte',
-        'bestellt_am' => '2026-11-20',
+        'bestellt_am' => '2026-11-20 14:35:00',
     ], $attrs));
 }
 
@@ -148,4 +148,10 @@ test('markAbgelegt überschreibt eine vorhandene Ablage nicht', function () {
     expect($b->abgelegt_by)->toBe($first->id)
         ->and($b->abgelegt_at->equalTo($zeit))->toBeTrue();
     expect(Activity::where('log_name', 'bestellung')->where('event', 'abgelegt')->count())->toBe(1);
+});
+
+test('bestellt_am behält die Uhrzeit', function () {
+    $b = Bestellung::create(['bestellt_bei' => 'X', 'bestellt_was' => 'Y', 'bezahlt_mit' => 'Z', 'bestellt_am' => '2026-11-20 14:35:00'])->fresh();
+
+    expect($b->bestellt_am->format('d.m.Y H:i'))->toBe('20.11.2026 14:35');
 });

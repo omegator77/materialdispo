@@ -28,28 +28,34 @@ class SlackBestellungSync
 
         $bestellung->loadMissing(['besteller', 'abgelegtVon']);
 
-        $headline = '🛒 BESTELLUNG — '.SlackVorgangSync::escape($bestellung->bestellt_bei);
+        $headline = '🛒 BESTELLUNG — '.$this->kurz($bestellung->bestellt_bei, 200);
         $stufe = $bestellung->stufe();
 
-        $lines = [
-            '*Bestellt bei:* '.SlackVorgangSync::escape($bestellung->bestellt_bei),
-            '*Was:* '.SlackVorgangSync::escape($bestellung->bestellt_was),
-            '*Bezahlt mit:* '.SlackVorgangSync::escape($bestellung->bezahlt_mit),
+        // Slack begrenzt Section-Texte auf 3000 Zeichen: Langtexte werden vor dem
+        // Maskieren gekürzt und liegen in eigenen Abschnitten.
+        $kopf = [
+            '*Bestellt bei:* '.$this->kurz($bestellung->bestellt_bei, 200),
+            '*Bezahlt mit:* '.$this->kurz($bestellung->bezahlt_mit, 200),
+        ];
+
+        $details = [
             '*Datum:* '.($bestellung->bestellt_am?->format('d.m.Y H:i') ?? '–'),
-            '*Besteller:* '.SlackVorgangSync::escape($bestellung->besteller?->name ?? 'unbekannt'),
+            '*Besteller:* '.$this->kurz($bestellung->besteller?->name ?? 'unbekannt', 100),
             '*Stufe:* '.$bestellung->stufeLabel(),
         ];
 
         if ($bestellung->sendungsnummer) {
-            $lines[] = '*Sendung:* '.$this->sendungText($bestellung);
+            $details[] = '*Sendung:* '.$this->sendungText($bestellung);
         }
 
         $blocks = [
-            ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*{$headline}*\n".implode("\n", $lines)]],
+            ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*{$headline}*\n".implode("\n", $kopf)]],
+            ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => '*Was:* '.$this->kurz($bestellung->bestellt_was, 1500, ' … (vollständig in der App)')]],
+            ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => implode("\n", $details)]],
         ];
 
         if ($stufe === Bestellung::STUFE_ABGELEGT) {
-            $by = $bestellung->abgelegtVon?->name ? ' von '.SlackVorgangSync::escape($bestellung->abgelegtVon->name) : '';
+            $by = $bestellung->abgelegtVon?->name ? ' von '.$this->kurz($bestellung->abgelegtVon->name, 100) : '';
             $blocks[] = ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "✅ bezahlt & abgelegt{$by} am {$bestellung->abgelegt_at->format('d.m.Y H:i')} Uhr"]];
         } else {
             $buttons = [$this->button('bestellung:sendung', 'Sendung eintragen', $bestellung)];
@@ -131,13 +137,41 @@ class SlackBestellungSync
             // URL ist rawurlencoded (kein | oder >); zur Sicherheit trotzdem kodieren.
             $url = str_replace(['|', '>', '<'], ['%7C', '%3E', '%3C'], $url);
             // Label: maskieren und "|" ersetzen, damit der Link nicht aufbricht.
-            $label = str_replace('|', '¦', SlackVorgangSync::escape($nummer));
+            $label = str_replace('|', '¦', $this->kurz($nummer, 100));
             $nummerText = "<{$url}|{$label}>";
         } else {
-            $nummerText = SlackVorgangSync::escape($nummer);
+            $nummerText = $this->kurz($nummer, 100);
         }
 
         return ($dienst ? SlackVorgangSync::escape($dienst).' ' : '').$nummerText;
+    }
+
+    /**
+     * Kürzt vor dem Maskieren so, dass der maskierte Text höchstens $max
+     * Zeichen lang ist (Entities werden nie zerschnitten).
+     */
+    private function kurz(?string $text, int $max, string $hinweis = ' …'): string
+    {
+        $text = (string) $text;
+
+        if (mb_strlen(SlackVorgangSync::escape($text)) <= $max) {
+            return SlackVorgangSync::escape($text);
+        }
+
+        $rest = $max - mb_strlen(SlackVorgangSync::escape($hinweis));
+        $out = '';
+        $len = 0;
+
+        foreach (mb_str_split($text) as $char) {
+            $add = mb_strlen(SlackVorgangSync::escape($char));
+            if ($len + $add > $rest) {
+                break;
+            }
+            $out .= $char;
+            $len += $add;
+        }
+
+        return SlackVorgangSync::escape($out).SlackVorgangSync::escape($hinweis);
     }
 
     private function button(string $actionId, string $label, Bestellung $bestellung): array

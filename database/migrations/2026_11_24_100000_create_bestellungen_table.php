@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('bestellt_bei');
             $table->text('bestellt_was');
             $table->string('bezahlt_mit');
-            $table->date('bestellt_am');
+            $table->dateTime('bestellt_am');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('versanddienstleister', 20)->nullable();
             $table->string('sendungsnummer')->nullable();
