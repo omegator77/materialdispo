@@ -45,7 +45,9 @@ keine Erinnerungen verschickt.** Auf dem Host:
 
 Der Scheduler startet `reminders:send-transport` stündlich zwischen 07:00 und
 19:00 Uhr (Zeitzone der App, siehe `APP_TIMEZONE`) und `slack:compact-completed`
-stündlich. Prüfen: `docker exec laravel-app php artisan schedule:list`.
+stündlich sowie `bestellungen:erinnern` täglich um 09:00 Uhr (Erinnerung an die
+Buchhaltung bei Bestellungen mit Rechnung, siehe Slack-Anbindung). Der vorhandene
+`schedule:run`-Cron genügt. Prüfen: `docker exec laravel-app php artisan schedule:list`.
 
 Ein Reminder wird erst reserviert, dann versendet. Scheitern **alle** Mails
 einer Erinnerung (z. B. SMTP-Ausfall), wird die Reservierung freigegeben, der
@@ -124,7 +126,8 @@ server {
   App dann eine private Absenderadresse zeigt (der sie vertraut), kann er
   `X-Forwarded-For` selbst setzen. Hinter dem nginx ist das nicht möglich.
 - `/slack/interactions` muss von außen erreichbar bleiben (Slack ruft es auf).
-  Es ist durch die Slack-Signatur geschützt, nicht durch ein Login.
+  Es ist durch die Slack-Signatur geschützt, nicht durch ein Login. Das gilt auch
+  für `/slack/commands` (Slash-Befehl `/bestellung`).
 - **TLS endet am nginx**, die App spricht intern HTTP. Deshalb
   `SESSION_SECURE_COOKIE=true` und `APP_URL=https://...` setzen; die App erkennt
   HTTPS über `X-Forwarded-Proto`.
@@ -196,6 +199,36 @@ Optional härten: `expose_php = Off` in `uploads.ini`, dann sendet PHP keinen
    `SLACK_REMINDER_CHANNEL`, `SLACK_PRODUCTION_CHANNEL` (Kanalnamen **in
    Anführungszeichen**, sonst schneidet dotenv alles ab `#` ab).
 4. Den Bot in die Kanäle einladen.
+
+### Bestellungen (`/bestellung`)
+
+1. Bot Token Scopes um **`commands`** ergänzen (zusätzlich zu `chat:write`,
+   `users:read`, `users:read.email`); danach die App neu installieren, sonst
+   gilt der neue Scope nicht.
+2. Unter **Slash Commands** den Befehl `/bestellung` anlegen, Request URL:
+   `https://<deine-domain>/slack/commands` (gleicher Host wie `/slack/interactions`).
+   Interactivity bleibt wie oben eingerichtet.
+3. Den Bot in den **Bestell-Kanal einladen** (`/invite @botname`).
+4. Kanal festlegen: in der App unter **Verwaltung → Einstellungen**
+   (`slack_order_channel`) oder per `.env` `SLACK_ORDER_CHANNEL="#kanal-name"`
+   (in Anführungszeichen). Die Einstellung hat Vorrang vor der `.env`. Ohne
+   Kanal werden Bestellungen gespeichert, aber nicht gepostet; der Besteller
+   erhält einen Hinweis.
+5. **Zwei neue Migrationen** (`bestellungen`-Tabelle, `users.ist_buchhaltung`):
+   vor dem Deploy ein **Datenbank-Backup** erstellen (siehe Backup), dann
+   `php artisan migrate --force`.
+6. Admin setzt unter **Verwaltung → Benutzer** das Häkchen **Buchhaltung** bei
+   den 2 bis 3 Personen, die Rechnungen ablegen dürfen. Die Zuordnung zu Slack
+   läuft über die gleiche E-Mail-Adresse.
+
+Der Scheduler-Befehl `bestellungen:erinnern` läuft täglich um 09:00 Uhr. Er
+erinnert die Buchhaltung im Thread, wenn eine Bestellung länger als 30 Tage auf
+„Rechnung liegt vor" steht, danach alle 7 Tage. Manuell: 
+`docker exec laravel-app php artisan bestellungen:erinnern`.
+
+Rechnungen werden nicht in der App gespeichert, sondern bleiben als Datei im
+Slack-Thread. Der kostenlose Slack-Tarif löscht Dateien nach spätestens einem
+Jahr; die Buchhaltung archiviert die Rechnung daher selbst.
 
 Berechtigungen: Ein Klick auf einen Bestätigungs-Button in Slack wirkt nur, wenn
 die Slack-E-Mail-Adresse einem App-Benutzer mit Rolle `admin` oder `user`

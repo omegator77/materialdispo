@@ -22,6 +22,17 @@ das ist nicht identisch, daher bleibt Phase B Pflicht. Drei Migrationen sind neu
 | `2026_07_17_100000_add_unique_index_to_item_production_table` | **löscht doppelte** Geräte-Zuordnungen je Produktion, setzt dann einen Unique-Index | `migrate:rollback` entfernt den Index; gelöschte Duplikate nur per Backup |
 | `2026_07_18_100000_add_booking_period_index_to_productions_table` | Index für die Verfügbarkeitsprüfung | `migrate:rollback` |
 
+### Zusatz für Bestellungen (zwei weitere neue Migrationen)
+
+| Migration | Wirkung | Rückgängig |
+|---|---|---|
+| `2026_11_24_100000_create_bestellungen_table` | neue Tabelle `bestellungen` | `migrate:rollback` (Bestelldaten gehen dabei verloren) |
+| `2026_11_24_100100_add_ist_buchhaltung_to_users_table` | neue Spalte `users.ist_buchhaltung` (Standard false) | `migrate:rollback` |
+
+Beide legen nur Neues an und verändern keine vorhandenen Daten. Phase B (Datenbank-Backup) gilt
+trotzdem. Slack-Einrichtung für `/bestellung` (Scope `commands`, Befehl, Kanal): siehe
+[betrieb.md](betrieb.md); nach dem Deploy Haken **Buchhaltung** in der Benutzerverwaltung setzen.
+
 ---
 
 ## Phase A: Vorprüfung (nur lesen, nichts wird verändert)
