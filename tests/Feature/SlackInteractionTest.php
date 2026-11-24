@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Bestellung;
 use App\Models\Mietvorgang;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\BestellungModals;
 use Illuminate\Support\Facades\Http;
 
 const SLACK_SECRET = 'test-signing-secret';
@@ -110,4 +112,16 @@ test('Eine unvollständige action_id führt nicht zu einem Serverfehler', functi
     $payload['actions'][0]['action_id'] = 'confirm:mietvorgang';
 
     slackPost($this, $payload)->assertNoContent();
+});
+
+test('Modal-Eingaben haben max_length', function () {
+    $neu = BestellungModals::neu();
+    $max = collect($neu['blocks'])->mapWithKeys(fn ($b) => [$b['block_id'] => $b['element']['max_length'] ?? null])->all();
+    expect($max)->toBe(['bestellt_bei' => 255, 'bestellt_was' => 2000, 'bezahlt_mit' => 255]);
+
+    $sendung = BestellungModals::sendung(Bestellung::create([
+        'bestellt_bei' => 'X', 'bestellt_was' => 'Y', 'bezahlt_mit' => 'Z', 'bestellt_am' => now(),
+    ]));
+    $nummer = collect($sendung['blocks'])->firstWhere('block_id', 'sendungsnummer');
+    expect($nummer['element']['max_length'])->toBe(100);
 });

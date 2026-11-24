@@ -17,3 +17,9 @@ test('die Anleitung erklärt Archiv, Rückgabe offen und Erneut mieten', functio
 
     expect($html)->toContain('Archiv')->toContain('Erneut mieten')->toContain('Rückgabe offen');
 });
+
+test('die Anleitung erklärt Bestellungen per Slack-Befehl und die Stufe Bezahlt & abgelegt', function () {
+    $html = $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('anleitung'))->assertOk()->getContent();
+
+    expect($html)->toContain('Bestellungen')->toContain('Bezahlt &amp; abgelegt')->toContain('/bestellung');
+});

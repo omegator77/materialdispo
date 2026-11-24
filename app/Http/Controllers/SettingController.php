@@ -10,6 +10,7 @@ class SettingController extends Controller
     private const KEYS = [
         'slack_reminder_channel',
         'slack_production_channel',
+        'slack_order_channel',
         'reminder_days_before_start',
         'reminder_days_before_end',
     ];
@@ -35,6 +36,7 @@ class SettingController extends Controller
         $validated = $request->validate([
             'slack_reminder_channel' => ['nullable', 'string', 'max:255'],
             'slack_production_channel' => ['nullable', 'string', 'max:255'],
+            'slack_order_channel' => ['nullable', 'string', 'max:255'],
             'reminder_days_before_start' => ['nullable', 'integer', 'min:0', 'max:60'],
             'reminder_days_before_end' => ['nullable', 'integer', 'min:0', 'max:60'],
         ]);

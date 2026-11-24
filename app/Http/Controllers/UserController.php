@@ -27,6 +27,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
+            'ist_buchhaltung' => $request->boolean('ist_buchhaltung'),
             'password' => Hash::make($request->password),
             'email_verified_at' => now(),
         ]);
@@ -45,6 +46,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
+            'ist_buchhaltung' => $request->boolean('ist_buchhaltung'),
         ];
 
         if ($request->filled('password')) {

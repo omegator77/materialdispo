@@ -21,6 +21,8 @@ Es gibt drei Rollen, die vom Admin vergeben werden (siehe **Verwaltung → Benut
 | **Benutzer** | Wie Betrachter, plus: Geräte/Produktionen/Vorgänge anlegen, bearbeiten, Haken setzen (z. B. „Packen abschließen") |
 | **Admin** | Wie Benutzer, plus: Benutzerverwaltung und Einstellungen |
 
+Zusätzlich gibt es am Benutzer das Häkchen **Buchhaltung** (setzt nur der Admin): Nur diese Personen dürfen Bestellungen auf „Bezahlt & abgelegt" setzen.
+
 Falls ein Button fehlt, den man erwarten würde — meistens liegt es an der Rolle, nicht an einem Fehler.
 
 ## Die Hauptnavigation
@@ -33,7 +35,7 @@ Oben in der Leiste:
 - **Packen** — Gesamtübersicht aller Produktionen mit ihrem Material
 - **Timeline** — Zeitstrahl, wer welches Gerät wann belegt
 - **Miete & Verleih** (Dropdown) — *Eingang* (was wir mieten): Mietgeräte, Vermieter, Mietvorgänge; *Ausgang* (was wir verleihen): Mieter, Vermietvorgänge
-- **Verwaltung** (Dropdown) — Stammdaten (Gruppen, Gerätetypen, Mailinglisten), das Protokoll sowie (für Admins) Benutzer und Einstellungen
+- **Verwaltung** (Dropdown) — Stammdaten (Gruppen, Gerätetypen, Mailinglisten), *Einkauf → Bestellungen*, das Protokoll sowie (für Admins) Benutzer und Einstellungen
 
 ## Dashboard: der Einstieg
 
@@ -159,6 +161,23 @@ Unter jeder Nachricht liegen **Buttons für die jeweils noch offenen Status-Schr
 
 Ist ein Vorgang vollständig abgeschlossen, verschwinden die Buttons; die Nachricht wird nach 48 Stunden automatisch zu einer kurzen Ein-Zeilen-Zusammenfassung („✅ … abgeschlossen") zusammengefasst, damit der Kanal übersichtlich bleibt.
 
+## Bestellungen (Einkauf über Slack)
+
+Bestellungen werden direkt in Slack erfasst und von dort bis zur Ablage der Rechnung begleitet. In der App gibt es dazu die Seite **Verwaltung → Einkauf → Bestellungen**.
+
+**So läuft es ab:**
+
+1. **Bestellung anlegen:** In Slack `/bestellung` eintippen. Es öffnet sich ein Formular mit **Bestellt bei**, **Bestellt was** und **Bezahlt mit** (alle drei Pflicht, das Datum setzt die App selbst). Nach dem Absenden erscheint im Bestell-Kanal eine Nachricht je Bestellung. Das gilt für Benutzer und Admins; Betrachter und unbekannte Slack-Konten bekommen eine Ablehnung, die nur sie selbst sehen.
+2. **Sendung nachtragen:** Mit dem Knopf **Sendung eintragen** an der Nachricht Versanddienstleister und Sendungsnummer ergänzen. Die Bestellung ist dann **Unterwegs**, und die Nachricht enthält einen Link zur Sendungsverfolgung des Paketdienstes. Die App fragt den Sendungsstatus nicht ab; es gibt nur den Link. Eine eingetragene Sendung lässt sich überschreiben.
+3. **Rechnung ablegen:** Die Rechnung als Datei **in den Thread** dieser Nachricht hochladen. Sie wird nicht in der App gespeichert, sondern bleibt in Slack. Danach auf **Rechnung liegt vor** klicken (jeder Benutzer oder Admin darf das, nicht nur der Besteller). Der Bot spricht dann die Buchhaltung im Thread an.
+4. **Bezahlt & abgelegt:** Die Buchhaltung lädt die Rechnung aus Slack herunter, archiviert sie selbst und klickt **Bezahlt & abgelegt**. Diesen Knopf dürfen nur Benutzer mit dem Häkchen **Buchhaltung** drücken; den Haken setzt ein Admin unter **Verwaltung → Benutzer**. Danach verschwinden die Knöpfe und die Nachricht zeigt die Zeile „✅ bezahlt & abgelegt von … am …".
+
+**Die vier Stufen:** Bestellt → Unterwegs → Rechnung liegt vor → Bezahlt & abgelegt.
+
+**Erinnerung:** Steht eine Bestellung länger als 30 Tage auf „Rechnung liegt vor", erinnert der Bot die Buchhaltung im Thread, danach alle 7 Tage, bis „Bezahlt & abgelegt" gesetzt ist. Hintergrund: Im kostenlosen Slack-Tarif werden Dateien nach spätestens einem Jahr gelöscht, daher soll die Buchhaltung die Rechnung vorher ablegen.
+
+**Die Seite in der App:** Die Liste zeigt Datum, Besteller, Bestellt bei, Bestellt was, Bezahlt mit, Sendung (Link) und Stufe. Der Filter steht standardmäßig auf **Offen** (alles außer Bezahlt & abgelegt), dazu gibt es **Bezahlt & abgelegt**, **Alle** und eine Suche. Benutzer und Admins können Tippfehler korrigieren, die Sendung nachtragen und Stufen weiterschalten oder zurücknehmen; Betrachter sehen die Liste nur. Jede Änderung aktualisiert die Slack-Nachricht. Ist Slack nicht erreichbar oder kein Kanal eingestellt, wird die Bestellung trotzdem gespeichert.
+
 ## Protokoll (Aktivitätslog)
 
 Unter **Verwaltung → Protokoll** (für die Rolle „Benutzer" und „Admin") lässt sich nachvollziehen, wer wann was geändert hat — auch Bestätigungen, die über Slack kamen, tauchen hier auf.
@@ -168,6 +187,7 @@ Unter **Verwaltung → Protokoll** (für die Rolle „Benutzer" und „Admin") l
 Admins verwalten unter **Verwaltung → Benutzer** die Konten und Rollen der Nutzer:innen. Unter **Verwaltung → Einstellungen** lassen sich außerdem:
 
 - die Slack-Anbindung je Bereich (Miet-/Vermietvorgänge bzw. Produktionen) ein-/ausschalten und der jeweilige Ziel-Kanal hinterlegt werden,
+- den Slack-Kanal für Bestellungen hinterlegen,
 - die Standard-Vorlaufzeit (in Tagen) für Erinnerungsmails vor Beginn/Ende festlegen.
 
 ## Typischer Ablauf in Kurzform
@@ -178,3 +198,4 @@ Admins verwalten unter **Verwaltung → Benutzer** die Konten und Rollen der Nut
 4. Fehlt Equipment, das erst angemietet werden muss: Mietvorgang anlegen, Status-Schritte abhaken
 5. Verleiht man selbst Geräte: Vermietvorgang anlegen, Status-Schritte abhaken
 6. Timeline und Packen jederzeit zur Kontrolle nutzen
+7. Einkäufe: in Slack `/bestellung`, Sendung und Rechnung nachtragen, Buchhaltung legt ab

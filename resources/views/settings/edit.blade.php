@@ -61,6 +61,18 @@
                         Leer lassen, um den in der Server-Konfiguration hinterlegten Standardkanal zu verwenden.
                     </p>
                 </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-100">
+                    <label for="slack_order_channel" class="block text-sm font-medium text-gray-700">
+                        Ziel-Kanal für Bestellungs-Nachrichten
+                    </label>
+                    <input type="text" name="slack_order_channel" id="slack_order_channel"
+                           value="{{ old('slack_order_channel', $settings['slack_order_channel']) }}"
+                           class="form-control w-full" placeholder="z. B. #bestellungen">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Leer lassen, um den in der Server-Konfiguration hinterlegten Standardkanal zu verwenden.
+                    </p>
+                </div>
             </section>
 
             <section class="border-t pt-6">

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BestellungController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\DashboardController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SlackCommandController;
 use App\Http\Controllers\SlackInteractionController;
 use App\Http\Controllers\SmartProductionController;
 use App\Http\Controllers\SupplierController;
@@ -35,6 +37,7 @@ Route::redirect('/', '/login');
 // Slack ruft diesen Endpunkt ohne Session/CSRF-Token auf; Absicherung erfolgt
 // über die Signaturprüfung (X-Slack-Signature) im Controller selbst.
 Route::post('/slack/interactions', [SlackInteractionController::class, 'handle'])->name('slack.interactions');
+Route::post('/slack/commands', [SlackCommandController::class, 'handle'])->name('slack.commands');
 
 // Admin + Benutzer — Schreibzugriff
 // Muss vor den read-only Resource-Routes stehen, damit z. B. "units/create"
@@ -130,6 +133,13 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('vermietvorgaenge/{vermietvorgang}/confirm-vollstaendig-zurueck', [VermietvorgangController::class, 'reopenVollstaendigZurueck'])->name('vermietvorgaenge.reopenVollstaendigZurueck');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+
+    Route::get('/bestellungen/{bestellung}/edit', [BestellungController::class, 'edit'])->name('bestellungen.edit');
+    Route::put('/bestellungen/{bestellung}', [BestellungController::class, 'update'])->name('bestellungen.update');
+    Route::post('/bestellungen/{bestellung}/rechnung', [BestellungController::class, 'rechnung'])->name('bestellungen.rechnung');
+    Route::post('/bestellungen/{bestellung}/abgelegt', [BestellungController::class, 'abgelegt'])->name('bestellungen.abgelegt');
+    Route::post('/bestellungen/{bestellung}/zuruecknehmen', [BestellungController::class, 'zuruecknehmen'])->name('bestellungen.zuruecknehmen');
+    Route::post('/bestellungen/{bestellung}/resync', [BestellungController::class, 'resync'])->name('bestellungen.resync');
 });
 
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
@@ -145,6 +155,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);
+    Route::get('/bestellungen', [BestellungController::class, 'index'])->name('bestellungen.index');
+    Route::get('/bestellungen/{bestellung}', [BestellungController::class, 'show'])->name('bestellungen.show');
     Route::resource('/mieter', MieterController::class)->only(['index', 'show']);
     Route::resource('/mailing-lists', MailingListController::class)->only(['index']);
     Route::resource('/mietvorgaenge', MietvorgangController::class)

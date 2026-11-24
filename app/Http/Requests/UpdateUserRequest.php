@@ -18,6 +18,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', Rule::unique('users')->ignore($this->route('user'))],
             'role' => ['required', Rule::in(['admin', 'user', 'viewer'])],
+            'ist_buchhaltung' => ['sometimes', 'boolean'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }

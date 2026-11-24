@@ -10,6 +10,7 @@
         ['Mietgeräte', route('items.rented'), 'mietgeräte mietpool gemietet'],
         ['Mietvorgänge', route('mietvorgaenge.index'), 'miete mietvorgänge eingehend'],
         ['Vermietvorgänge', route('vermietvorgaenge.index'), 'verleih vermietvorgänge ausgehend'],
+        ['Bestellungen', route('bestellungen.index'), 'bestellungen einkauf bestellt rechnung sendung paket'],
     ]);
     if ($isUser) {
         $actions = $actions->concat([

@@ -34,6 +34,14 @@
                 </div>
 
                 <div>
+                    <label class="flex items-center gap-2">
+                        <input class="form-check" type="checkbox" name="ist_buchhaltung" value="1" @checked(old('ist_buchhaltung'))>
+                        <span class="form-label mb-0">Buchhaltung</span>
+                    </label>
+                    <p class="text-gray-500 text-xs mt-1">Erhält Hinweise zu Rechnungen und darf Bestellungen als bezahlt und abgelegt markieren.</p>
+                </div>
+
+                <div>
                     <label class="form-label">Passwort</label>
                     <input type="password" name="password"
                            class="form-control w-full">

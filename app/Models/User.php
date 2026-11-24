@@ -41,6 +41,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'ist_buchhaltung',
     ];
 
     /**
@@ -63,7 +64,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'ist_buchhaltung' => 'boolean',
         ];
+    }
+
+    public function scopeBuchhaltung($query)
+    {
+        return $query->where('ist_buchhaltung', true);
     }
 
     public function isAdmin(): bool

@@ -18,6 +18,7 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'role' => ['required', Rule::in(['admin', 'user', 'viewer'])],
+            'ist_buchhaltung' => ['sometimes', 'boolean'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
