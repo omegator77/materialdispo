@@ -370,3 +370,67 @@ test('Activity-Log hält Verursacher beim Anlegen fest', function () {
     $log = Activity::where('log_name', 'bestellung')->where('event', 'created')->sole();
     expect($log->causer_id)->toBe($user->id);
 });
+
+test('Klick auf Rechnung liegt vor bei bereits gesetzter Stufe pingt nicht erneut, repariert aber die Nachricht', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    User::factory()->create(['role' => 'user', 'ist_buchhaltung' => true, 'email' => 'bh1@example.com']);
+    bstFake(['U1' => 'crew@example.com', 'UB1' => 'bh1@example.com']);
+    $b = bstOrder(['rechnung_vorhanden_at' => now()]);
+
+    bstClick($this, 'bestellung:rechnung', $b)->assertNoContent();
+
+    expect(bstCalls('chat.postMessage')->filter(fn ($c) => isset($c[0]['thread_ts'])))->toHaveCount(0);
+    expect(bstCalls('chat.update'))->toHaveCount(1);
+});
+
+test('Rechnung liegt vor auf bereits abgelegter Bestellung pingt nicht', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    User::factory()->create(['role' => 'user', 'ist_buchhaltung' => true, 'email' => 'bh1@example.com']);
+    bstFake(['U1' => 'crew@example.com', 'UB1' => 'bh1@example.com']);
+    $b = bstOrder(['rechnung_vorhanden_at' => now(), 'abgelegt_at' => now()]);
+
+    bstClick($this, 'bestellung:rechnung', $b)->assertNoContent();
+
+    expect(bstCalls('chat.postMessage')->filter(fn ($c) => isset($c[0]['thread_ts'])))->toHaveCount(0);
+});
+
+test('Ohne Bestell-Kanal wird gespeichert und ein Hinweis-Formular angezeigt', function () {
+    config(['services.slack.order_channel' => null]);
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+
+    bstSubmit($this, 'bestellung_neu', ['bestellt_bei' => 'A', 'bestellt_was' => 'B', 'bezahlt_mit' => 'C'])
+        ->assertOk()
+        ->assertJsonPath('response_action', 'update')
+        ->assertJsonPath('view.type', 'modal')
+        ->assertJsonPath('view.title.text', 'Bestellung gespeichert')
+        ->assertJsonPath('view.close.text', 'Schließen');
+
+    expect(Bestellung::count())->toBe(1);
+    expect(bstCalls('chat.postMessage'))->toHaveCount(0);
+});
+
+test('Absenden von Sendung durch Betrachter wird abgelehnt', function () {
+    User::factory()->create(['role' => 'viewer', 'email' => 'viewer@example.com']);
+    bstFake(['U1' => 'viewer@example.com']);
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_sendung', [
+        'versanddienstleister' => ['type' => 'static_select', 'selected_option' => ['value' => 'dhl']],
+        'sendungsnummer' => '123',
+    ], 'V9', (string) $b->id)->assertOk()
+        ->assertJsonPath('response_action', 'errors')
+        ->assertJsonPath('errors.versanddienstleister', fn ($t) => str_starts_with($t, '🚫 Keine Berechtigung'));
+
+    expect($b->fresh()->sendungsnummer)->toBeNull();
+});
+
+test('Sendungsformular mit unbekannter Bestellung ergibt Feldfehler statt 500', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+
+    bstSubmit($this, 'bestellung_sendung', [
+        'versanddienstleister' => ['type' => 'static_select', 'selected_option' => ['value' => 'dhl']],
+        'sendungsnummer' => '123',
+    ], 'V9', '999999')->assertOk()->assertJsonPath('response_action', 'errors');
+});

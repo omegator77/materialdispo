@@ -20,7 +20,7 @@ class SlackBestellungSync
     public function sync(Bestellung $bestellung): void
     {
         $token = config('services.slack.bot_token');
-        $channel = $this->channelFor($bestellung);
+        $channel = self::channelFor($bestellung);
 
         if (! $token || ! $channel) {
             return;
@@ -122,9 +122,10 @@ class SlackBestellungSync
         }
     }
 
-    private function channelFor(Bestellung $bestellung): ?string
+    /** Ziel-Kanal: Kanal der Nachricht, sonst Einstellung, sonst Konfiguration. */
+    public static function channelFor(?Bestellung $bestellung = null): ?string
     {
-        return $bestellung->slack_channel ?: Setting::get('slack_order_channel') ?: config('services.slack.order_channel');
+        return $bestellung?->slack_channel ?: Setting::get('slack_order_channel') ?: config('services.slack.order_channel') ?: null;
     }
 
     private function sendungText(Bestellung $bestellung): string

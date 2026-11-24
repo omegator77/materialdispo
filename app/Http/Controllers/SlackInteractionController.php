@@ -137,12 +137,18 @@ class SlackInteractionController extends Controller
                 return;
 
             case 'bestellung:rechnung':
+                $neu = ! $bestellung->rechnung_vorhanden_at;
                 $bestellung->markRechnungVorhanden($user);
 
-                dispatch(function () use ($bestellung) {
+                // Sync läuft immer (repariert veraltete Nachrichten); die
+                // Buchhaltung wird nur beim tatsächlichen Stufenwechsel angepingt.
+                dispatch(function () use ($bestellung, $neu) {
                     $sync = app(SlackBestellungSync::class);
                     $sync->sync($bestellung);
-                    $sync->threadReply($bestellung->fresh(), $this->buchhaltungMention());
+
+                    if ($neu) {
+                        $sync->threadReply($bestellung->fresh(), $this->buchhaltungMention());
+                    }
                 })->afterResponse();
 
                 return;
@@ -237,6 +243,18 @@ class SlackInteractionController extends Controller
         }
 
         $this->syncAfterResponse($bestellung);
+
+        if (! config('services.slack.bot_token') || ! SlackBestellungSync::channelFor($bestellung)) {
+            return response()->json([
+                'response_action' => 'update',
+                'view' => [
+                    'type' => 'modal',
+                    'title' => ['type' => 'plain_text', 'text' => 'Bestellung gespeichert'],
+                    'close' => ['type' => 'plain_text', 'text' => 'Schließen'],
+                    'blocks' => [['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => 'Die Bestellung ist gespeichert, aber es ist kein Bestell-Kanal eingestellt. Bitte in den App-Einstellungen den Kanal eintragen; danach lässt sich die Nachricht über „In Slack neu senden“ nachholen.']]],
+                ],
+            ]);
+        }
 
         return response('', 200);
     }
