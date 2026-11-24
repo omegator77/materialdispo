@@ -12,7 +12,13 @@ wenn die Buchhaltung sie aus Slack herunterladen kann.
   (Datum automatisch) → später **Sendungsverfolgung** nachtragen → abschließend **Rechnung**.
 - Gewählter Weg: **Slash-Befehl** + Formular (Modal) + eine Slack-Nachricht je Bestellung, die
   aktualisiert wird, + kleine Tabelle und Seite "Bestellungen" in der App.
-- Keine Dateispeicherung in der App.
+- Keine Dateispeicherung in der App. Die **Buchhaltung lädt die Rechnung aus Slack herunter und
+  archiviert sie selbst**; ein automatisches Löschen der Datei in Slack ist nicht nötig (der
+  Free-Tarif löscht Dateien nach spätestens einem Jahr ohnehin selbst).
+- Vier **Stufen** je Bestellung: **Bestellt**, **Unterwegs** (Sendungsnummer eingetragen),
+  **Rechnung liegt vor**, **Bezahlt & abgelegt**. Die letzte Stufe setzt nur die **Buchhaltung**
+  (2 bis 3 Personen, alle haben einen App-Benutzer); alle anderen Schritte darf jeder Benutzer und
+  Admin, auch das Hochladen der Rechnung und der Klick "Rechnung liegt vor" (nicht nur der Besteller).
 
 ## Ist-Zustand (Befund)
 - Slack-Zugang vorhanden: Bot-Token, Signing-Secret, Endpunkt `POST /slack/interactions`
@@ -29,22 +35,32 @@ wenn die Buchhaltung sie aus Slack herunterladen kann.
    (mehrzeilig), Bezahlt mit (Freitext). Pflichtfelder: Bestellt bei, Bestellt was, Bezahlt mit.
 2. Absenden legt eine **Bestellung** an (Datum = jetzt, Besteller = zugeordneter App-Benutzer) und
    postet eine Nachricht in den Bestell-Kanal: Titel, Bestellt bei, Was, Bezahlt mit, Datum,
-   Besteller, Status; Knöpfe **Sendung eintragen** und **Abschließen**; Hinweis "Rechnung als Datei
-   in den Thread dieser Nachricht hochladen".
-3. **Sendung eintragen** öffnet ein Formular (Versanddienstleister, Sendungsnummer) und
-   aktualisiert dieselbe Nachricht (mit Tracking-Link, sofern der Dienstleister bekannt ist). Ist
-   bereits eine Sendung eingetragen, kann sie überschrieben werden.
-4. **Abschließen** markiert die Bestellung als abgeschlossen (Zeitpunkt, wer) und kompaktiert die
-   Nachricht (Knöpfe weg, "✅ abgeschlossen"). Die Rechnung liegt dann als Datei im Thread.
-5. **App-Seite "Bestellungen"**: Liste mit Datum, Besteller, bei, was, bezahlt mit, Sendung
-   (Link), Status; Filter "Offen / Abgeschlossen / Alle" (Standard Offen) und Suche; Detail- und
-   Bearbeiten-Seite (Tippfehler korrigieren, Sendung nachtragen, abschließen/wieder öffnen); jede
-   Änderung aktualisiert die Slack-Nachricht. Im Menü unter "Verwaltung" in neuer Gruppe "Einkauf".
+   Besteller, **aktuelle Stufe**; Knöpfe je nach Stufe; Hinweis "Rechnung als Datei in den Thread
+   dieser Nachricht hochladen".
+3. **Sendung eintragen** (Knopf) öffnet ein Formular (Versanddienstleister, Sendungsnummer),
+   aktualisiert dieselbe Nachricht mit Tracking-Link (Stufe **Unterwegs**). Eine eingetragene
+   Sendung lässt sich überschreiben.
+4. **Rechnung liegt vor** (Knopf, jeder Benutzer/Admin): Stufe **Rechnung liegt vor**; der Bot
+   spricht die Buchhaltung im Thread an (Erwähnung der Buchhaltungs-Benutzer, per E-Mail ihren
+   Slack-Konten zugeordnet).
+5. **Bezahlt & abgelegt** (Knopf, nur Benutzer mit Häkchen **Buchhaltung**): Stufe **Bezahlt &
+   abgelegt** (Zeitpunkt, wer); Nachricht wird kompakt ("✅ bezahlt & abgelegt").
+6. **Erinnerung:** Steht eine Bestellung länger als 30 Tage auf "Rechnung liegt vor", erinnert der
+   Bot die Buchhaltung im Thread, danach alle 7 Tage, bis die Stufe erreicht ist (Schutz davor, dass
+   die Datei in Slack nach einem Jahr verschwindet, bevor sie abgelegt ist).
+7. **App-Seite "Bestellungen"**: Liste mit Datum, Besteller, bei, was, bezahlt mit, Sendung
+   (Link), **Stufe**; Filter "Offen / Bezahlt & abgelegt / Alle" (Standard Offen = alles außer
+   Bezahlt & abgelegt) und Suche; Detail- und Bearbeiten-Seite (Tippfehler korrigieren, Sendung
+   nachtragen, Stufen weiterschalten bzw. zurücknehmen); jede Änderung aktualisiert die
+   Slack-Nachricht. Im Menü unter "Verwaltung" in neuer Gruppe "Einkauf".
+8. **Benutzerverwaltung:** Häkchen **Buchhaltung** am Benutzer (nur Admin setzbar).
 
 ## Nicht-Ziele
 - Keine Speicherung oder Erkennung der Rechnung in der App (kein Mithören von Nachrichten oder
-  Datei-Uploads; "Abschließen" ist ein bewusster Klick).
-- Kein Abruf des Sendungsstatus bei den Paketdiensten, keine Erinnerungen, keine Summen/Exporte.
+  Datei-Uploads; "Rechnung liegt vor" ist ein bewusster Klick) und **kein Löschen** von Dateien in
+  Slack.
+- Kein Abruf des Sendungsstatus bei den Paketdiensten, keine Summen/Exporte; Erinnerungen nur wie
+  unter Ziel 6.
 - Keine Verknüpfung mit Produktionen, Geräten oder Mietvorgängen.
 - Kein Stichwort in normalen Nachrichten (nur der Slash-Befehl).
 
@@ -61,8 +77,10 @@ Nicht vom Anwender entschieden; jede mit Kosten bei Irrtum.
   umbauen. Irrtum: uneinheitliche Schreibweisen.
 - **Versanddienstleister als feste Auswahl** (DHL, DPD, UPS, GLS, Hermes, Sonstige) für den
   Tracking-Link; bei "Sonstige" nur die Nummer. Irrtum: ein Dienst fehlt; Link-Muster ändert sich.
-- **Abschließen ist ein Klick** nach dem Hochladen der Rechnung im Thread (kein automatisches
-  Erkennen). Irrtum: Bestellungen bleiben offen, wenn niemand klickt.
+- **Die Stufen werden durch Klicks gesetzt** (kein automatisches Erkennen von Dateien, kein
+  Mithören). Irrtum: Bestellungen bleiben auf einer Stufe stehen, wenn niemand klickt; die
+  Erinnerung fängt nur die Stufe "Rechnung liegt vor" ab.
+- **Erinnerungsfrist** 30 Tage, danach alle 7 Tage; als Konstanten, nicht einstellbar.
 - **Wer darf:** Slack-Benutzer, die per E-Mail einem App-Benutzer mit Rolle admin/user zugeordnet
   sind, für Befehl, Formulare und Knöpfe; Betrachter dürfen die Seite nur lesen.
 - **Bestell-Kanal** kommt aus einer neuen Einstellung `slack_order_channel` (wie die anderen
@@ -95,14 +113,16 @@ Auch diese hat der Anwender nicht entschieden; jede mit Kosten bei Irrtum.
 - **`handle()` wird nach `payload.type` aufgeteilt** (`block_actions`, `view_submission`);
   abgelehnte oder ungültige `view_submission` antworten mit `response_action: errors` im Formular,
   Knopfklicks mit einer flüchtigen Antwort nur für den Klickenden.
-- **Wer darf Sendung eintragen/abschließen:** jeder Admin/Benutzer, nicht nur der Besteller.
-  "Wieder öffnen" gibt es nur in der App; die Slack-Nachricht bekommt dabei ihre Knöpfe zurück.
+- **Wer darf was:** Sendung eintragen und "Rechnung liegt vor": jeder Admin/Benutzer, nicht nur
+  der Besteller; "Bezahlt & abgelegt": nur Benutzer mit Häkchen Buchhaltung (auch Admins ohne das
+  Häkchen nicht). Zurücknehmen einer Stufe gibt es nur in der App (Buchhaltung für die letzte
+  Stufe, sonst jeder Admin/Benutzer); die Slack-Nachricht bekommt dabei ihre Knöpfe zurück.
 - **Zeitzone:** Datum und Uhrzeit nach `APP_TIMEZONE` (in `docs/betrieb.md` für Produktion als
   `Europe/Berlin` vorgesehen); die App formatiert in dieser Zone.
 - **Längen:** "Bestellt was" höchstens 2000 Zeichen, die anderen Felder höchstens 255; Slack-Texte
   werden maskiert (`SlackVorgangSync::escape`), die Sendungsnummer wird getrimmt und im Link
   URL-kodiert.
-- **Protokoll:** alle Aktionen (anlegen, Sendung, abschließen, wieder öffnen) landen im Activity-Log
+- **Protokoll:** alle Aktionen (anlegen, Sendung, Rechnung liegt vor, bezahlt & abgelegt, Zurücknehmen) landen im Activity-Log
   mit dem zugeordneten Benutzer als Verursacher.
 - **Slack-Einrichtung:** vorhandene Scopes (`chat:write`, `users:read`, `users:read.email`) genügen
   für Nachrichten und Zuordnung; neu: `commands` und der Slash-Befehl `/bestellung` mit der Adresse
@@ -112,15 +132,20 @@ Auch diese hat der Anwender nicht entschieden; jede mit Kosten bei Irrtum.
 1. **Datenmodell** (Migration): Tabelle `bestellungen`: `id`, `bestellt_bei` (string), `bestellt_was`
    (text), `bezahlt_mit` (string), `bestellt_am` (datetime), `created_by` (FK users,
    nullOnDelete), `versanddienstleister` (string, nullable), `sendungsnummer` (string, nullable),
-   `abgeschlossen_at` (datetime, nullable), `abgeschlossen_by` (FK users, nullOnDelete, nullable),
+   `rechnung_vorhanden_at` und `rechnung_vorhanden_by` (nullable, FK users nullOnDelete),
+   `abgelegt_at` und `abgelegt_by` (nullable, FK users nullOnDelete), `letzte_erinnerung_at`
+   (nullable),
    `slack_channel` und `slack_message_ts` (nullable), `slack_view_id` (nullable, unique, zur
-   Doppelerkennung), Zeitstempel; Activity-Log wie bei den anderen Modellen.
+   Doppelerkennung), Zeitstempel; Activity-Log wie bei den anderen Modellen. Die **Stufe** wird aus den Feldern berechnet
+   (Sendungsnummer, `rechnung_vorhanden_at`, `abgelegt_at`), nicht gespeichert. Zweite Migration:
+   `users.ist_buchhaltung` (boolean, Standard false) und Häkchen im Benutzerformular.
 2. **Slack-Eingang**: neuer Endpunkt `POST /slack/commands` (CSRF-Ausnahme, gleiche
    Signaturprüfung; Prüfung in einen gemeinsamen Dienst/Trait ziehen). Öffnet das Formular per
    `views.open` mit `trigger_id` innerhalb von 3 s. Der bestehende `/slack/interactions` wird um
-   `view_submission` (neue Bestellung, Sendung eintragen) und Knöpfe (`bestellung:sendung`,
-   `bestellung:abschliessen`) erweitert; die Bestellungs-ID reist im Formular als
-   `private_metadata` bzw. als Knopf-`value`.
+   `view_submission` (neue Bestellung, Sendung eintragen) und Knöpfe (`bestellung:sendung`, `bestellung:rechnung`, `bestellung:abgelegt`) erweitert; die Bestellungs-ID reist im Formular als
+   `private_metadata` bzw. als Knopf-`value`; Knöpfe: `bestellung:sendung`, `bestellung:rechnung`, `bestellung:abgelegt`.
+   Ein geplanter Befehl `bestellungen:erinnern` (täglich, im vorhandenen Scheduler) verschickt die
+   Erinnerungen.
 3. **Dienst** `SlackBestellungSync` (Muster `SlackVorgangSync`): `sync(Bestellung)` postet bzw.
    aktualisiert die Nachricht (Blocks, Tracking-Link, abgeschlossen-Ansicht), `slackApi` mit
    Timeout und ohne Ausnahme nach außen.
@@ -145,5 +170,5 @@ Aufbau der Blocks, Texte, Tracking-Link-Muster je Dienstleister, Test-Szenarien 
 
 ## Erfolg
 Eine Bestellung ist in unter einer Minute in Slack erfasst, in der Nachricht und der App-Liste
-sichtbar, die Sendung lässt sich später nachtragen, und die Buchhaltung findet die Rechnung im Thread
-der Bestell-Nachricht.
+sichtbar, die Sendung lässt sich später nachtragen, die Buchhaltung findet die Rechnung im Thread
+und setzt am Ende "Bezahlt & abgelegt"; liegt eine Rechnung zu lange unbearbeitet, wird erinnert.
