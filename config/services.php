@@ -37,6 +37,7 @@ return [
         'signing_secret' => env('SLACK_SIGNING_SECRET'),
         'reminder_channel' => env('SLACK_REMINDER_CHANNEL'),
         'production_channel' => env('SLACK_PRODUCTION_CHANNEL'),
+        'order_channel' => env('SLACK_ORDER_CHANNEL'),
     ],
 
 ];

@@ -7,6 +7,7 @@ use App\Models\Production;
 use App\Models\User;
 use App\Models\Vermietvorgang;
 use App\Services\SlackVorgangSync;
+use App\Support\SlackSignature;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -202,16 +203,6 @@ class SlackInteractionController extends Controller
 
     private function verifySignature(Request $request): void
     {
-        $secret = config('services.slack.signing_secret');
-        $timestamp = $request->header('X-Slack-Request-Timestamp');
-        $signature = $request->header('X-Slack-Signature');
-
-        abort_if(! $secret || ! $timestamp || ! $signature, 401, 'Fehlende Slack-Signatur.');
-        abort_if(abs(time() - (int) $timestamp) > 300, 400, 'Zeitstempel zu alt.');
-
-        $baseString = "v0:{$timestamp}:{$request->getContent()}";
-        $expected = 'v0='.hash_hmac('sha256', $baseString, $secret);
-
-        abort_unless(hash_equals($expected, (string) $signature), 401, 'Ungültige Slack-Signatur.');
+        SlackSignature::verify($request);
     }
 }
