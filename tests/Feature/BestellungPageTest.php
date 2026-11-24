@@ -104,7 +104,6 @@ test('Bearbeiten speichert, protokolliert und aktualisiert Slack', function () {
         'bestellt_bei' => 'Neu GmbH',
         'bestellt_was' => 'Stativ',
         'bezahlt_mit' => 'Rechnung',
-        'bestellt_am' => '2026-11-21T09:15',
         'versanddienstleister' => 'dpd',
         'sendungsnummer' => 'DPD-77',
     ])->assertRedirect(route('bestellungen.show', $b));
@@ -112,8 +111,7 @@ test('Bearbeiten speichert, protokolliert und aktualisiert Slack', function () {
     $b->refresh();
     expect($b->bestellt_bei)->toBe('Neu GmbH')
         ->and($b->versanddienstleister)->toBe('dpd')
-        ->and($b->sendungsnummer)->toBe('DPD-77')
-        ->and($b->bestellt_am->format('Y-m-d H:i'))->toBe('2026-11-21 09:15');
+        ->and($b->sendungsnummer)->toBe('DPD-77');
     expect(Activity::where('log_name', 'bestellung')->where('causer_id', $this->admin->id)->exists())->toBeTrue();
     Http::assertSent(fn (Request $r) => str_ends_with($r->url(), 'chat.update') && $r['ts'] === '1700.1');
 });
@@ -123,7 +121,7 @@ test('Bearbeiten leert Dienstleister und Sendungsnummer', function () {
 
     $this->actingAs($this->admin)->put(route('bestellungen.update', $b), [
         'bestellt_bei' => 'Thomann', 'bestellt_was' => 'Kabel', 'bezahlt_mit' => 'Bar',
-        'bestellt_am' => '2026-11-20T14:35', 'versanddienstleister' => '', 'sendungsnummer' => '',
+        'versanddienstleister' => '', 'sendungsnummer' => '',
     ])->assertRedirect();
 
     expect($b->fresh()->sendungsnummer)->toBeNull()->and($b->fresh()->versanddienstleister)->toBeNull();
@@ -136,13 +134,12 @@ test('Validierung beim Bearbeiten', function () {
         'bestellt_bei' => str_repeat('a', 256),
         'bestellt_was' => str_repeat('b', 2001),
         'bezahlt_mit' => '',
-        'bestellt_am' => 'kein datum',
         'versanddienstleister' => 'fedex',
         'sendungsnummer' => str_repeat('1', 101),
-    ])->assertSessionHasErrors(['bestellt_bei', 'bestellt_was', 'bezahlt_mit', 'bestellt_am', 'versanddienstleister', 'sendungsnummer']);
+    ])->assertSessionHasErrors(['bestellt_bei', 'bestellt_was', 'bezahlt_mit', 'versanddienstleister', 'sendungsnummer']);
 
     $this->actingAs($this->admin)->put(route('bestellungen.update', $b), [])
-        ->assertSessionHasErrors(['bestellt_bei', 'bestellt_was', 'bezahlt_mit', 'bestellt_am']);
+        ->assertSessionHasErrors(['bestellt_bei', 'bestellt_was', 'bezahlt_mit']);
 });
 
 test('Rechnung liegt vor setzt die Stufe und synchronisiert Slack', function () {
@@ -233,4 +230,65 @@ test('Befehlspalette enthält Bestellungen', function () {
     $json = str_replace('\\', '', str_replace('\\u0022', '"', $html));
 
     expect($json)->toContain('"title":"Bestellungen","url":"'.route('bestellungen.index').'"');
+});
+
+test('Bearbeiten ändert bestellt_am nicht', function () {
+    $b = bpBestellung(['bestellt_am' => '2026-11-20 14:35:42']);
+
+    $this->actingAs($this->admin)->put(route('bestellungen.update', $b), [
+        'bestellt_bei' => 'Thomann', 'bestellt_was' => 'Anderes', 'bezahlt_mit' => 'Bar',
+        'bestellt_am' => '2030-01-01T00:00',
+    ])->assertRedirect();
+
+    expect($b->fresh()->bestellt_am->format('Y-m-d H:i:s'))->toBe('2026-11-20 14:35:42')
+        ->and($b->fresh()->bestellt_was)->toBe('Anderes');
+    $changed = Activity::where('log_name', 'bestellung')->where('event', 'updated')->get()->flatMap(fn ($a) => array_keys($a->properties['attributes'] ?? []));
+    expect($changed->contains('bestellt_am'))->toBeFalse();
+    $this->actingAs($this->admin)->get(route('bestellungen.edit', $b))->assertDontSee('name="bestellt_am"', false);
+});
+
+test('App-Rechnung pingt Buchhaltung im Thread, nur bei Stufenwechsel', function () {
+    config(['services.slack.bot_token' => 'xoxb-test']);
+    Http::fake(['slack.com/api/*' => Http::response(['ok' => true])]);
+    $b = bpBestellung(['slack_channel' => 'C1', 'slack_message_ts' => '5.5']);
+
+    $this->actingAs($this->admin)->post(route('bestellungen.rechnung', $b))->assertRedirect();
+
+    Http::assertSent(fn (Request $r) => str_ends_with($r->url(), 'chat.postMessage') && $r['thread_ts'] === '5.5' && str_contains($r['text'], 'Rechnung liegt vor'));
+});
+
+test('App-Rechnung bei bereits gesetzter Stufe pingt nicht und synchronisiert nicht', function () {
+    config(['services.slack.bot_token' => 'xoxb-test']);
+    Http::fake(['slack.com/api/*' => Http::response(['ok' => true])]);
+    $b = bpBestellung(['slack_channel' => 'C1', 'slack_message_ts' => '5.5', 'rechnung_vorhanden_at' => now()]);
+
+    $this->actingAs($this->admin)->post(route('bestellungen.rechnung', $b))
+        ->assertRedirect(route('bestellungen.show', $b))->assertSessionHas('error', 'Stufe bereits gesetzt.')->assertSessionMissing('success');
+
+    Http::assertNothingSent();
+});
+
+test('Abgelegt bei bereits gesetzter Stufe meldet und ändert nichts', function () {
+    Http::fake();
+    $b = bpBestellung(['abgelegt_at' => now()]);
+    $buch = bpBuchhaltung();
+    $before = Activity::count();
+
+    $this->actingAs($buch)->post(route('bestellungen.abgelegt', $b))
+        ->assertSessionHas('error', 'Stufe bereits gesetzt.')->assertSessionMissing('success');
+
+    expect(Activity::count())->toBe($before);
+    Http::assertNothingSent();
+});
+
+test('Zurücknehmen ohne Stufe meldet und ändert nichts', function () {
+    Http::fake();
+    $b = bpBestellung();
+    $before = Activity::count();
+
+    $this->actingAs($this->admin)->post(route('bestellungen.zuruecknehmen', $b))
+        ->assertSessionHas('error', 'Keine Stufe zum Zurücknehmen.')->assertSessionMissing('success');
+
+    expect(Activity::count())->toBe($before);
+    Http::assertNothingSent();
 });

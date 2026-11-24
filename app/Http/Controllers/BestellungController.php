@@ -59,8 +59,17 @@ class BestellungController extends Controller
 
     public function rechnung(Request $request, Bestellung $bestellung)
     {
+        if ($bestellung->rechnung_vorhanden_at) {
+            return $this->nichtsZuTun($bestellung, 'Stufe bereits gesetzt.');
+        }
+
         $bestellung->markRechnungVorhanden($request->user());
-        $this->syncAfterResponse($bestellung);
+
+        dispatch(function () use ($bestellung) {
+            $sync = app(SlackBestellungSync::class);
+            $sync->sync($bestellung);
+            $sync->pingBuchhaltung($bestellung->fresh());
+        })->afterResponse();
 
         return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Rechnung als vorliegend markiert.');
     }
@@ -68,6 +77,10 @@ class BestellungController extends Controller
     public function abgelegt(Request $request, Bestellung $bestellung)
     {
         abort_unless($request->user()->ist_buchhaltung, 403, 'Nur die Buchhaltung darf Bestellungen als bezahlt & abgelegt markieren.');
+
+        if ($bestellung->abgelegt_at) {
+            return $this->nichtsZuTun($bestellung, 'Stufe bereits gesetzt.');
+        }
 
         $bestellung->markAbgelegt($request->user());
         $this->syncAfterResponse($bestellung);
@@ -79,6 +92,8 @@ class BestellungController extends Controller
     {
         if ($bestellung->abgelegt_at) {
             abort_unless($request->user()->ist_buchhaltung, 403, 'Nur die Buchhaltung darf „Bezahlt & abgelegt“ zurücknehmen.');
+        } elseif (! $bestellung->rechnung_vorhanden_at) {
+            return $this->nichtsZuTun($bestellung, 'Keine Stufe zum Zurücknehmen.');
         }
 
         $bestellung->revertStage($request->user());
@@ -97,6 +112,11 @@ class BestellungController extends Controller
         $this->syncAfterResponse($bestellung);
 
         return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Die Slack-Nachricht wird gesendet bzw. aktualisiert.');
+    }
+
+    private function nichtsZuTun(Bestellung $bestellung, string $meldung)
+    {
+        return redirect()->route('bestellungen.show', $bestellung)->with('error', $meldung);
     }
 
     /** Slack erst nach der Antwort bedienen, damit die Seite nicht auf Slack wartet. */

@@ -147,7 +147,7 @@ class SlackInteractionController extends Controller
                     $sync->sync($bestellung);
 
                     if ($neu) {
-                        $sync->threadReply($bestellung->fresh(), $this->buchhaltungMention());
+                        $sync->pingBuchhaltung($bestellung->fresh());
                     }
                 })->afterResponse();
 
@@ -159,21 +159,6 @@ class SlackInteractionController extends Controller
 
                 return;
         }
-    }
-
-    /** Erwähnt die Buchhaltungs-Benutzer mit Slack-Konto (sonst Klartext). */
-    private function buchhaltungMention(): string
-    {
-        $resolver = app(SlackUserResolver::class);
-        $mentions = User::buchhaltung()->get()
-            ->map(fn (User $u) => $resolver->slackIdFor($u))
-            ->filter()
-            ->map(fn (string $id) => "<@{$id}>")
-            ->implode(' ');
-
-        $text = 'Rechnung liegt vor: bitte herunterladen, bezahlen und ablegen.';
-
-        return ($mentions !== '' ? $mentions : 'Buchhaltung:').' '.$text;
     }
 
     private function handleViewSubmission(array $payload)

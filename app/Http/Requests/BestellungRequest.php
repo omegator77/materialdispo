@@ -29,7 +29,6 @@ class BestellungRequest extends FormRequest
             'bestellt_bei' => ['required', 'string', 'max:255'],
             'bestellt_was' => ['required', 'string', 'max:2000'],
             'bezahlt_mit' => ['required', 'string', 'max:255'],
-            'bestellt_am' => ['required', 'date'],
             'versanddienstleister' => ['nullable', Rule::in(array_keys(Bestellung::CARRIERS))],
             'sendungsnummer' => ['nullable', 'string', 'max:100'],
         ];
@@ -41,7 +40,6 @@ class BestellungRequest extends FormRequest
             'bestellt_bei' => 'Bestellt bei',
             'bestellt_was' => 'Bestellt was',
             'bezahlt_mit' => 'Bezahlt mit',
-            'bestellt_am' => 'Datum',
             'versanddienstleister' => 'Versanddienstleister',
             'sendungsnummer' => 'Sendungsnummer',
         ];

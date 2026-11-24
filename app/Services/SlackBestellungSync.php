@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Bestellung;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -120,6 +121,21 @@ class SlackBestellungSync
         if ($response && ! $response->json('ok')) {
             Log::warning('Slack-Thread-Reply (Bestellung) konnte nicht gesendet werden: '.$response->json('error'));
         }
+    }
+
+    /** Erwähnt die Buchhaltungs-Benutzer (mit Slack-Konto, sonst Klartext) im Thread der Bestellung. */
+    public function pingBuchhaltung(Bestellung $bestellung): void
+    {
+        $resolver = app(SlackUserResolver::class);
+        $mentions = User::buchhaltung()->get()
+            ->map(fn (User $u) => $resolver->slackIdFor($u))
+            ->filter()
+            ->map(fn (string $id) => "<@{$id}>")
+            ->implode(' ');
+
+        $text = 'Rechnung liegt vor: bitte herunterladen, bezahlen und ablegen.';
+
+        $this->threadReply($bestellung, ($mentions !== '' ? $mentions : 'Buchhaltung:').' '.$text);
     }
 
     /** Ziel-Kanal: Kanal der Nachricht, sonst Einstellung, sonst Konfiguration. */

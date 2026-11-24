@@ -27,11 +27,6 @@
                             <input type="text" name="bestellt_bei" id="bestellt_bei" maxlength="255" required
                                    value="{{ old('bestellt_bei', $bestellung->bestellt_bei) }}" class="form-control w-full">
                         </div>
-                        <div>
-                            <label for="bestellt_am" class="form-label">Datum</label>
-                            <input type="datetime-local" name="bestellt_am" id="bestellt_am" required
-                                   value="{{ old('bestellt_am', $bestellung->bestellt_am?->format('Y-m-d\TH:i')) }}" class="form-control w-full">
-                        </div>
                         <div class="md:col-span-2">
                             <label for="bestellt_was" class="form-label">Bestellt was</label>
                             <textarea name="bestellt_was" id="bestellt_was" rows="4" maxlength="2000" required class="form-control w-full">{{ old('bestellt_was', $bestellung->bestellt_was) }}</textarea>
