@@ -2,16 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bestellung;
 use App\Models\Mietvorgang;
 use App\Models\Production;
 use App\Models\User;
 use App\Models\Vermietvorgang;
+use App\Services\BestellungModals;
+use App\Services\SlackBestellungSync;
+use App\Services\SlackUserResolver;
 use App\Services\SlackVorgangSync;
 use App\Support\SlackSignature;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Spatie\Activitylog\CauserResolver;
 
 class SlackInteractionController extends Controller
 {
@@ -52,6 +58,10 @@ class SlackInteractionController extends Controller
         'production' => ['packvorgang'],
     ];
 
+    public const DENIED_TEXT = '🚫 Keine Berechtigung: Dein Slack-Konto ist keinem App-Benutzer mit Schreibrechten zugeordnet (Abgleich über die E-Mail-Adresse).';
+
+    private const NOT_ACCOUNTING_TEXT = '🚫 Keine Berechtigung: Nur die Buchhaltung darf Bestellungen als bezahlt & abgelegt markieren.';
+
     public function __construct(private SlackVorgangSync $slack) {}
 
     public function handle(Request $request)
@@ -60,8 +70,18 @@ class SlackInteractionController extends Controller
 
         $payload = json_decode($request->input('payload', '{}'), true);
 
+        if (($payload['type'] ?? null) === 'view_submission') {
+            return $this->handleViewSubmission($payload);
+        }
+
         $actionId = $payload['actions'][0]['action_id'] ?? null;
         $responseUrl = $payload['response_url'] ?? null;
+
+        if ($actionId && str_starts_with($actionId, 'bestellung:')) {
+            $this->handleBestellungAction($actionId, $payload, $responseUrl);
+
+            return response()->noContent();
+        }
 
         if ($actionId && str_starts_with($actionId, 'confirm:')) {
             $this->handleConfirm($actionId, $payload, $responseUrl);
@@ -80,6 +100,236 @@ class SlackInteractionController extends Controller
         }
 
         return response()->noContent();
+    }
+
+    /**
+     * Knöpfe der Bestell-Nachricht. Jede Aktion prüft zuerst die Berechtigung;
+     * geändert wird nur über die Modellmethoden (gleiche Regeln wie in der App).
+     */
+    private function handleBestellungAction(string $actionId, array $payload, ?string $responseUrl): void
+    {
+        $user = app(SlackUserResolver::class)->resolve($payload['user']['id'] ?? null);
+
+        if (! $user || ! $user->isUser()) {
+            $this->replyEphemeralSafely($responseUrl, self::DENIED_TEXT);
+
+            return;
+        }
+
+        if ($actionId === 'bestellung:abgelegt' && ! $user->ist_buchhaltung) {
+            $this->replyEphemeralSafely($responseUrl, self::NOT_ACCOUNTING_TEXT);
+
+            return;
+        }
+
+        $bestellung = Bestellung::find($payload['actions'][0]['value'] ?? null);
+
+        if (! $bestellung) {
+            $this->replyEphemeralSafely($responseUrl, '⚠️ Bestellung wurde nicht mehr gefunden.');
+
+            return;
+        }
+
+        switch ($actionId) {
+            case 'bestellung:sendung':
+                $this->openView($payload['trigger_id'] ?? null, BestellungModals::sendung($bestellung), $responseUrl);
+
+                return;
+
+            case 'bestellung:rechnung':
+                $bestellung->markRechnungVorhanden($user);
+
+                dispatch(function () use ($bestellung) {
+                    $sync = app(SlackBestellungSync::class);
+                    $sync->sync($bestellung);
+                    $sync->threadReply($bestellung->fresh(), $this->buchhaltungMention());
+                })->afterResponse();
+
+                return;
+
+            case 'bestellung:abgelegt':
+                $bestellung->markAbgelegt($user);
+                $this->syncAfterResponse($bestellung);
+
+                return;
+        }
+    }
+
+    /** Erwähnt die Buchhaltungs-Benutzer mit Slack-Konto (sonst Klartext). */
+    private function buchhaltungMention(): string
+    {
+        $resolver = app(SlackUserResolver::class);
+        $mentions = User::buchhaltung()->get()
+            ->map(fn (User $u) => $resolver->slackIdFor($u))
+            ->filter()
+            ->map(fn (string $id) => "<@{$id}>")
+            ->implode(' ');
+
+        $text = 'Rechnung liegt vor: bitte herunterladen, bezahlen und ablegen.';
+
+        return ($mentions !== '' ? $mentions : 'Buchhaltung:').' '.$text;
+    }
+
+    private function handleViewSubmission(array $payload)
+    {
+        $view = $payload['view'] ?? [];
+        $callbackId = $view['callback_id'] ?? null;
+
+        if (! in_array($callbackId, [BestellungModals::CALLBACK_NEU, BestellungModals::CALLBACK_SENDUNG], true)) {
+            return response()->noContent();
+        }
+
+        $firstField = $callbackId === BestellungModals::CALLBACK_NEU ? 'bestellt_bei' : 'versanddienstleister';
+        $user = app(SlackUserResolver::class)->resolve($payload['user']['id'] ?? null);
+
+        if (! $user || ! $user->isUser()) {
+            return $this->errors([$firstField => self::DENIED_TEXT]);
+        }
+
+        return $callbackId === BestellungModals::CALLBACK_NEU
+            ? $this->submitNeu($view, $user)
+            : $this->submitSendung($view, $user);
+    }
+
+    private function submitNeu(array $view, User $user)
+    {
+        $data = [];
+        $errors = [];
+
+        foreach (['bestellt_bei' => 255, 'bestellt_was' => 2000, 'bezahlt_mit' => 255] as $field => $max) {
+            $value = $this->fieldValue($view, $field);
+
+            if ($value === '') {
+                $errors[$field] = 'Bitte ausfüllen.';
+            } elseif (mb_strlen($value) > $max) {
+                $errors[$field] = "Maximal {$max} Zeichen erlaubt.";
+            }
+
+            $data[$field] = $value;
+        }
+
+        if ($errors) {
+            return $this->errors($errors);
+        }
+
+        $viewId = $view['id'] ?? null;
+
+        // Slack-Wiederholung desselben Formulars: nichts neu anlegen.
+        if ($viewId && Bestellung::where('slack_view_id', $viewId)->exists()) {
+            return response('', 200);
+        }
+
+        try {
+            $resolver = app(CauserResolver::class);
+            $resolver->setCauser($user);
+
+            try {
+                $bestellung = Bestellung::create($data + [
+                    'bestellt_am' => now(),
+                    'created_by' => $user->id,
+                    'slack_view_id' => $viewId,
+                ]);
+            } finally {
+                $resolver->setCauser(null);
+            }
+        } catch (UniqueConstraintViolationException) {
+            return response('', 200);
+        }
+
+        $this->syncAfterResponse($bestellung);
+
+        return response('', 200);
+    }
+
+    private function submitSendung(array $view, User $user)
+    {
+        $bestellung = Bestellung::find($view['private_metadata'] ?? null);
+
+        if (! $bestellung) {
+            return $this->errors(['sendungsnummer' => 'Bestellung wurde nicht mehr gefunden.']);
+        }
+
+        $carrier = $view['state']['values']['versanddienstleister']['versanddienstleister']['selected_option']['value'] ?? '';
+        $nummer = $this->fieldValue($view, 'sendungsnummer');
+        $errors = [];
+
+        if (! array_key_exists($carrier, Bestellung::CARRIERS)) {
+            $errors['versanddienstleister'] = 'Bitte einen Versanddienstleister wählen.';
+        }
+
+        if ($nummer === '') {
+            $errors['sendungsnummer'] = 'Bitte ausfüllen.';
+        } elseif (mb_strlen($nummer) > 100) {
+            $errors['sendungsnummer'] = 'Maximal 100 Zeichen erlaubt.';
+        }
+
+        if ($errors) {
+            return $this->errors($errors);
+        }
+
+        // Das automatische "updated"-Log entfällt; stattdessen ein lesbarer Eintrag.
+        activity()->withoutLogs(fn () => $bestellung->update([
+            'versanddienstleister' => $carrier,
+            'sendungsnummer' => $nummer,
+        ]));
+
+        activity('bestellung')
+            ->performedOn($bestellung)
+            ->causedBy($user)
+            ->event('sendung_eingetragen')
+            ->withProperties(['attributes' => ['versanddienstleister' => $carrier, 'sendungsnummer' => $nummer]])
+            ->log('Bestellung "'.$bestellung->bestellt_bei.'": Sendung eingetragen ('.Bestellung::CARRIERS[$carrier].' '.$nummer.')');
+
+        $this->syncAfterResponse($bestellung);
+
+        return response('', 200);
+    }
+
+    /** Getrimmter Wert eines einfachen Eingabefeldes (Block-ID = Action-ID = Feldname). */
+    private function fieldValue(array $view, string $field): string
+    {
+        $value = $view['state']['values'][$field][$field]['value'] ?? '';
+
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function errors(array $errors)
+    {
+        return response()->json(['response_action' => 'errors', 'errors' => $errors]);
+    }
+
+    /** Die Bestell-Nachricht erst nach der Antwort an Slack (3-Sekunden-Limit) posten/aktualisieren. */
+    private function syncAfterResponse(Bestellung $bestellung): void
+    {
+        dispatch(fn () => app(SlackBestellungSync::class)->sync($bestellung))->afterResponse();
+    }
+
+    private function openView(?string $triggerId, array $view, ?string $responseUrl): void
+    {
+        try {
+            $response = Http::withToken(config('services.slack.bot_token'))
+                ->timeout(5)
+                ->post('https://slack.com/api/views.open', ['trigger_id' => $triggerId, 'view' => $view]);
+
+            if ($response->json('ok')) {
+                return;
+            }
+
+            Log::warning('Slack views.open fehlgeschlagen: '.$response->json('error'));
+        } catch (ConnectionException $e) {
+            Log::warning('Slack views.open nicht erreichbar: '.$e->getMessage());
+        }
+
+        $this->replyEphemeralSafely($responseUrl, 'Formular konnte nicht geöffnet werden.');
+    }
+
+    private function replyEphemeralSafely(?string $responseUrl, string $text): void
+    {
+        try {
+            $this->replyEphemeral($responseUrl, $text);
+        } catch (ConnectionException $e) {
+            Log::warning('Slack response_url nicht erreichbar: '.$e->getMessage());
+        }
     }
 
     /**

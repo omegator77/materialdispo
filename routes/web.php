@@ -17,6 +17,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SlackCommandController;
 use App\Http\Controllers\SlackInteractionController;
 use App\Http\Controllers\SmartProductionController;
 use App\Http\Controllers\SupplierController;
@@ -35,6 +36,7 @@ Route::redirect('/', '/login');
 // Slack ruft diesen Endpunkt ohne Session/CSRF-Token auf; Absicherung erfolgt
 // über die Signaturprüfung (X-Slack-Signature) im Controller selbst.
 Route::post('/slack/interactions', [SlackInteractionController::class, 'handle'])->name('slack.interactions');
+Route::post('/slack/commands', [SlackCommandController::class, 'handle'])->name('slack.commands');
 
 // Admin + Benutzer — Schreibzugriff
 // Muss vor den read-only Resource-Routes stehen, damit z. B. "units/create"
