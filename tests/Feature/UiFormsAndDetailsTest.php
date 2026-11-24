@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Bestellung;
 use App\Models\CameraConfig;
 use App\Models\Geraetetyp;
 use App\Models\Item;
@@ -50,6 +51,7 @@ function uiFixtures(): array
         'verm' => Vermietvorgang::create(['mieter_id' => $mieter->id, 'rent_start' => '2026-12-01', 'rent_end' => '2026-12-05']),
         'config' => CameraConfig::create(['production_id' => $production->id, 'item_id' => $item->id, 'cam_number' => 'Cam 1']),
         'vb' => VbProtokoll::forceCreate(['production_id' => $production->id, 'kunde' => 'Sky']),
+        'bestellung' => Bestellung::create(['bestellt_bei' => 'Thomann', 'bestellt_was' => 'Kabel', 'bezahlt_mit' => 'Karte', 'bestellt_am' => '2026-11-20 10:00:00']),
         'user' => User::factory()->create(['role' => 'user', 'name' => 'Nora']),
     ];
 }
@@ -78,10 +80,12 @@ dataset('seiten', [
     'Kamerazug anlegen' => [fn ($f) => route('camera-config.create', $f['production'])],
     'Kamerazug bearbeiten' => [fn ($f) => route('camera-config.edit', $f['config'])],
     'VB-Protokoll bearbeiten' => [fn ($f) => route('vb-protokoll.edit', $f['production'])],
+    'Bestellung bearbeiten' => [fn ($f) => route('bestellungen.edit', $f['bestellung'])],
     'Einstellungen' => [fn ($f) => route('settings.edit')],
     'Profil' => [fn ($f) => route('profile.edit')],
     // Detailseiten
     'Gruppe Details' => [fn ($f) => route('units.show', $f['unit'])],
+    'Bestellung Details' => [fn ($f) => route('bestellungen.show', $f['bestellung'])],
     'Vermieter Details' => [fn ($f) => route('suppliers.show', $f['supplier'])],
     'Mieter Details' => [fn ($f) => route('mieter.show', $f['mieter'])],
     'Gerät Details' => [fn ($f) => route('items.show', $f['item'])],

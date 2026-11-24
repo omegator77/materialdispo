@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BestellungController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CameraConfigController;
 use App\Http\Controllers\DashboardController;
@@ -132,6 +133,13 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::delete('vermietvorgaenge/{vermietvorgang}/confirm-vollstaendig-zurueck', [VermietvorgangController::class, 'reopenVollstaendigZurueck'])->name('vermietvorgaenge.reopenVollstaendigZurueck');
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+
+    Route::get('/bestellungen/{bestellung}/edit', [BestellungController::class, 'edit'])->name('bestellungen.edit');
+    Route::put('/bestellungen/{bestellung}', [BestellungController::class, 'update'])->name('bestellungen.update');
+    Route::post('/bestellungen/{bestellung}/rechnung', [BestellungController::class, 'rechnung'])->name('bestellungen.rechnung');
+    Route::post('/bestellungen/{bestellung}/abgelegt', [BestellungController::class, 'abgelegt'])->name('bestellungen.abgelegt');
+    Route::post('/bestellungen/{bestellung}/zuruecknehmen', [BestellungController::class, 'zuruecknehmen'])->name('bestellungen.zuruecknehmen');
+    Route::post('/bestellungen/{bestellung}/resync', [BestellungController::class, 'resync'])->name('bestellungen.resync');
 });
 
 // Alle eingeloggten User (inkl. Viewer) — nur lesend
@@ -147,6 +155,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/items', ItemController::class)->only(['index', 'show']);
     Route::resource('/productions', ProductionController::class)->only(['index', 'show']);
     Route::resource('/suppliers', SupplierController::class)->only(['index', 'show']);
+    Route::get('/bestellungen', [BestellungController::class, 'index'])->name('bestellungen.index');
+    Route::get('/bestellungen/{bestellung}', [BestellungController::class, 'show'])->name('bestellungen.show');
     Route::resource('/mieter', MieterController::class)->only(['index', 'show']);
     Route::resource('/mailing-lists', MailingListController::class)->only(['index']);
     Route::resource('/mietvorgaenge', MietvorgangController::class)

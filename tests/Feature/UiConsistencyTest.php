@@ -26,6 +26,7 @@ dataset('listenseiten', [
     'Vermietvorgänge' => ['vermietvorgaenge.index'],
     'Packliste' => ['itemprods'],
     'Aktivitätslog' => ['activity-log.index'],
+    'Bestellungen' => ['bestellungen.index'],
 ]);
 
 // Reste der alten, uneinheitlichen Gestaltung; auf umgestellten Seiten darf nichts davon vorkommen.

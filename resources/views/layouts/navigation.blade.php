@@ -75,7 +75,7 @@
                     </div>
 
                     @php
-                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'mailing-lists.*'];
+                        $verwaltungRoutes = ['units.*', 'geraetetypen.*', 'mailing-lists.*', 'bestellungen.*'];
                         if (Auth::user()->isUser()) {
                             $verwaltungRoutes = array_merge($verwaltungRoutes, ['activity-log.*']);
                         }
@@ -106,6 +106,12 @@
                                 </x-dropdown-link>
                                 <x-dropdown-link :href="route('mailing-lists.index')">
                                     {{ __('Mailinglisten') }}
+                                </x-dropdown-link>
+
+                                <div class="border-t border-gray-100 my-1"></div>
+                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Einkauf') }}</div>
+                                <x-dropdown-link :href="route('bestellungen.index')">
+                                    {{ __('Bestellungen') }}
                                 </x-dropdown-link>
 
                                 @if(Auth::user()->isUser())
@@ -261,6 +267,12 @@
 
                 <x-responsive-nav-link :href="route('mailing-lists.index')" :active="request()->routeIs('mailing-lists.*')">
                     {{ __('Mailinglisten') }}
+                </x-responsive-nav-link>
+
+                <div class="px-4 py-1 mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ __('Einkauf') }}</div>
+
+                <x-responsive-nav-link :href="route('bestellungen.index')" :active="request()->routeIs('bestellungen.*')">
+                    {{ __('Bestellungen') }}
                 </x-responsive-nav-link>
 
                 @if(Auth::user()->isUser())
