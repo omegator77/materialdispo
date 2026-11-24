@@ -72,6 +72,42 @@ Nicht vom Anwender entschieden; jede mit Kosten bei Irrtum.
 - **Fehlertoleranz:** Speichern vor Slack-Aufruf; schlägt Slack fehl, bleibt die Bestellung
   erhalten und die Nachricht lässt sich über "Bearbeiten" in der App erneut synchronisieren.
 
+## Entscheidungen des Autors aus der Prüfung des Entwurfs
+Auch diese hat der Anwender nicht entschieden; jede mit Kosten bei Irrtum.
+- **Kein Queue-Worker.** Die App hat bewusst keinen (siehe `.env.example`). Innerhalb der 3 Sekunden
+  passieren nur Signaturprüfung, Berechtigung (aus dem Cache, siehe unten) und `views.open` bzw. das
+  Speichern der Bestellung. Das Posten und Aktualisieren der Slack-Nachricht läuft **nach der
+  Antwort** (`dispatch(...)->afterResponse()`, ohne Worker). Irrtum: bei einem Absturz zwischen
+  Speichern und Posten fehlt die Slack-Nachricht, sie wird über "In Slack neu senden" nachgeholt.
+- **Berechtigung vor `views.open`**, mit zwischengespeicherter Zuordnung Slack-ID → App-Benutzer
+  (10 Minuten, nur Treffer; kein Treffer wird nicht gecacht). Schlägt `users.info` fehl oder ist
+  unbekannt: ablehnen ("Keine Berechtigung"), nicht öffnen. Irrtum: eine eben geänderte Rolle gilt
+  bis zu 10 Minuten verzögert.
+- **Doppelschutz:** Bestellung zuerst speichern mit eindeutiger `slack_view_id`; kollidiert sie bei
+  einer Slack-Wiederholung, wird nichts neu angelegt und mit OK geantwortet. Eine noch ausstehende
+  oder fehlgeschlagene Slack-Nachricht stößt eine Wiederholung **nicht** selbst an, nur "In Slack
+  neu senden" in der App.
+- **Neu senden:** Detailseite hat "In Slack neu senden"; jedes Speichern auf der Bearbeiten-Seite
+  synchronisiert ebenfalls. Eine Bestellung ohne `slack_message_ts` wird dabei erstmals gepostet,
+  sobald ein Kanal eingestellt ist.
+- **Einstellung `slack_order_channel`** kommt auf die bestehende Einstellungsseite (wie die anderen
+  Kanäle, ohne Ein-/Ausschalter).
+- **`handle()` wird nach `payload.type` aufgeteilt** (`block_actions`, `view_submission`);
+  abgelehnte oder ungültige `view_submission` antworten mit `response_action: errors` im Formular,
+  Knopfklicks mit einer flüchtigen Antwort nur für den Klickenden.
+- **Wer darf Sendung eintragen/abschließen:** jeder Admin/Benutzer, nicht nur der Besteller.
+  "Wieder öffnen" gibt es nur in der App; die Slack-Nachricht bekommt dabei ihre Knöpfe zurück.
+- **Zeitzone:** Datum und Uhrzeit nach `APP_TIMEZONE` (in `docs/betrieb.md` für Produktion als
+  `Europe/Berlin` vorgesehen); die App formatiert in dieser Zone.
+- **Längen:** "Bestellt was" höchstens 2000 Zeichen, die anderen Felder höchstens 255; Slack-Texte
+  werden maskiert (`SlackVorgangSync::escape`), die Sendungsnummer wird getrimmt und im Link
+  URL-kodiert.
+- **Protokoll:** alle Aktionen (anlegen, Sendung, abschließen, wieder öffnen) landen im Activity-Log
+  mit dem zugeordneten Benutzer als Verursacher.
+- **Slack-Einrichtung:** vorhandene Scopes (`chat:write`, `users:read`, `users:read.email`) genügen
+  für Nachrichten und Zuordnung; neu: `commands` und der Slash-Befehl `/bestellung` mit der Adresse
+  `/slack/commands` auf demselben Host wie `/slack/interactions`.
+
 ## Entwurf
 1. **Datenmodell** (Migration): Tabelle `bestellungen`: `id`, `bestellt_bei` (string), `bestellt_was`
    (text), `bezahlt_mit` (string), `bestellt_am` (datetime), `created_by` (FK users,
