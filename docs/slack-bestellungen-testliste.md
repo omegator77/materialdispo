@@ -18,7 +18,7 @@ bereithalten; die E-Mail-Adresse muss in Slack und App gleich sein.
    klicken (auch als anderer Benutzer als der Besteller testen). Erwartet: Stufe "Rechnung liegt vor",
    der Bot spricht die Buchhaltung im Thread an.
 5. **Bezahlt & abgelegt**: Als Benutzer ohne Häkchen klicken: Ablehnung (nur für dich sichtbar).
-   Als Buchhaltung klicken: Nachricht wird zur Zeile "bezahlt & abgelegt"; in der App Filter
+   Als Buchhaltung klicken: die Knöpfe verschwinden und die Zeile "✅ bezahlt & abgelegt von … am …" erscheint; in der App Filter
    "Bezahlt & abgelegt". In der App "Zurücknehmen" testen.
 6. **Erinnerung**: Eine Bestellung auf "Rechnung liegt vor" bringen und in der Datenbank
    `rechnung_vorhanden_at` auf vor mehr als 30 Tagen setzen (z. B.

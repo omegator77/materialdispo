@@ -137,8 +137,7 @@ class SlackInteractionController extends Controller
                 return;
 
             case 'bestellung:rechnung':
-                $neu = ! $bestellung->rechnung_vorhanden_at;
-                $bestellung->markRechnungVorhanden($user);
+                $neu = $bestellung->markRechnungVorhanden($user);
 
                 // Sync läuft immer (repariert veraltete Nachrichten); die
                 // Buchhaltung wird nur beim tatsächlichen Stufenwechsel angepingt.

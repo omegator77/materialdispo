@@ -153,35 +153,48 @@ class Bestellung extends Model
         return str_replace('{nummer}', rawurlencode($this->sendungsnummer), $pattern);
     }
 
-    public function markRechnungVorhanden(User $by): void
+    public function markRechnungVorhanden(User $by): bool
     {
-        if ($this->rechnung_vorhanden_at) {
-            return;
-        }
+        $affected = activity()->withoutLogs(fn () => static::whereKey($this->id)
+            ->whereNull('rechnung_vorhanden_at')
+            ->whereNull('abgelegt_at')
+            ->update(['rechnung_vorhanden_at' => now(), 'rechnung_vorhanden_by' => $by->id]));
 
-        $this->forceFill(['rechnung_vorhanden_at' => now(), 'rechnung_vorhanden_by' => $by->id])->save();
+        $this->refresh();
+
+        if ($affected !== 1) {
+            return false;
+        }
 
         $this->logStage($by, 'rechnung_vorhanden', 'Rechnung liegt vor');
+
+        return true;
     }
 
-    public function markAbgelegt(User $by): void
+    public function markAbgelegt(User $by): bool
     {
-        if ($this->abgelegt_at) {
-            return;
+        $affected = activity()->withoutLogs(fn () => static::whereKey($this->id)
+            ->whereNull('abgelegt_at')
+            ->update(['abgelegt_at' => now(), 'abgelegt_by' => $by->id]));
+
+        $this->refresh();
+
+        if ($affected !== 1) {
+            return false;
         }
 
-        $this->forceFill(['abgelegt_at' => now(), 'abgelegt_by' => $by->id])->save();
-
         $this->logStage($by, 'abgelegt', 'als bezahlt & abgelegt markiert');
+
+        return true;
     }
 
     public function revertStage(User $by): void
     {
         if ($this->abgelegt_at) {
-            $this->forceFill(['abgelegt_at' => null, 'abgelegt_by' => null])->save();
+            activity()->withoutLogs(fn () => $this->forceFill(['abgelegt_at' => null, 'abgelegt_by' => null])->save());
             $this->logStage($by, 'abgelegt_zurueckgenommen', 'Stufe "Bezahlt & abgelegt" zurückgenommen');
         } elseif ($this->rechnung_vorhanden_at) {
-            $this->forceFill(['rechnung_vorhanden_at' => null, 'rechnung_vorhanden_by' => null])->save();
+            activity()->withoutLogs(fn () => $this->forceFill(['rechnung_vorhanden_at' => null, 'rechnung_vorhanden_by' => null])->save());
             $this->logStage($by, 'rechnung_zurueckgenommen', 'Stufe "Rechnung liegt vor" zurückgenommen');
         }
     }

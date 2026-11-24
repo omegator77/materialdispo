@@ -24,9 +24,9 @@ class BestellungModals
             'submit' => ['type' => 'plain_text', 'text' => 'Speichern'],
             'close' => ['type' => 'plain_text', 'text' => 'Abbrechen'],
             'blocks' => [
-                self::input('bestellt_bei', 'Bestellt bei'),
-                self::input('bestellt_was', 'Bestellt was', multiline: true),
-                self::input('bezahlt_mit', 'Bezahlt mit'),
+                self::input('bestellt_bei', 'Bestellt bei', maxLength: 255),
+                self::input('bestellt_was', 'Bestellt was', multiline: true, maxLength: 2000),
+                self::input('bezahlt_mit', 'Bezahlt mit', maxLength: 255),
             ],
         ];
     }
@@ -66,14 +66,18 @@ class BestellungModals
                     'label' => ['type' => 'plain_text', 'text' => 'Versanddienstleister'],
                     'element' => $select,
                 ],
-                self::input('sendungsnummer', 'Sendungsnummer', initial: $bestellung->sendungsnummer),
+                self::input('sendungsnummer', 'Sendungsnummer', initial: $bestellung->sendungsnummer, maxLength: 100),
             ],
         ];
     }
 
-    private static function input(string $name, string $label, bool $multiline = false, ?string $initial = null): array
+    private static function input(string $name, string $label, bool $multiline = false, ?string $initial = null, ?int $maxLength = null): array
     {
         $element = ['type' => 'plain_text_input', 'action_id' => $name, 'multiline' => $multiline];
+
+        if ($maxLength !== null) {
+            $element['max_length'] = $maxLength;
+        }
 
         if ($initial !== null && $initial !== '') {
             $element['initial_value'] = $initial;

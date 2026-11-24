@@ -59,11 +59,9 @@ class BestellungController extends Controller
 
     public function rechnung(Request $request, Bestellung $bestellung)
     {
-        if ($bestellung->rechnung_vorhanden_at) {
+        if (! $bestellung->markRechnungVorhanden($request->user())) {
             return $this->nichtsZuTun($bestellung, 'Stufe bereits gesetzt.');
         }
-
-        $bestellung->markRechnungVorhanden($request->user());
 
         dispatch(function () use ($bestellung) {
             $sync = app(SlackBestellungSync::class);
@@ -78,11 +76,9 @@ class BestellungController extends Controller
     {
         abort_unless($request->user()->ist_buchhaltung, 403, 'Nur die Buchhaltung darf Bestellungen als bezahlt & abgelegt markieren.');
 
-        if ($bestellung->abgelegt_at) {
+        if (! $bestellung->markAbgelegt($request->user())) {
             return $this->nichtsZuTun($bestellung, 'Stufe bereits gesetzt.');
         }
-
-        $bestellung->markAbgelegt($request->user());
         $this->syncAfterResponse($bestellung);
 
         return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Als bezahlt & abgelegt markiert.');

@@ -98,7 +98,8 @@ test('markRechnungVorhanden setzt Zeit und Nutzer nur einmal', function () {
         ->and($b->rechnung_vorhanden_at)->not->toBeNull()
         ->and($b->stufe())->toBe('rechnung')
         ->and($b->rechnungVon->is($first))->toBeTrue();
-    expect(Activity::where('log_name', 'bestellung')->where('causer_id', $first->id)->count())->toBeGreaterThan(0);
+    expect(Activity::where('log_name', 'bestellung')->where('causer_id', $first->id)->count())->toBe(1);
+    expect(Activity::where('subject_type', Bestellung::class)->where('subject_id', $b->id)->where('event', 'updated')->count())->toBe(0);
 });
 
 test('markAbgelegt setzt Zeit und Nutzer', function () {
@@ -154,4 +155,55 @@ test('bestellt_am behält die Uhrzeit', function () {
     $b = Bestellung::create(['bestellt_bei' => 'X', 'bestellt_was' => 'Y', 'bezahlt_mit' => 'Z', 'bestellt_am' => '2026-11-20 14:35:00'])->fresh();
 
     expect($b->bestellt_am->format('d.m.Y H:i'))->toBe('20.11.2026 14:35');
+});
+
+test('Stufenwechsel ohne angemeldete Sitzung protokolliert genau einen Eintrag mit Verursacher', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    Activity::query()->delete();
+
+    $b->markAbgelegt($user);
+
+    $entries = Activity::where('subject_id', $b->id)->get();
+    expect($entries)->toHaveCount(1)
+        ->and($entries->first()->causer_id)->toBe($user->id);
+
+    Activity::query()->delete();
+    $b->revertStage($user);
+    $entries = Activity::where('subject_id', $b->id)->get();
+    expect($entries)->toHaveCount(1)->and($entries->first()->causer_id)->toBe($user->id);
+});
+
+test('markRechnungVorhanden und markAbgelegt liefern true, dann false', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+
+    expect($b->markRechnungVorhanden($user))->toBeTrue()
+        ->and($b->markRechnungVorhanden($user))->toBeFalse();
+
+    $c = neueBestellung();
+    expect($c->markAbgelegt($user))->toBeTrue()
+        ->and($c->markAbgelegt($user))->toBeFalse();
+});
+
+test('markRechnungVorhanden auf bereits abgelegter Bestellung gibt false und ändert nichts', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    $b->markAbgelegt($user);
+    $abgelegtAt = $b->fresh()->abgelegt_at;
+
+    expect($b->markRechnungVorhanden($user))->toBeFalse();
+    $b->refresh();
+    expect($b->rechnung_vorhanden_at)->toBeNull()->and($b->abgelegt_at->equalTo($abgelegtAt))->toBeTrue();
+});
+
+test('veraltete zweite Instanz löst keinen zweiten Stufenwechsel aus', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    $stale = Bestellung::find($b->id);
+
+    expect($b->markRechnungVorhanden($user))->toBeTrue();
+    Activity::query()->delete();
+    expect($stale->markRechnungVorhanden($user))->toBeFalse();
+    expect(Activity::count())->toBe(0);
 });
