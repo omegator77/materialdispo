@@ -133,3 +133,19 @@ test('revertStage nimmt die höchste Stufe zurück', function () {
     $b->refresh();
     expect($b->sendungsnummer)->toBe('1')->and($b->stufe())->toBe('unterwegs');
 });
+
+test('markAbgelegt überschreibt eine vorhandene Ablage nicht', function () {
+    $first = User::factory()->create();
+    $second = User::factory()->create();
+    $b = neueBestellung();
+
+    $b->markAbgelegt($first);
+    $zeit = $b->fresh()->abgelegt_at;
+    $this->travel(5)->minutes();
+    $b->markAbgelegt($second);
+
+    $b->refresh();
+    expect($b->abgelegt_by)->toBe($first->id)
+        ->and($b->abgelegt_at->equalTo($zeit))->toBeTrue();
+    expect(Activity::where('log_name', 'bestellung')->where('event', 'abgelegt')->count())->toBe(1);
+});

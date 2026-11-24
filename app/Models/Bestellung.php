@@ -166,6 +166,10 @@ class Bestellung extends Model
 
     public function markAbgelegt(User $by): void
     {
+        if ($this->abgelegt_at) {
+            return;
+        }
+
         $this->forceFill(['abgelegt_at' => now(), 'abgelegt_by' => $by->id])->save();
 
         $this->logStage($by, 'abgelegt', 'als bezahlt & abgelegt markiert');
