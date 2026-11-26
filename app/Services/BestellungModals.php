@@ -15,6 +15,8 @@ class BestellungModals
 
     public const CALLBACK_SENDUNG = 'bestellung_sendung';
 
+    public const CALLBACK_ANGEKOMMEN = 'bestellung_angekommen';
+
     public static function neu(): array
     {
         return [
@@ -71,7 +73,22 @@ class BestellungModals
         ];
     }
 
-    private static function input(string $name, string $label, bool $multiline = false, ?string $initial = null, ?int $maxLength = null): array
+    public static function angekommen(Bestellung $bestellung): array
+    {
+        return [
+            'type' => 'modal',
+            'callback_id' => self::CALLBACK_ANGEKOMMEN,
+            'private_metadata' => (string) $bestellung->id,
+            'title' => ['type' => 'plain_text', 'text' => 'Sendung angekommen'],
+            'submit' => ['type' => 'plain_text', 'text' => 'Speichern'],
+            'close' => ['type' => 'plain_text', 'text' => 'Abbrechen'],
+            'blocks' => [
+                self::input('notiz', 'Notiz (optional), z. B. Lagerort', maxLength: 255, optional: true),
+            ],
+        ];
+    }
+
+    private static function input(string $name, string $label, bool $multiline = false, ?string $initial = null, ?int $maxLength = null, bool $optional = false): array
     {
         $element = ['type' => 'plain_text_input', 'action_id' => $name, 'multiline' => $multiline];
 
@@ -83,11 +100,17 @@ class BestellungModals
             $element['initial_value'] = $initial;
         }
 
-        return [
+        $block = [
             'type' => 'input',
             'block_id' => $name,
             'label' => ['type' => 'plain_text', 'text' => $label],
             'element' => $element,
         ];
+
+        if ($optional) {
+            $block['optional'] = true;
+        }
+
+        return $block;
     }
 }

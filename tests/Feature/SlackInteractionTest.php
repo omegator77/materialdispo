@@ -125,3 +125,18 @@ test('Modal-Eingaben haben max_length', function () {
     $nummer = collect($sendung['blocks'])->firstWhere('block_id', 'sendungsnummer');
     expect($nummer['element']['max_length'])->toBe(100);
 });
+
+test('Angekommen-Formular hat Callback, Metadaten und optionalen Notizblock', function () {
+    $b = Bestellung::create(['bestellt_bei' => 'X', 'bestellt_was' => 'Y', 'bezahlt_mit' => 'Z', 'bestellt_am' => now()]);
+    $modal = BestellungModals::angekommen($b);
+
+    expect($modal['callback_id'])->toBe('bestellung_angekommen')
+        ->and($modal['private_metadata'])->toBe((string) $b->id)
+        ->and($modal['title']['text'])->toBe('Sendung angekommen')
+        ->and($modal['blocks'])->toHaveCount(1);
+    $block = $modal['blocks'][0];
+    expect($block['block_id'])->toBe('notiz')
+        ->and($block['optional'])->toBeTrue()
+        ->and($block['label']['text'])->toBe('Notiz (optional), z. B. Lagerort')
+        ->and($block['element']['max_length'])->toBe(255);
+});
