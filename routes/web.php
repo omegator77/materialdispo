@@ -139,6 +139,8 @@ Route::middleware(['auth', 'role:admin,user'])->group(function () {
     Route::post('/bestellungen/{bestellung}/rechnung', [BestellungController::class, 'rechnung'])->name('bestellungen.rechnung');
     Route::post('/bestellungen/{bestellung}/abgelegt', [BestellungController::class, 'abgelegt'])->name('bestellungen.abgelegt');
     Route::post('/bestellungen/{bestellung}/zuruecknehmen', [BestellungController::class, 'zuruecknehmen'])->name('bestellungen.zuruecknehmen');
+    Route::post('/bestellungen/{bestellung}/angekommen', [BestellungController::class, 'angekommen'])->name('bestellungen.angekommen');
+    Route::post('/bestellungen/{bestellung}/angekommen/zuruecknehmen', [BestellungController::class, 'angekommenZuruecknehmen'])->name('bestellungen.angekommen.zuruecknehmen');
     Route::post('/bestellungen/{bestellung}/resync', [BestellungController::class, 'resync'])->name('bestellungen.resync');
 });
 

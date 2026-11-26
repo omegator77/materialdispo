@@ -292,3 +292,124 @@ test('Zurücknehmen ohne Stufe meldet und ändert nichts', function () {
     expect(Activity::count())->toBe($before);
     Http::assertNothingSent();
 });
+
+function bpSlackFake(): void
+{
+    config(['services.slack.bot_token' => 'xoxb-test', 'services.slack.order_channel' => 'C123']);
+    Http::fake(['slack.com/api/*' => Http::response(['ok' => true, 'ts' => '1.1', 'channel' => 'C123'])]);
+}
+
+test('Angekommen setzt Ankunft mit Notiz und aktualisiert Slack', function () {
+    bpSlackFake();
+    $b = bpBestellung(['slack_channel' => 'C123', 'slack_message_ts' => '1700.1']);
+
+    $this->actingAs($this->admin)->post(route('bestellungen.angekommen', $b), ['notiz' => "  Regal 3\nOben  "])
+        ->assertRedirect(route('bestellungen.show', $b))->assertSessionHas('success');
+
+    $b->refresh();
+    expect($b->istAngekommen())->toBeTrue()
+        ->and($b->angekommen_by)->toBe($this->admin->id)
+        ->and($b->angekommen_notiz)->toBe('Regal 3 Oben');
+    Http::assertSent(fn (Request $r) => str_ends_with($r->url(), 'chat.update') && $r['ts'] === '1700.1');
+});
+
+test('Betrachter bekommt 403 auf Angekommen-Routen', function () {
+    $b = bpBestellung();
+    $this->actingAs($this->viewer)->post(route('bestellungen.angekommen', $b))->assertForbidden();
+    $this->actingAs($this->viewer)->post(route('bestellungen.angekommen.zuruecknehmen', $b))->assertForbidden();
+});
+
+test('Angekommen bei bereits angekommener Sendung meldet und ändert nichts', function () {
+    Http::fake();
+    $b = bpBestellung(['angekommen_at' => now()->subDay(), 'angekommen_notiz' => 'alt']);
+    $at = $b->fresh()->angekommen_at;
+    $before = Activity::count();
+
+    $this->actingAs($this->admin)->post(route('bestellungen.angekommen', $b), ['notiz' => 'neu'])
+        ->assertSessionHas('error', 'Sendung ist bereits als angekommen eingetragen.')->assertSessionMissing('success');
+
+    expect($b->fresh()->angekommen_notiz)->toBe('alt')->and($b->fresh()->angekommen_at->equalTo($at))->toBeTrue()
+        ->and(Activity::count())->toBe($before);
+    Http::assertNothingSent();
+});
+
+test('Ankunft zurücknehmen leert die Ankunft und synchronisiert', function () {
+    bpSlackFake();
+    $b = bpBestellung(['slack_channel' => 'C123', 'slack_message_ts' => '1700.1',
+        'angekommen_at' => now(), 'angekommen_by' => $this->admin->id, 'angekommen_notiz' => 'x']);
+
+    $this->actingAs($this->admin)->post(route('bestellungen.angekommen.zuruecknehmen', $b))
+        ->assertRedirect(route('bestellungen.show', $b))->assertSessionHas('success');
+
+    $b->refresh();
+    expect($b->angekommen_at)->toBeNull()->and($b->angekommen_by)->toBeNull()->and($b->angekommen_notiz)->toBeNull();
+    Http::assertSent(fn (Request $r) => str_ends_with($r->url(), 'chat.update'));
+});
+
+test('Ankunft zurücknehmen ohne Ankunft meldet und ändert nichts', function () {
+    Http::fake();
+    $b = bpBestellung();
+
+    $this->actingAs($this->admin)->post(route('bestellungen.angekommen.zuruecknehmen', $b))
+        ->assertSessionHas('error', 'Keine Ankunft zum Zurücknehmen.')->assertSessionMissing('success');
+
+    Http::assertNothingSent();
+});
+
+test('Zu lange Ankunftsnotiz wird abgelehnt', function () {
+    Http::fake();
+    $b = bpBestellung();
+
+    $this->actingAs($this->admin)->post(route('bestellungen.angekommen', $b), ['notiz' => str_repeat('a', 256)])
+        ->assertSessionHasErrors('notiz');
+
+    expect($b->fresh()->istAngekommen())->toBeFalse();
+});
+
+test('Detailseite zeigt Ankunft-Knopf bzw. Ankunftsdaten', function () {
+    $b = bpBestellung();
+    $this->actingAs($this->admin)->get(route('bestellungen.show', $b))
+        ->assertOk()->assertSee('Sendung angekommen')->assertSee('name="notiz"', false)->assertDontSee('Ankunft zurücknehmen');
+
+    $b->update(['angekommen_at' => '2026-11-25 09:30:00', 'angekommen_by' => $this->admin->id, 'angekommen_notiz' => 'Regal 3']);
+    $this->actingAs($this->admin)->get(route('bestellungen.show', $b))
+        ->assertOk()->assertSee('25.11.2026 09:30')->assertSee($this->admin->name)->assertSee('Regal 3')
+        ->assertSee('Ankunft zurücknehmen')->assertDontSee('name="notiz"', false);
+
+    $this->actingAs($this->viewer)->get(route('bestellungen.show', $b))
+        ->assertOk()->assertSee('Regal 3')->assertDontSee('Ankunft zurücknehmen');
+    $b->update(['angekommen_at' => null]);
+    $this->actingAs($this->viewer)->get(route('bestellungen.show', $b))
+        ->assertOk()->assertDontSee('Sendung angekommen');
+});
+
+test('Liste kennzeichnet angekommene Bestellungen', function () {
+    bpBestellung(['bestellt_bei' => 'Da', 'angekommen_at' => now()]);
+    $this->actingAs($this->admin)->get(route('bestellungen.index'))->assertOk()->assertSee('angekommen');
+
+    Bestellung::query()->update(['angekommen_at' => null]);
+    $this->actingAs($this->admin)->get(route('bestellungen.index'))->assertOk()->assertDontSee('angekommen');
+});
+
+test('Bearbeiten: Notizfeld nur bei Ankunft, Update ändert Ankunft nie', function () {
+    Http::fake();
+    $b = bpBestellung();
+    $this->actingAs($this->admin)->get(route('bestellungen.edit', $b))->assertOk()->assertDontSee('angekommen_notiz');
+
+    $payload = ['bestellt_bei' => 'Thomann', 'bestellt_was' => 'XLR-Kabel', 'bezahlt_mit' => 'Kreditkarte',
+        'angekommen_notiz' => 'schleich', 'angekommen_at' => '2020-01-01 00:00:00', 'angekommen_by' => $this->admin->id];
+    $this->actingAs($this->admin)->put(route('bestellungen.update', $b), $payload)->assertRedirect();
+    $b->refresh();
+    expect($b->angekommen_at)->toBeNull()->and($b->angekommen_by)->toBeNull()->and($b->angekommen_notiz)->toBeNull();
+
+    $b->update(['angekommen_at' => '2026-11-25 09:30:00', 'angekommen_by' => $this->admin->id]);
+    $this->actingAs($this->admin)->get(route('bestellungen.edit', $b))->assertOk()->assertSee('angekommen_notiz');
+    $this->actingAs($this->admin)->put(route('bestellungen.update', $b), array_merge($payload, ['angekommen_notiz' => "  Lager\nA  "]))->assertRedirect();
+    $b->refresh();
+    expect($b->angekommen_notiz)->toBe('Lager A')
+        ->and($b->angekommen_at->format('Y-m-d H:i'))->toBe('2026-11-25 09:30')
+        ->and($b->angekommen_by)->toBe($this->admin->id);
+
+    $this->actingAs($this->admin)->put(route('bestellungen.update', $b), array_merge($payload, ['angekommen_notiz' => str_repeat('a', 256)]))
+        ->assertSessionHasErrors('angekommen_notiz');
+});

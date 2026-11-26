@@ -21,6 +21,11 @@ class BestellungRequest extends FormRequest
                 $this->merge([$feld => $wert === '' ? null : $wert]);
             }
         }
+
+        if (is_string($this->input('angekommen_notiz'))) {
+            $wert = trim(preg_replace('/\s+/u', ' ', $this->input('angekommen_notiz')));
+            $this->merge(['angekommen_notiz' => $wert === '' ? null : $wert]);
+        }
     }
 
     public function rules(): array
@@ -31,6 +36,7 @@ class BestellungRequest extends FormRequest
             'bezahlt_mit' => ['required', 'string', 'max:255'],
             'versanddienstleister' => ['nullable', Rule::in(array_keys(Bestellung::CARRIERS))],
             'sendungsnummer' => ['nullable', 'string', 'max:100'],
+            'angekommen_notiz' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -42,6 +48,7 @@ class BestellungRequest extends FormRequest
             'bezahlt_mit' => 'Bezahlt mit',
             'versanddienstleister' => 'Versanddienstleister',
             'sendungsnummer' => 'Sendungsnummer',
+            'angekommen_notiz' => 'Ankunftsnotiz',
         ];
     }
 }
