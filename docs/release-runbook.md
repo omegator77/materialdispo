@@ -11,10 +11,16 @@ Alle Befehle im Projektordner ausführen:
 cd /home/noicebard/docker-projects/laravel-app
 ```
 
-Dieses Release enthält **Datenbank-Migrationen**. Sie wurden auf MySQL 8.0 mit Beispieldaten
+Dieses Release enthält **genau eine neue Datenbank-Migration**:
+`2026_11_26_100000_add_angekommen_to_bestellungen_table` (siehe „Zusatz für Sendung angekommen"
+unten). Die übrigen Migrationen in diesem Dokument stammen aus früheren Releases; sie sind auf
+der Produktion bereits gelaufen und erscheinen bei `migrate --pretend` nicht mehr (nur wer
+eine ältere Stufe ausrollt, muss sie berücksichtigen). Sie wurden auf MySQL 8.0 mit Beispieldaten
 (Freitext in VB-Protokollen, doppelte Geräte-Zuordnungen, Umlaute und Sonderzeichen)
 durchgespielt, einschließlich Rückweg und erneutem Ausrollen. Produktion läuft auf MySQL 8.4;
-das ist nicht identisch, daher bleibt Phase B Pflicht. Drei Migrationen sind neu:
+das ist nicht identisch, daher bleibt Phase B Pflicht.
+
+### Frühere Release: VB-Protokoll und Geräte (drei Migrationen)
 
 | Migration | Wirkung | Rückgängig |
 |---|---|---|
@@ -22,7 +28,7 @@ das ist nicht identisch, daher bleibt Phase B Pflicht. Drei Migrationen sind neu
 | `2026_07_17_100000_add_unique_index_to_item_production_table` | **löscht doppelte** Geräte-Zuordnungen je Produktion, setzt dann einen Unique-Index | `migrate:rollback` entfernt den Index; gelöschte Duplikate nur per Backup |
 | `2026_07_18_100000_add_booking_period_index_to_productions_table` | Index für die Verfügbarkeitsprüfung | `migrate:rollback` |
 
-### Zusatz für Bestellungen (zwei weitere neue Migrationen)
+### Frühere Release: Bestellungen (zwei Migrationen)
 
 | Migration | Wirkung | Rückgängig |
 |---|---|---|
@@ -33,11 +39,11 @@ Beide legen nur Neues an und verändern keine vorhandenen Daten. Phase B (Datenb
 trotzdem. Slack-Einrichtung für `/bestellung` (Scope `commands`, Befehl, Kanal): siehe
 [betrieb.md](betrieb.md); nach dem Deploy Haken **Buchhaltung** in der Benutzerverwaltung setzen.
 
-### Zusatz für "Sendung angekommen" (eine weitere neue Migration)
+### Dieses Release: "Sendung angekommen" (eine neue Migration)
 
 | Migration | Wirkung | Rückgängig |
 |---|---|---|
-| `2026_11_26_100000_add_angekommen_to_bestellungen_table` | neue Spalten `bestellungen.angekommen_at`, `angekommen_by`, `angekommen_notiz` (alle leer) | `migrate:rollback` (eingetragene Ankünfte gehen dabei verloren) |
+| `2026_11_26_100000_add_angekommen_to_bestellungen_table` | neue Spalten `bestellungen.angekommen_at`, `angekommen_by`, `angekommen_notiz` (alle leer) | `php artisan migrate:rollback --step=1` (eingetragene Ankünfte gehen dabei verloren) |
 
 Sie legt nur Neues an und verändert keine vorhandenen Daten. **Datenbank vorher sichern** (Phase B).
 Es gibt **keine neuen Slack-Scopes** und keine Änderung an der Slack-Einrichtung; die Nachrichten
@@ -155,8 +161,8 @@ docker exec laravel-app php artisan up
 ```
 
 **Haltepunkte:**
-- Nach C4 `--pretend`: Es dürfen nur die drei Migrationen oben (plus bekannte
-  ausstehende aus A2) auftauchen. Bei Unerwartetem **abbrechen** und `php artisan up`.
+- Nach C4 `--pretend`: Es darf nur `2026_11_26_100000_add_angekommen_to_bestellungen_table`
+  (plus bekannte ausstehende aus A2) auftauchen. Bei Unerwartetem **abbrechen** und `php artisan up`.
 - Bricht `migrate --force` mit einem Fehler ab: **nicht** erneut starten, sondern
   Fehlermeldung sichern, `up` ausführen und zurückrollen (Phase E).
 - Im App-Container ist `composer` vorhanden, `node`/`npm` nicht. Deshalb baut C5 die
@@ -218,9 +224,13 @@ docker restart laravel-app
 docker exec laravel-app php artisan up
 ```
 
-**Nur die Indizes zurücknehmen** (falls sie Probleme machen):
-`docker exec laravel-app php artisan migrate:rollback --step=2`
-(entfernt in umgekehrter Reihenfolge den Produktionsindex und den Unique-Index).
+**Nur die Ankunfts-Migration zurücknehmen** (falls sie Probleme macht):
+`docker exec laravel-app php artisan migrate:rollback --step=1`
+(`--step` zählt Migrationen, nicht Release-Teile: `--step=1` nimmt nur
+`add_angekommen_to_bestellungen_table` zurück und löscht die Ankunftsdaten. Ein höherer
+Wert würde zusätzlich ältere Migrationen zurücknehmen, z. B. `--step=2` auch
+`add_ist_buchhaltung_to_users_table` und damit die Produktionsspalte `users.ist_buchhaltung`.
+Daher nie mit größerem Wert ausführen.)
 
 **Datenbank komplett zurück** (nur wenn Daten beschädigt wurden; verwirft alles seit
 dem Backup):

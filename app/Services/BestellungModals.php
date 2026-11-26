@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Bestellung;
 
 /**
- * Block-Kit-Aufbau der beiden Bestell-Formulare. Block-ID und Action-ID sind
+ * Block-Kit-Aufbau der drei Bestell-Formulare. Block-ID und Action-ID sind
  * jeweils der Feldname, damit SlackInteractionController::fieldValue() die
  * Eingaben aus view.state.values.<feld>.<feld> lesen kann.
  */
