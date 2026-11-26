@@ -434,3 +434,102 @@ test('Sendungsformular mit unbekannter Bestellung ergibt Feldfehler statt 500', 
         'sendungsnummer' => '123',
     ], 'V9', '999999')->assertOk()->assertJsonPath('response_action', 'errors');
 });
+
+test('Sendung angekommen öffnet das Formular', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+    $b = bstOrder();
+
+    bstClick($this, 'bestellung:angekommen', $b)->assertNoContent();
+
+    $req = bstCalls('views.open')->first()[0];
+    expect($req['trigger_id'])->toBe('TRIG2')
+        ->and($req['view']['callback_id'])->toBe('bestellung_angekommen')
+        ->and($req['view']['private_metadata'])->toBe((string) $b->id);
+});
+
+test('Sendung angekommen ohne Schreibrecht öffnet nichts', function () {
+    User::factory()->create(['role' => 'viewer', 'email' => 'viewer@example.com']);
+    bstFake(['U1' => 'viewer@example.com']);
+    $b = bstOrder();
+
+    bstClick($this, 'bestellung:angekommen', $b)->assertNoContent();
+    expect(bstCalls('views.open'))->toHaveCount(0);
+    expect(Http::recorded(fn (Request $r) => $r->url() === 'https://hooks.slack.test/response' && ($r['response_type'] ?? null) === 'ephemeral'))->toHaveCount(1);
+});
+
+test('Sendung angekommen von unbekanntem Konto öffnet nichts', function () {
+    bstFake();
+    $b = bstOrder();
+
+    bstClick($this, 'bestellung:angekommen', $b)->assertNoContent();
+    expect(bstCalls('views.open'))->toHaveCount(0);
+    expect(Http::recorded(fn (Request $r) => $r->url() === 'https://hooks.slack.test/response'))->toHaveCount(1);
+});
+
+test('Angekommen-Formular setzt Ankunft mit Notiz und aktualisiert die Nachricht', function () {
+    $user = User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => '  Lager B '], 'V1', (string) $b->id)->assertOk()->assertContent('');
+
+    $b->refresh();
+    expect($b->istAngekommen())->toBeTrue()->and($b->angekommen_notiz)->toBe('Lager B')->and($b->angekommen_by)->toBe($user->id);
+    expect(bstCalls('chat.update'))->toHaveCount(1);
+});
+
+test('Angekommen-Formular ohne Notiz speichert null', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => '   '], 'V1', (string) $b->id)->assertOk()->assertContent('');
+
+    expect($b->fresh()->istAngekommen())->toBeTrue()->and($b->fresh()->angekommen_notiz)->toBeNull();
+});
+
+test('Angekommen-Formular lehnt zu lange Notiz ab', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => str_repeat('a', 256)], 'V1', (string) $b->id)
+        ->assertOk()->assertJsonPath('response_action', 'errors')->assertJsonStructure(['errors' => ['notiz']]);
+
+    expect($b->fresh()->istAngekommen())->toBeFalse();
+});
+
+test('Angekommen-Formular durch Betrachter wird abgelehnt', function () {
+    User::factory()->create(['role' => 'viewer', 'email' => 'viewer@example.com']);
+    bstFake(['U1' => 'viewer@example.com']);
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => 'x'], 'V1', (string) $b->id)->assertOk()
+        ->assertJsonPath('response_action', 'errors')
+        ->assertJsonPath('errors.notiz', fn ($t) => str_starts_with($t, '🚫 Keine Berechtigung'));
+
+    expect($b->fresh()->istAngekommen())->toBeFalse();
+});
+
+test('Angekommen-Formular mit unbekannter Bestellung ergibt Feldfehler', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => 'x'], 'V1', '999999')
+        ->assertOk()->assertJsonPath('response_action', 'errors')->assertJsonStructure(['errors' => ['notiz']]);
+});
+
+test('Zweites Absenden ändert nichts, repariert aber die Nachricht', function () {
+    User::factory()->create(['role' => 'user', 'email' => 'crew@example.com']);
+    bstFake();
+    $b = bstOrder();
+
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => 'erst'], 'V1', (string) $b->id)->assertOk();
+    $at = $b->fresh()->angekommen_at;
+    $nachErstem = bstCalls('chat.update')->count();
+    bstSubmit($this, 'bestellung_angekommen', ['notiz' => 'zweit'], 'V1', (string) $b->id)->assertOk()->assertContent('');
+
+    expect($b->fresh()->angekommen_notiz)->toBe('erst')->and($b->fresh()->angekommen_at->equalTo($at))->toBeTrue();
+    expect(bstCalls('chat.update')->count())->toBeGreaterThan($nachErstem);
+});

@@ -56,6 +56,13 @@
                             <input type="text" name="sendungsnummer" id="sendungsnummer" maxlength="100"
                                    value="{{ old('sendungsnummer', $bestellung->sendungsnummer) }}" class="form-control w-full">
                         </div>
+                        @if($bestellung->istAngekommen())
+                            <div class="md:col-span-2">
+                                <label for="angekommen_notiz" class="form-label">Ankunftsnotiz</label>
+                                <input type="text" name="angekommen_notiz" id="angekommen_notiz" maxlength="255"
+                                       value="{{ old('angekommen_notiz', $bestellung->angekommen_notiz) }}" class="form-control w-full">
+                            </div>
+                        @endif
                     </div>
                 </section>
 

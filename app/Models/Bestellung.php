@@ -53,6 +53,9 @@ class Bestellung extends Model
         'rechnung_vorhanden_by',
         'abgelegt_at',
         'abgelegt_by',
+        'angekommen_at',
+        'angekommen_by',
+        'angekommen_notiz',
         'letzte_erinnerung_at',
         'slack_channel',
         'slack_message_ts',
@@ -65,6 +68,7 @@ class Bestellung extends Model
             'bestellt_am' => 'datetime',
             'rechnung_vorhanden_at' => 'datetime',
             'abgelegt_at' => 'datetime',
+            'angekommen_at' => 'datetime',
             'letzte_erinnerung_at' => 'datetime',
         ];
     }
@@ -76,6 +80,7 @@ class Bestellung extends Model
                 'bestellt_bei', 'bestellt_was', 'bezahlt_mit', 'bestellt_am',
                 'versanddienstleister', 'sendungsnummer',
                 'rechnung_vorhanden_at', 'abgelegt_at',
+                'angekommen_at', 'angekommen_notiz',
             ])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
@@ -105,6 +110,11 @@ class Bestellung extends Model
     public function abgelegtVon()
     {
         return $this->belongsTo(User::class, 'abgelegt_by');
+    }
+
+    public function angekommenVon()
+    {
+        return $this->belongsTo(User::class, 'angekommen_by');
     }
 
     public function scopeOffen(Builder $query): Builder
@@ -184,6 +194,52 @@ class Bestellung extends Model
         }
 
         $this->logStage($by, 'abgelegt', 'als bezahlt & abgelegt markiert');
+
+        return true;
+    }
+
+    public function istAngekommen(): bool
+    {
+        return $this->angekommen_at !== null;
+    }
+
+    public function markAngekommen(User $by, ?string $notiz = null): bool
+    {
+        $notiz = rtrim(mb_substr(trim((string) $notiz), 0, 255));
+        $notiz = $notiz === '' ? null : $notiz;
+
+        $affected = activity()->withoutLogs(fn () => static::whereKey($this->id)
+            ->whereNull('angekommen_at')
+            ->update([
+                'angekommen_at' => now(),
+                'angekommen_by' => $by->id,
+                'angekommen_notiz' => $notiz,
+            ]));
+
+        $this->refresh();
+
+        if ($affected !== 1) {
+            return false;
+        }
+
+        $this->logStage($by, 'angekommen', 'Sendung angekommen'.($notiz !== null ? ' (Notiz: '.preg_replace('/\s+/u', ' ', $notiz).')' : ''));
+
+        return true;
+    }
+
+    public function revertAngekommen(User $by): bool
+    {
+        $affected = activity()->withoutLogs(fn () => static::whereKey($this->id)
+            ->whereNotNull('angekommen_at')
+            ->update(['angekommen_at' => null, 'angekommen_by' => null, 'angekommen_notiz' => null]));
+
+        $this->refresh();
+
+        if ($affected !== 1) {
+            return false;
+        }
+
+        $this->logStage($by, 'angekommen_zurueckgenommen', 'Ankunft zurückgenommen');
 
         return true;
     }

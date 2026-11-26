@@ -136,6 +136,11 @@ class SlackInteractionController extends Controller
 
                 return;
 
+            case 'bestellung:angekommen':
+                $this->openView($payload['trigger_id'] ?? null, BestellungModals::angekommen($bestellung), $responseUrl);
+
+                return;
+
             case 'bestellung:rechnung':
                 $neu = $bestellung->markRechnungVorhanden($user);
 
@@ -165,20 +170,26 @@ class SlackInteractionController extends Controller
         $view = $payload['view'] ?? [];
         $callbackId = $view['callback_id'] ?? null;
 
-        if (! in_array($callbackId, [BestellungModals::CALLBACK_NEU, BestellungModals::CALLBACK_SENDUNG], true)) {
+        if (! in_array($callbackId, [BestellungModals::CALLBACK_NEU, BestellungModals::CALLBACK_SENDUNG, BestellungModals::CALLBACK_ANGEKOMMEN], true)) {
             return response()->noContent();
         }
 
-        $firstField = $callbackId === BestellungModals::CALLBACK_NEU ? 'bestellt_bei' : 'versanddienstleister';
+        $firstField = match ($callbackId) {
+            BestellungModals::CALLBACK_NEU => 'bestellt_bei',
+            BestellungModals::CALLBACK_ANGEKOMMEN => 'notiz',
+            default => 'versanddienstleister',
+        };
         $user = app(SlackUserResolver::class)->resolve($payload['user']['id'] ?? null);
 
         if (! $user || ! $user->isUser()) {
             return $this->errors([$firstField => self::DENIED_TEXT]);
         }
 
-        return $callbackId === BestellungModals::CALLBACK_NEU
-            ? $this->submitNeu($view, $user)
-            : $this->submitSendung($view, $user);
+        return match ($callbackId) {
+            BestellungModals::CALLBACK_NEU => $this->submitNeu($view, $user),
+            BestellungModals::CALLBACK_ANGEKOMMEN => $this->submitAngekommen($view, $user),
+            default => $this->submitSendung($view, $user),
+        };
     }
 
     private function submitNeu(array $view, User $user)
@@ -282,6 +293,28 @@ class SlackInteractionController extends Controller
             ->withProperties(['attributes' => ['versanddienstleister' => $carrier, 'sendungsnummer' => $nummer]])
             ->log('Bestellung "'.$bestellung->bestellt_bei.'": Sendung eingetragen ('.Bestellung::CARRIERS[$carrier].' '.$nummer.')');
 
+        $this->syncAfterResponse($bestellung);
+
+        return response('', 200);
+    }
+
+    private function submitAngekommen(array $view, User $user)
+    {
+        $bestellung = Bestellung::find($view['private_metadata'] ?? null);
+
+        if (! $bestellung) {
+            return $this->errors(['notiz' => 'Bestellung wurde nicht mehr gefunden.']);
+        }
+
+        $notiz = $this->fieldValue($view, 'notiz');
+
+        if (mb_strlen($notiz) > 255) {
+            return $this->errors(['notiz' => 'Maximal 255 Zeichen erlaubt.']);
+        }
+
+        $bestellung->markAngekommen($user, $notiz !== '' ? $notiz : null);
+
+        // Sync läuft immer (repariert veraltete Nachrichten), auch bei bereits gesetzter Ankunft.
         $this->syncAfterResponse($bestellung);
 
         return response('', 200);

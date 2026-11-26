@@ -53,7 +53,7 @@
                             </td>
                             <td>{{ \Illuminate\Support\Str::limit($bestellung->bestellt_was, 80) }}</td>
                             <td>{{ $bestellung->bezahlt_mit }}</td>
-                            <td>@include('bestellungen._sendung')</td>
+                            <td>@include('bestellungen._sendung')@if($bestellung->istAngekommen()) <span class="badge badge-green">angekommen</span>@endif</td>
                             <td>@include('bestellungen._stufe')</td>
                             <td>
                                 <div class="flex justify-end gap-2">
@@ -83,7 +83,7 @@
                     <div class="mt-3 space-y-1 text-sm text-gray-700">
                         <p>{{ \Illuminate\Support\Str::limit($bestellung->bestellt_was, 120) }}</p>
                         <p><span class="font-medium">Bezahlt mit:</span> {{ $bestellung->bezahlt_mit }}</p>
-                        <p><span class="font-medium">Sendung:</span> @include('bestellungen._sendung')</p>
+                        <p><span class="font-medium">Sendung:</span> @include('bestellungen._sendung')@if($bestellung->istAngekommen()) <span class="badge badge-green">angekommen</span>@endif</p>
                     </div>
                     <div class="mt-4 flex gap-2">
                         <a href="{{ route('bestellungen.show', $bestellung) }}" class="btn btn-secondary flex-1 text-center">Details</a>

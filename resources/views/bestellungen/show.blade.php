@@ -92,6 +92,39 @@
             </section>
 
             <section class="border-t pt-6 mt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">Ankunft</h4>
+                @if($bestellung->istAngekommen())
+                    <p class="text-sm text-gray-700">
+                        <span class="badge badge-green">Angekommen</span>
+                        {{ $bestellung->angekommen_at->format('d.m.Y H:i') }}
+                        @if($bestellung->angekommenVon) · {{ $bestellung->angekommenVon->name }} @endif
+                    </p>
+                    @if($bestellung->angekommen_notiz)
+                        <p class="mt-2 text-sm text-gray-700"><span class="font-medium">Notiz:</span> {{ $bestellung->angekommen_notiz }}</p>
+                    @endif
+                    @if($user->isUser())
+                        <form action="{{ route('bestellungen.angekommen.zuruecknehmen', $bestellung) }}" method="POST" class="mt-3"
+                              onsubmit="return confirm('Die Ankunft wirklich zurücknehmen?');">
+                            @csrf
+                            <button type="submit" class="btn btn-secondary">Ankunft zurücknehmen</button>
+                        </form>
+                    @endif
+                @elseif($user->isUser())
+                    <form action="{{ route('bestellungen.angekommen', $bestellung) }}" method="POST" class="flex flex-col sm:flex-row gap-3 sm:items-end">
+                        @csrf
+                        <div class="flex-1">
+                            <label for="notiz" class="form-label">Notiz (optional), z. B. Lagerort</label>
+                            <input type="text" name="notiz" id="notiz" maxlength="255" value="{{ old('notiz') }}" class="form-control w-full">
+                            @error('notiz')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="btn btn-primary">Sendung angekommen</button>
+                    </form>
+                @else
+                    <p class="text-sm text-gray-500">Noch nicht angekommen.</p>
+                @endif
+            </section>
+
+            <section class="border-t pt-6 mt-6">
                 <h4 class="text-lg font-semibold text-gray-800 mb-4">Stufenverlauf</h4>
                 <ol class="space-y-2 text-sm text-gray-700">
                     <li><span class="badge badge-gray">Bestellt</span>

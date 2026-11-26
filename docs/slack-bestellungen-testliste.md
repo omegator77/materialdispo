@@ -33,3 +33,20 @@ bereithalten; die E-Mail-Adresse muss in Slack und App gleich sein.
    aber keine Bearbeiten-Knöpfe.
 9. **Doppelklick**: Formular schnell zweimal absenden bzw. Knopf doppelt klicken. Erwartet: nur
    eine Bestellung, keine doppelte Erinnerung.
+10. **Sendung angekommen mit Notiz**: Auf einer Bestellung (egal welche Stufe außer Bezahlt & abgelegt) den Knopf
+    "Sendung angekommen" klicken, Notiz "Lager B, Regal 3" eingeben, speichern. Erwartet: Knopf
+    verschwindet, die Nachricht zeigt "📦 Angekommen am … Uhr von Name — Lager B, Regal 3"; Stufe und
+    übrige Knöpfe unverändert. In der App zeigt die Detailseite die Ankunft, die Liste das Kennzeichen "angekommen".
+11. **Sendung angekommen ohne Notiz**: Bei einer zweiten Bestellung das Formular leer absenden.
+    Erwartet: Zeile "📦 Angekommen am … Uhr von Name" ohne " — …", kein Fehler.
+12. **Zweiter Klick**: Auf einer bereits angekommenen Bestellung einen veralteten Knopf (zweiter Slack-Tab
+    oder Formular doppelt absenden) auslösen. Erwartet: Zeit, Name und Notiz der ersten Ankunft bleiben unverändert.
+13. **Betrachter**: "Sendung angekommen" als Betrachter oder mit unbekannter E-Mail-Adresse klicken. Erwartet:
+    Ablehnung (nur für dich sichtbar), keine Änderung an der Nachricht.
+14. **Zurücknehmen in der App**: Detailseite der angekommenen Bestellung, "Ankunft zurücknehmen" (Rückfrage
+    bestätigen). Erwartet: die 📦-Zeile verschwindet aus der Slack-Nachricht, der Knopf "Sendung angekommen"
+    ist wieder da. Zusätzlich in der App die Notiz einer angekommenen Bestellung unter Bearbeiten ändern;
+    die Slack-Zeile zeigt den neuen Text.
+15. **Zeile bleibt nach Bezahlt & abgelegt**: Eine angekommene Bestellung über "Rechnung liegt vor" bis
+    "Bezahlt & abgelegt" bringen (als Buchhaltung). Erwartet: Knöpfe weg, die 📦-Zeile steht weiterhin über der
+    Zeile "✅ bezahlt & abgelegt …".

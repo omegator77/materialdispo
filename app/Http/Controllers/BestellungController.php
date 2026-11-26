@@ -39,7 +39,7 @@ class BestellungController extends Controller
 
     public function show(Bestellung $bestellung)
     {
-        $bestellung->load(['besteller', 'rechnungVon', 'abgelegtVon']);
+        $bestellung->load(['besteller', 'rechnungVon', 'abgelegtVon', 'angekommenVon']);
 
         return view('bestellungen.show', compact('bestellung'));
     }
@@ -51,7 +51,11 @@ class BestellungController extends Controller
 
     public function update(BestellungRequest $request, Bestellung $bestellung)
     {
-        $bestellung->update($request->validated());
+        $daten = $request->validated();
+        if (! $bestellung->istAngekommen()) {
+            unset($daten['angekommen_notiz']);
+        }
+        $bestellung->update($daten);
         $this->syncAfterResponse($bestellung);
 
         return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Bestellung gespeichert.');
@@ -96,6 +100,32 @@ class BestellungController extends Controller
         $this->syncAfterResponse($bestellung);
 
         return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Stufe zurückgenommen.');
+    }
+
+    public function angekommen(Request $request, Bestellung $bestellung)
+    {
+        // Mehrzeilige Eingaben zu einer Zeile zusammenfassen (die Slack-Zeile baut darauf auf).
+        if (is_string($request->input('notiz'))) {
+            $request->merge(['notiz' => trim(preg_replace('/\s+/u', ' ', $request->input('notiz')))]);
+        }
+        $daten = $request->validate(['notiz' => ['nullable', 'string', 'max:255']]);
+
+        if (! $bestellung->markAngekommen($request->user(), $daten['notiz'] ?? null)) {
+            return $this->nichtsZuTun($bestellung, 'Sendung ist bereits als angekommen eingetragen.');
+        }
+        $this->syncAfterResponse($bestellung);
+
+        return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Sendung als angekommen eingetragen.');
+    }
+
+    public function angekommenZuruecknehmen(Request $request, Bestellung $bestellung)
+    {
+        if (! $bestellung->revertAngekommen($request->user())) {
+            return $this->nichtsZuTun($bestellung, 'Keine Ankunft zum Zurücknehmen.');
+        }
+        $this->syncAfterResponse($bestellung);
+
+        return redirect()->route('bestellungen.show', $bestellung)->with('success', 'Ankunft zurückgenommen.');
     }
 
     public function resync(Bestellung $bestellung)

@@ -27,7 +27,7 @@ class SlackBestellungSync
             return;
         }
 
-        $bestellung->loadMissing(['besteller', 'abgelegtVon']);
+        $bestellung->loadMissing(['besteller', 'abgelegtVon', 'angekommenVon']);
 
         $headline = '🛒 BESTELLUNG — '.$this->kurz($bestellung->bestellt_bei, 200);
         $stufe = $bestellung->stufe();
@@ -49,6 +49,10 @@ class SlackBestellungSync
             $details[] = '*Sendung:* '.$this->sendungText($bestellung);
         }
 
+        if ($bestellung->istAngekommen()) {
+            $details[] = $this->angekommenText($bestellung);
+        }
+
         $blocks = [
             ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "*{$headline}*\n".implode("\n", $kopf)]],
             ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => '*Was:* '.$this->kurz($bestellung->bestellt_was, 1500, ' … (vollständig in der App)')]],
@@ -60,6 +64,10 @@ class SlackBestellungSync
             $blocks[] = ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => "✅ bezahlt & abgelegt{$by} am {$bestellung->abgelegt_at->format('d.m.Y H:i')} Uhr"]];
         } else {
             $buttons = [$this->button('bestellung:sendung', 'Sendung eintragen', $bestellung)];
+
+            if (! $bestellung->istAngekommen()) {
+                $buttons[] = $this->button('bestellung:angekommen', 'Sendung angekommen', $bestellung);
+            }
 
             if ($stufe === Bestellung::STUFE_RECHNUNG) {
                 $buttons[] = $this->button('bestellung:abgelegt', 'Bezahlt & abgelegt', $bestellung);
@@ -149,6 +157,21 @@ class SlackBestellungSync
     public static function channelFor(?Bestellung $bestellung = null): ?string
     {
         return $bestellung?->slack_channel ?: Setting::get('slack_order_channel') ?: config('services.slack.order_channel') ?: null;
+    }
+
+    private function angekommenText(Bestellung $bestellung): string
+    {
+        $text = '📦 Angekommen am '.$bestellung->angekommen_at->format('d.m.Y H:i').' Uhr';
+
+        if ($bestellung->angekommenVon?->name) {
+            $text .= ' von '.$this->kurz($bestellung->angekommenVon->name, 100);
+        }
+
+        if ($bestellung->angekommen_notiz) {
+            $text .= ' — '.$this->kurz($bestellung->angekommen_notiz, 500);
+        }
+
+        return $text;
     }
 
     private function sendungText(Bestellung $bestellung): string

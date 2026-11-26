@@ -73,15 +73,15 @@ test('Knöpfe je Stufe', function () {
     };
 
     $b = bestellungFuerSync();
-    expect($ids($b))->toBe(['bestellung:sendung', 'bestellung:rechnung']);
+    expect($ids($b))->toBe(['bestellung:sendung', 'bestellung:angekommen', 'bestellung:rechnung']);
 
     $b = bestellungFuerSync(['sendungsnummer' => '123', 'versanddienstleister' => 'dhl']);
-    expect($ids($b))->toBe(['bestellung:sendung', 'bestellung:rechnung']);
+    expect($ids($b))->toBe(['bestellung:sendung', 'bestellung:angekommen', 'bestellung:rechnung']);
 
     $u = User::factory()->create();
     $b = bestellungFuerSync();
     $b->markRechnungVorhanden($u);
-    expect($ids($b->fresh()))->toBe(['bestellung:sendung', 'bestellung:abgelegt']);
+    expect($ids($b->fresh()))->toBe(['bestellung:sendung', 'bestellung:angekommen', 'bestellung:abgelegt']);
 
     $b->markAbgelegt($u);
     expect($ids($b->fresh()))->toBe([]);
@@ -177,5 +177,68 @@ test('sehr lange Texte lassen jeden Abschnitt unter 3000 Zeichen und werden trot
             }
         }
         expect(json_encode($body['blocks'], JSON_UNESCAPED_UNICODE))->toContain('vollständig in der App');
+    }
+});
+
+function bestellungSyncText(Bestellung $b): string
+{
+    app(SlackBestellungSync::class)->sync($b);
+
+    return json_encode(bestellungSlackBody('chat.postMessage')[0]['blocks'], JSON_UNESCAPED_UNICODE);
+}
+
+test('ohne Ankunft: Knopf Sendung angekommen in richtiger Reihenfolge, keine Paketzeile', function () {
+    $b = bestellungFuerSync();
+    $text = bestellungSyncText($b);
+
+    expect(bestellungActionIds(bestellungSlackBody('chat.postMessage')[0]['blocks']))
+        ->toBe(['bestellung:sendung', 'bestellung:angekommen', 'bestellung:rechnung'])
+        ->and($text)->toContain('Sendung angekommen')->not->toContain('📦');
+});
+
+test('Rechnungsstufe behält Reihenfolge mit Angekommen-Knopf', function () {
+    $b = bestellungFuerSync(['rechnung_vorhanden_at' => now()]);
+    bestellungSyncText($b);
+
+    expect(bestellungActionIds(bestellungSlackBody('chat.postMessage')[0]['blocks']))
+        ->toBe(['bestellung:sendung', 'bestellung:angekommen', 'bestellung:abgelegt']);
+});
+
+test('mit Ankunft und Notiz: Zeile statt Knopf', function () {
+    $anna = User::factory()->create(['name' => 'Anna']);
+    $b = bestellungFuerSync(['angekommen_at' => '2026-11-26 14:05:00', 'angekommen_by' => $anna->id, 'angekommen_notiz' => 'Lager B']);
+    $text = bestellungSyncText($b);
+
+    expect($text)->toContain('📦 Angekommen am 26.11.2026 14:05 Uhr von Anna — Lager B')
+        ->and(bestellungActionIds(bestellungSlackBody('chat.postMessage')[0]['blocks']))->not->toContain('bestellung:angekommen');
+});
+
+test('mit Ankunft ohne Notiz: keine Notizfortsetzung', function () {
+    $anna = User::factory()->create(['name' => 'Anna']);
+    $b = bestellungFuerSync(['angekommen_at' => '2026-11-26 14:05:00', 'angekommen_by' => $anna->id]);
+
+    expect(bestellungSyncText($b))->toContain('📦 Angekommen am 26.11.2026 14:05 Uhr von Anna"')->not->toContain('Uhr von Anna —');
+});
+
+test('abgelegt behält die Paketzeile ohne Knopf', function () {
+    $anna = User::factory()->create(['name' => 'Anna']);
+    $b = bestellungFuerSync(['angekommen_at' => '2026-11-26 14:05:00', 'angekommen_by' => $anna->id, 'rechnung_vorhanden_at' => now(), 'abgelegt_at' => now()]);
+
+    expect(bestellungSyncText($b))->toContain('📦 Angekommen am')->and(bestellungActionIds(bestellungSlackBody('chat.postMessage')[0]['blocks']))->toBe([]);
+});
+
+test('Notiz wird maskiert und gekürzt', function () {
+    $anna = User::factory()->create(['name' => 'Anna']);
+    $b = bestellungFuerSync(['angekommen_at' => '2026-11-26 14:05:00', 'angekommen_by' => $anna->id, 'angekommen_notiz' => '<!channel> <@U1> & *fett*']);
+    $text = bestellungSyncText($b);
+
+    expect($text)->toContain('&lt;!channel&gt;')->toContain('&lt;@U1&gt;')->toContain('&amp;')->not->toContain('<!channel>')->not->toContain('<@U1>');
+
+    $lang = bestellungFuerSync(['angekommen_at' => '2026-11-26 14:05:00', 'angekommen_by' => $anna->id, 'angekommen_notiz' => str_repeat('&', 255)]);
+    app(SlackBestellungSync::class)->sync($lang);
+    foreach (bestellungSlackBody('chat.postMessage')[1]['blocks'] as $block) {
+        if (isset($block['text']['text'])) {
+            expect(mb_strlen($block['text']['text']))->toBeLessThan(3000);
+        }
     }
 });
