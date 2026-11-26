@@ -205,8 +205,8 @@ class Bestellung extends Model
 
     public function markAngekommen(User $by, ?string $notiz = null): bool
     {
-        $notiz = trim((string) $notiz);
-        $notiz = $notiz === '' ? null : mb_substr($notiz, 0, 255);
+        $notiz = rtrim(mb_substr(trim((string) $notiz), 0, 255));
+        $notiz = $notiz === '' ? null : $notiz;
 
         $affected = activity()->withoutLogs(fn () => static::whereKey($this->id)
             ->whereNull('angekommen_at')
@@ -222,7 +222,7 @@ class Bestellung extends Model
             return false;
         }
 
-        $this->logStage($by, 'angekommen', 'Sendung angekommen'.($notiz !== null ? " (Notiz: {$notiz})" : ''));
+        $this->logStage($by, 'angekommen', 'Sendung angekommen'.($notiz !== null ? ' (Notiz: '.preg_replace('/\s+/u', ' ', $notiz).')' : ''));
 
         return true;
     }

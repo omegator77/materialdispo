@@ -230,7 +230,7 @@ test('markAngekommen setzt Zeit, Person und getrimmte Notiz und ist nicht übers
         ->and($b->angekommen_notiz)->toBe('Regal 3');
 });
 
-test('markAngekommen speichert leere Notiz als null und kürzt auf 255 Zeichen', function (?string $notiz) {
+test('markAngekommen speichert leere Notiz als null', function (?string $notiz) {
     $user = User::factory()->create();
     $b = neueBestellung();
 
@@ -301,4 +301,56 @@ test('revertAngekommen leert Spalten, protokolliert einmal und erlaubt erneutes 
     expect($b->revertAngekommen($user))->toBeFalse();
     expect($b->markAngekommen($user, 'Neu'))->toBeTrue()
         ->and($b->fresh()->angekommen_notiz)->toBe('Neu');
+});
+
+test('veraltete Instanz überschreibt keine Ankunft', function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
+    $b = neueBestellung();
+    $stale = Bestellung::find($b->id);
+
+    expect($b->markAngekommen($user, 'Regal 3'))->toBeTrue();
+    $zeit = $b->fresh()->angekommen_at;
+    Activity::query()->delete();
+
+    expect($stale->markAngekommen($other, 'Anderes'))->toBeFalse();
+
+    $b->refresh();
+    expect($b->angekommen_at->equalTo($zeit))->toBeTrue()
+        ->and($b->angekommen_by)->toBe($user->id)
+        ->and($b->angekommen_notiz)->toBe('Regal 3')
+        ->and(Activity::count())->toBe(0);
+});
+
+test('veraltete Instanz nimmt eine bereits zurückgenommene Ankunft nicht nochmal zurück', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    $b->markAngekommen($user, 'Regal 3');
+    $stale = Bestellung::find($b->id);
+
+    expect($b->revertAngekommen($user))->toBeTrue();
+    Activity::query()->delete();
+
+    expect($stale->revertAngekommen($user))->toBeFalse()
+        ->and(Activity::count())->toBe(0);
+});
+
+test('gekürzte Notiz endet nicht auf Leerzeichen', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+
+    $b->markAngekommen($user, str_repeat('a', 254).' mehr Text');
+
+    expect($b->fresh()->angekommen_notiz)->toBe(str_repeat('a', 254));
+});
+
+test('Protokolltext faltet Zeilenumbrüche der Notiz, gespeichert bleibt sie unverändert', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    Activity::query()->delete();
+
+    $b->markAngekommen($user, "Regal 3\n\n  Fach   2");
+
+    expect($b->fresh()->angekommen_notiz)->toBe("Regal 3\n\n  Fach   2")
+        ->and(Activity::first()->description)->toContain('(Notiz: Regal 3 Fach 2)');
 });
