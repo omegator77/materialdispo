@@ -23,3 +23,9 @@ test('die Anleitung erklärt Bestellungen per Slack-Befehl und die Stufe Bezahlt
 
     expect($html)->toContain('Bestellungen')->toContain('Bezahlt &amp; abgelegt')->toContain('/bestellung');
 });
+
+test('die Anleitung erklärt den Knopf Sendung angekommen mit Notiz und Zurücknehmen', function () {
+    $html = $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('anleitung'))->assertOk()->getContent();
+
+    expect($html)->toContain('Sendung angekommen')->toContain('Lagerort')->toContain('Ankunft zurücknehmen');
+});

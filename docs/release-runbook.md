@@ -33,6 +33,16 @@ Beide legen nur Neues an und verändern keine vorhandenen Daten. Phase B (Datenb
 trotzdem. Slack-Einrichtung für `/bestellung` (Scope `commands`, Befehl, Kanal): siehe
 [betrieb.md](betrieb.md); nach dem Deploy Haken **Buchhaltung** in der Benutzerverwaltung setzen.
 
+### Zusatz für "Sendung angekommen" (eine weitere neue Migration)
+
+| Migration | Wirkung | Rückgängig |
+|---|---|---|
+| `2026_11_26_100000_add_angekommen_to_bestellungen_table` | neue Spalten `bestellungen.angekommen_at`, `angekommen_by`, `angekommen_notiz` (alle leer) | `migrate:rollback` (eingetragene Ankünfte gehen dabei verloren) |
+
+Sie legt nur Neues an und verändert keine vorhandenen Daten. **Datenbank vorher sichern** (Phase B).
+Es gibt **keine neuen Slack-Scopes** und keine Änderung an der Slack-Einrichtung; die Nachrichten
+bestehender Bestellungen erhalten den Knopf "Sendung angekommen" beim nächsten Aktualisieren.
+
 ---
 
 ## Phase A: Vorprüfung (nur lesen, nichts wird verändert)
