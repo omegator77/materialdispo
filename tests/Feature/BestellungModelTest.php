@@ -207,3 +207,98 @@ test('veraltete zweite Instanz löst keinen zweiten Stufenwechsel aus', function
     expect($stale->markRechnungVorhanden($user))->toBeFalse();
     expect(Activity::count())->toBe(0);
 });
+
+test('markAngekommen setzt Zeit, Person und getrimmte Notiz und ist nicht überschreibbar', function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
+    $b = neueBestellung();
+
+    expect($b->markAngekommen($user, '  Regal 3  '))->toBeTrue();
+    $b->refresh();
+    $zeit = $b->angekommen_at;
+
+    expect($zeit)->not->toBeNull()
+        ->and($b->angekommen_by)->toBe($user->id)
+        ->and($b->angekommen_notiz)->toBe('Regal 3')
+        ->and($b->istAngekommen())->toBeTrue()
+        ->and($b->angekommenVon->is($user))->toBeTrue();
+
+    expect($b->markAngekommen($other, 'Anderes'))->toBeFalse();
+    $b->refresh();
+    expect($b->angekommen_at->equalTo($zeit))->toBeTrue()
+        ->and($b->angekommen_by)->toBe($user->id)
+        ->and($b->angekommen_notiz)->toBe('Regal 3');
+});
+
+test('markAngekommen speichert leere Notiz als null und kürzt auf 255 Zeichen', function (?string $notiz) {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+
+    $b->markAngekommen($user, $notiz);
+
+    expect($b->fresh()->angekommen_notiz)->toBeNull();
+})->with([null, '', '   ']);
+
+test('markAngekommen kürzt lange Notiz auf 255 Zeichen', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+
+    $b->markAngekommen($user, str_repeat('ä', 300));
+
+    expect(mb_strlen($b->fresh()->angekommen_notiz))->toBe(255);
+});
+
+test('Ankunft ändert die Stufe nicht', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung(['sendungsnummer' => '123']);
+    expect($b->stufe())->toBe(Bestellung::STUFE_UNTERWEGS);
+
+    $b->markAngekommen($user);
+    expect($b->stufe())->toBe(Bestellung::STUFE_UNTERWEGS);
+
+    $c = neueBestellung();
+    $c->markAngekommen($user);
+    expect($c->stufe())->toBe(Bestellung::STUFE_BESTELLT);
+});
+
+test('markAngekommen protokolliert genau einen Eintrag mit Verursacher', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+    Activity::query()->delete();
+
+    $b->markAngekommen($user, 'Regal 3');
+    $b->markAngekommen($user, 'Regal 4');
+
+    $entries = Activity::where('subject_id', $b->id)->get();
+    expect($entries)->toHaveCount(1)
+        ->and($entries->first()->event)->toBe('angekommen')
+        ->and($entries->first()->causer_id)->toBe($user->id)
+        ->and($entries->first()->description)->toContain('Sendung angekommen')
+        ->and($entries->first()->description)->toContain('(Notiz: Regal 3)');
+});
+
+test('revertAngekommen leert Spalten, protokolliert einmal und erlaubt erneutes Eintragen', function () {
+    $user = User::factory()->create();
+    $b = neueBestellung();
+
+    expect($b->revertAngekommen($user))->toBeFalse();
+
+    $b->markAngekommen($user, 'Regal 3');
+    Activity::query()->delete();
+
+    expect($b->revertAngekommen($user))->toBeTrue();
+    $b->refresh();
+    expect($b->angekommen_at)->toBeNull()
+        ->and($b->angekommen_by)->toBeNull()
+        ->and($b->angekommen_notiz)->toBeNull()
+        ->and($b->istAngekommen())->toBeFalse();
+
+    $entries = Activity::where('subject_id', $b->id)->get();
+    expect($entries)->toHaveCount(1)
+        ->and($entries->first()->event)->toBe('angekommen_zurueckgenommen')
+        ->and($entries->first()->causer_id)->toBe($user->id);
+
+    expect($b->revertAngekommen($user))->toBeFalse();
+    expect($b->markAngekommen($user, 'Neu'))->toBeTrue()
+        ->and($b->fresh()->angekommen_notiz)->toBe('Neu');
+});
